@@ -1,0 +1,185 @@
+============
+data_loader:
+
+Responsibilities
+
+Load SPHY price+dividend data (weekly CSV or API via your existing AlphaVantage class)
+
+Load FRED spread data (daily CSV or API via your existing Fred class)
+
+Convert FRED to weekly (W-FRI)
+
+Merge SPHY + Spread
+
+Compute TR_factor + TR (but no indicators here)
+
+Output a fully prepared weekly DataFrame
+
+Everything else (indicators, strategy, optimization) is handled in later modules.
+
+=============
+indicators.py
+
+This module is pure indicator computation.
+It takes the weekly DataFrame from data_loader.py and adds:
+
+Moving average (MA)
+
+4-week spread change (chg4)
+
+3-week price change (ret3)
+
+Spread deltas (week-over-week)
+
+Peak spread window logic support
+
+Any reusable indicator logic needed by the SPHY strategy
+
+Everything is stateless and functional.
+No strategy logic, no parameters hard-coded.
+
+=============
+strategy_base.py
+his module defines the abstract base class that all strategies (SPHY, NEA, future ones) will inherit from.
+It standardizes the interface and enforces clear structure:
+
+Every strategy must implement:
+
+evaluate_sell(row, df, idx)
+
+evaluate_buy(row, df, idx, was_sold)
+
+run(df, start_invested) → returns positions + buy/sell dates
+
+This separation ensures strategies remain clean and testable.
+
+================
+strategy_sphy
+This module contains the full SPHY strategy logic, implementing the rules exactly as defined in your specification.
+
+It inherits from BaseStrategy and implements:
+
+evaluate_sell()
+
+evaluate_buy()
+
+Key features included:
+
+SELL if any of:
+
+Spread > SPREAD_LVL
+
+chg4 > CHG4
+
+ret3 < RET3
+
+BUY only if all:
+
+close > MA
+
+last 2 weekly spread deltas negative
+
+current spread ≤ recent 4-week peak × (1 − DROP)
+
+AND only after a prior SELL event
+
+====================
+backtester.py
+This module is responsible for turning a strategy’s positions into actual returns.
+
+It performs:
+
+Apply weekly returns when invested
+
+Apply weekly cash yield when not invested
+
+Build the cumulative strategy equity curve
+
+Compute performance metrics:
+
+final value
+
+APY (annualized return)
+
+exposure (optional extension point)
+
+This module contains no strategy rules and no data loading.
+It is reusable for SPHY, NEA, or any future asset.
+
+========================
+optimizer_sphy
+This module performs the full SPHY parameter optimization loop.
+
+It will:
+
+Load weekly data (via WeeklyDataLoader)
+
+Apply indicators (via IndicatorEngine)
+
+Run the SPHY strategy for each parameter combination
+
+Use the Backtester to compute APY
+
+Store results in a clean results table
+
+Return:
+
+best_params
+
+results_df
+
+optional full backtest result for best params
+
+The optimizer is intentionally modular — you can plug in different grids or even random-search later.
+
+==================
+main.py
+This is your new, clean orchestrator.
+
+It replaces the old procedural script with a modular, maintainable entry point that:
+
+Parses command-line inputs
+
+Loads data via WeeklyDataLoader
+
+Applies indicators
+
+Runs the SPHY strategy
+
+Runs the Backtester
+
+Displays buy/sell events
+
+Supports running the optimizer
+
+And uses CSV input by default, exactly as you prefer.
+
+It is short, clean, and contains no business logic.
+
+==================
+WHAT YOU NOW HAVE
+✔ A production-ready modular backtest framework
+
+Every component is isolated, reusable, testable.
+
+✔ SPHY strategy fully implemented
+
+Using your exact entry/exit rules.
+
+✔ Clean backtester
+
+Handles return application and APY.
+
+✔ Full optimizer
+
+Searches 540 parameter combinations.
+
+✔ Clean CLI
+
+python main.py → run SPHY
+
+python main.py --optimize → run optimizer
+
+python main.py --invested 0 → start in cash
+
+python main.py --input-type csv → always use CSV sources (default)
