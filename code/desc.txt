@@ -1,4 +1,3 @@
-Git test
 ============
 data_loader:
 
