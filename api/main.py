@@ -10,7 +10,7 @@ from fastapi.responses import StreamingResponse
 from fastapi.staticfiles import StaticFiles
 
 # Add the code/ directory to sys.path so we can import the pipeline modules
-CODE_DIR = Path(__file__).resolve().parent.parent / "code"
+CODE_DIR = Path(__file__).resolve().parent.parent / "backend"
 INPUT_DIR = Path(__file__).resolve().parent.parent / "inputs"
 sys.path.insert(0, str(CODE_DIR))
 

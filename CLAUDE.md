@@ -25,7 +25,7 @@ The end goal is a dynamic, multi-security framework driven by a React/Vite UI. T
 
 ## Running the Code
 
-All commands run from the `code/` directory. Python 3.13+ required. Dependencies: `pandas`, `numpy`, `requests`, `pandas-datareader`.
+All commands run from the `backend/` directory. Python 3.13+ required. Dependencies: `pandas`, `numpy`, `requests`, `pandas-datareader`.
 
 ```bash
 # Run SPHY strategy with current best parameters
@@ -49,7 +49,7 @@ python main.py --ticker SPHY --input-type api
 
 Input CSVs are in `inputs/`: `weekly-adjusted.csv` (Alpha Vantage price/dividend) and `fred.csv` (FRED daily spread data).
 
-Output CSVs are written to `code/`: `strategy_output.csv`, `buyhold_output.csv`, `optimizer_results.csv`, `best_strategy_output.csv`.
+Output CSVs are written to `backend/`: `strategy_output.csv`, `buyhold_output.csv`, `optimizer_results.csv`, `best_strategy_output.csv`.
 
 ## Architecture
 
