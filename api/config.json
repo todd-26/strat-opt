@@ -1,0 +1,36 @@
+{
+  "defaultParams": {
+    "MA": 50,
+    "DROP": 0.016,
+    "CHG4": 0.16,
+    "RET3": -0.0225,
+    "SPREAD_LVL": 7.0
+  },
+  "defaultRanges": {
+    "MA": {
+      "min": 50.0,
+      "max": 50.0,
+      "step": 5.0
+    },
+    "DROP": {
+      "min": 0.016,
+      "max": 0.016,
+      "step": 0.001
+    },
+    "CHG4": {
+      "min": 0.16,
+      "max": 0.16,
+      "step": 0.005
+    },
+    "RET3": {
+      "min": -0.0225,
+      "max": -0.0225,
+      "step": 0.0005
+    },
+    "SPREAD_LVL": {
+      "min": 7.0,
+      "max": 7.0,
+      "step": 0.1
+    }
+  }
+}

@@ -1,0 +1,30 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* Slate theme defaults — overridden by applyTheme() */
+  --bg: #f8fafc;
+  --bg-card: #ffffff;
+  --bg-header: #1e293b;
+  --bg-input: #f1f5f9;
+  --bg-hover: #e2e8f0;
+  --text: #0f172a;
+  --text-muted: #64748b;
+  --text-header: #f8fafc;
+  --border: #e2e8f0;
+  --accent: #0d9488;
+  --accent-text: #ffffff;
+  --tab-active: #0d9488;
+  --tab-active-text: #ffffff;
+  --buy: #16a34a;
+  --sell: #dc2626;
+  --hold: #d97706;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: system-ui, -apple-system, sans-serif;
+  min-height: 100vh;
+}
