@@ -20,31 +20,43 @@ class SPHYOptimizer:
         Directory containing CSV inputs.
     cash_rate : float
         Annualized cash rate (same as strategy).
+    param_grids : dict, optional
+        Override any of the default grids. Keys: 'MA', 'DROP', 'CHG4', 'RET3', 'SPREAD_LVL'.
+        Values: lists of values to test. Unspecified keys use defaults.
     """
 
-    def __init__(self, input_type: str, input_dir: Path, cash_rate: float):
+    def __init__(self, input_type: str, input_dir: Path, cash_rate: float, param_grids: dict = None):
         self.input_type = input_type
         self.input_dir = input_dir
         self.cash_rate = cash_rate
 
-        # Fixed grids you approved
-        self.MA_grid = [40, 45, 50, 55, 60]
-        self.DROP_grid = [0.03, 0.04, 0.05]
-        self.CHG4_grid = [0.15, 0.18, 0.20]
-        self.RET3_grid = [-0.015, -0.02, -0.025]
-        self.SPREAD_grid = [7.0, 7.2, 7.4, 7.6, 7.8]
-
         # this was my last test with the winner of 50, .017, .165, -0.021, 7.0
         self.MA_grid = [50]
-        self.DROP_grid = [0.017]
-        self.CHG4_grid = [0.165]
-        self.RET3_grid =  [-0.02, -0.0205, -0.021, -0.0215, -0.022]
+        self.DROP_grid = [0.016]
+        # self.DROP_grid = [0.017]
+        self.CHG4_grid = [0.16]
+        # self.CHG4_grid = [0.165]
+        self.RET3_grid =  [-0.021, -0.0215, -0.022, -0.0225, -0.023]
+        # self.RET3_grid =  [-0.02, -0.0205, -0.021, -0.0215, -0.022]
         self.SPREAD_grid = [7.0]
+
+        # Apply caller-supplied overrides
+        if param_grids:
+            if "MA" in param_grids:
+                self.MA_grid = param_grids["MA"]
+            if "DROP" in param_grids:
+                self.DROP_grid = param_grids["DROP"]
+            if "CHG4" in param_grids:
+                self.CHG4_grid = param_grids["CHG4"]
+            if "RET3" in param_grids:
+                self.RET3_grid = param_grids["RET3"]
+            if "SPREAD_LVL" in param_grids:
+                self.SPREAD_grid = param_grids["SPREAD_LVL"]
 
     # ------------------------------------------------------------
     # Full optimization run
     # ------------------------------------------------------------
-    def run(self, ticker: str, start_invested: int = 1):
+    def run(self, ticker: str, start_invested: int = 1, progress_callback=None):
         """
         Executes the full grid search.
 
@@ -53,6 +65,8 @@ class SPHYOptimizer:
         start_invested : int
             1 = start invested
             0 = start in cash
+        progress_callback : callable, optional
+            Called after each combination with (current: int, total: int).
 
         Returns
         -------
@@ -66,6 +80,9 @@ class SPHYOptimizer:
         df = loader.load()
 
         results = []
+        total = (len(self.MA_grid) * len(self.DROP_grid) * len(self.CHG4_grid) *
+                 len(self.RET3_grid) * len(self.SPREAD_grid))
+        current = 0
 
         # Cartesian product of all parameter sets
         for MA, DROP, CHG4, RET3, SPREAD_LVL in itertools.product(
@@ -104,7 +121,12 @@ class SPHYOptimizer:
                 "RET3": RET3,
                 "SPREAD_LVL": SPREAD_LVL,
                 "APY": apy,
+                "final_value": bt_result["final_value"],
             })
+
+            current += 1
+            if progress_callback is not None:
+                progress_callback(current, total)
 
         results_df = pd.DataFrame(results)
         results_df["MA"] = results_df["MA"].apply(int)

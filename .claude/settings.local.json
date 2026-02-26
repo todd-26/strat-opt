@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cd:*)",
+      "Bash(tail:*)",
+      "Bash(cd /c/Users/Todd/OneDrive/Documents/Finance/strat-opt/frontend && npx tsc --noEmit 2>&1)",
+      "Bash(pip install:*)",
+      "Bash(cd /c/Users/Todd/OneDrive/Documents/Finance/strat-opt/api && python -c \"import main; print\\('API imports OK'\\)\" 2>&1)",
+      "Bash(cd /c/Users/Todd/OneDrive/Documents/Finance/strat-opt/frontend && npm run build 2>&1)"
+    ]
+  }
+}

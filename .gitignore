@@ -174,5 +174,13 @@ cython_debug/
 # PyPI configuration file
 .pypirc
 
-code/*.csv
+backend/*.csv
+
+# Node / frontend
+node_modules/
+frontend/dist/
+
+# Claude Code session transcripts (keep settings/skills/hooks tracked)
+.claude/projects/
+
 
