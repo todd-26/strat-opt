@@ -130,7 +130,7 @@ export function SettingsSheet({ open, onClose, settings, onUpdate, config, onSav
             <input
               type="number"
               value={settings.cashRate}
-              step="0.01"
+              step="0.0025"
               onChange={(e) => onUpdate({ cashRate: parseFloat(e.target.value) || 0 })}
               className="w-32 rounded border px-2 py-1.5 text-sm"
               style={{

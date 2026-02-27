@@ -148,7 +148,7 @@ export function OptimizerTab({ settings, ticker, defaultRanges, paramDescription
             <input
               type="number"
               value={cashRate}
-              step="0.01"
+              step="0.0025"
               onChange={(e) => setCashRate(parseFloat(e.target.value) || 0)}
               className="w-28 rounded border px-2 py-1.5 text-sm"
               style={{
