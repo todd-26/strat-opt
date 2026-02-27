@@ -2,7 +2,6 @@ import { useRef, useState } from 'react'
 import {
   ComposedChart,
   Line,
-  Scatter,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -16,11 +15,8 @@ interface ChartPoint {
   date: string
   strategy: number
   buyhold?: number
-}
-
-interface MarkerPoint {
-  date: string
-  value: number
+  isBuy: boolean
+  isSell: boolean
 }
 
 interface Props {
@@ -32,19 +28,28 @@ interface Props {
   id?: string
 }
 
-// Custom triangle dots for buy/sell scatter
-const BuyDot = (props: { cx?: number; cy?: number }) => {
-  const { cx = 0, cy = 0 } = props
-  const size = 8
-  const points = `${cx},${cy - size} ${cx - size},${cy + size} ${cx + size},${cy + size}`
-  return <polygon points={points} fill="var(--buy)" opacity={0.85} />
-}
+const OFFSET = 12
+const SIZE = 7
 
-const SellDot = (props: { cx?: number; cy?: number }) => {
-  const { cx = 0, cy = 0 } = props
-  const size = 8
-  const points = `${cx},${cy + size} ${cx - size},${cy - size} ${cx + size},${cy - size}`
-  return <polygon points={points} fill="var(--sell)" opacity={0.85} />
+// Called by Recharts for each data point on the strategy line.
+// Returns a triangle marker for buy/sell dates, nothing otherwise.
+function StrategyDot(props: any) {
+  const { cx, cy, payload } = props
+  if (!cx || !cy) return <g />
+
+  if (payload?.isBuy) {
+    // Up-pointing triangle below the line
+    const top = cy + OFFSET
+    const pts = `${cx},${top - SIZE} ${cx - SIZE},${top + SIZE} ${cx + SIZE},${top + SIZE}`
+    return <polygon points={pts} fill="var(--buy)" opacity={0.9} />
+  }
+  if (payload?.isSell) {
+    // Down-pointing triangle above the line
+    const top = cy - OFFSET
+    const pts = `${cx},${top + SIZE} ${cx - SIZE},${top - SIZE} ${cx + SIZE},${top - SIZE}`
+    return <polygon points={pts} fill="var(--sell)" opacity={0.9} />
+  }
+  return <g />
 }
 
 export function EquityCurveChart({
@@ -58,27 +63,20 @@ export function EquityCurveChart({
   const [showBuyHold, setShowBuyHold] = useState(false)
   const chartRef = useRef<HTMLDivElement>(null)
 
-  // Build merged chart data
   const buyholdByDate = new Map((buyholdCurve ?? []).map((p) => [p.date, p.strategy]))
+  const buySet = new Set(buydates)
+  const sellSet = new Set(selldates)
 
+  // Embed buy/sell flags directly into each data point so the Line's
+  // custom dot renderer can position markers exactly on the curve.
   const chartData: ChartPoint[] = equityCurve.map((p) => ({
     date: p.date,
     strategy: p.strategy,
     buyhold: buyholdByDate.get(p.date),
+    isBuy: buySet.has(p.date),
+    isSell: sellSet.has(p.date),
   }))
 
-  // Build buy/sell marker datasets aligned to strategy values
-  const strategyByDate = new Map(equityCurve.map((p) => [p.date, p.strategy]))
-
-  const buyMarkers: MarkerPoint[] = buydates
-    .map((d) => ({ date: d, value: strategyByDate.get(d) ?? 0 }))
-    .filter((m) => m.value > 0)
-
-  const sellMarkers: MarkerPoint[] = selldates
-    .map((d) => ({ date: d, value: strategyByDate.get(d) ?? 0 }))
-    .filter((m) => m.value > 0)
-
-  // CSV export
   function exportCsv() {
     const rows = ['date,strategy' + (showBuyHold && buyholdCurve ? ',buyhold' : '')]
     for (const p of chartData) {
@@ -95,7 +93,6 @@ export function EquityCurveChart({
     URL.revokeObjectURL(url)
   }
 
-  // PNG export via html2canvas
   async function exportPng() {
     if (!chartRef.current) return
     try {
@@ -111,21 +108,21 @@ export function EquityCurveChart({
     }
   }
 
-  // X-axis tick formatter: show year only
   const tickFormatter = (val: string) => val?.slice(0, 4) ?? ''
 
   return (
     <div>
       <div className="mb-2 flex flex-wrap items-center gap-3">
-        {showBuyHoldToggle && buyholdCurve && (
-          <label className="flex items-center gap-2 text-sm" style={{ color: 'var(--text)' }}>
+        {showBuyHoldToggle && (
+          <label className="flex items-center gap-2 text-sm" style={{ color: buyholdCurve ? 'var(--text)' : 'var(--text-muted)' }}>
             <input
               type="checkbox"
               checked={showBuyHold}
               onChange={(e) => setShowBuyHold(e.target.checked)}
+              disabled={!buyholdCurve}
               className="rounded"
             />
-            Show Buy &amp; Hold
+            {buyholdCurve ? 'Show Buy & Hold' : 'Show Buy & Hold (loading…)'}
           </label>
         )}
         <button
@@ -179,7 +176,8 @@ export function EquityCurveChart({
               type="monotone"
               dataKey="strategy"
               stroke="var(--accent)"
-              dot={false}
+              dot={StrategyDot}
+              activeDot={{ r: 3 }}
               strokeWidth={2}
               name="strategy"
             />
@@ -192,24 +190,6 @@ export function EquityCurveChart({
                 strokeWidth={1.5}
                 strokeDasharray="4 2"
                 name="buyhold"
-              />
-            )}
-            {buyMarkers.length > 0 && (
-              <Scatter
-                data={buyMarkers}
-                dataKey="value"
-                name="Buy"
-                shape={<BuyDot />}
-                legendType="none"
-              />
-            )}
-            {sellMarkers.length > 0 && (
-              <Scatter
-                data={sellMarkers}
-                dataKey="value"
-                name="Sell"
-                shape={<SellDot />}
-                legendType="none"
               />
             )}
           </ComposedChart>
