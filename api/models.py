@@ -20,6 +20,7 @@ class SignalRequest(BaseModel):
     ticker: str = "SPHY"
     params: StrategyParams = StrategyParams()
     start_invested: int = 1
+    cash_rate: float = 0.04
     input_type: str = "csv"
 
 

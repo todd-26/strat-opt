@@ -6,7 +6,7 @@ import { OptimizerTable } from '../OptimizerTable'
 import { EquityCurveChart } from '../EquityCurveChart'
 import { MetricsCard } from '../MetricsCard'
 import type { Settings, StrategyParams, BacktestResult } from '../../types'
-import { streamOptimizer } from '../../lib/api'
+import { streamOptimizer, runBuyHold } from '../../lib/api'
 
 interface Props {
   settings: Settings
@@ -29,6 +29,8 @@ export function OptimizerTab({ settings, ticker, defaultRanges }: Props) {
   const [drillResult, setDrillResult] = useState<BacktestResult | null>(null)
   const [drillLoading, setDrillLoading] = useState(false)
   const [drillError, setDrillError] = useState<string | null>(null)
+  const [buyholdResult, setBuyholdResult] = useState<BacktestResult | null>(null)
+  const [buyholdError, setBuyholdError] = useState<string | null>(null)
 
   // Highlight the best row when results arrive (no chart loaded yet)
   useEffect(() => {
@@ -50,6 +52,11 @@ export function OptimizerTab({ settings, ticker, defaultRanges }: Props) {
     setSelectedParams(null)
     setChartParams(null)
     setDrillResult(null)
+    setBuyholdResult(null)
+    setBuyholdError(null)
+    runBuyHold(ticker, cashRate, inputType)
+      .then(setBuyholdResult)
+      .catch((e) => setBuyholdError(String(e)))
   }
 
   async function handleToggleChart(params: StrategyParams) {
@@ -245,6 +252,14 @@ export function OptimizerTab({ settings, ticker, defaultRanges }: Props) {
           {error}
         </div>
       )}
+      {buyholdError && (
+        <div
+          className="rounded-lg border px-4 py-3 text-sm"
+          style={{ borderColor: 'var(--sell)', background: '#fee2e2', color: '#991b1b' }}
+        >
+          Buy &amp; Hold overlay failed: {buyholdError}
+        </div>
+      )}
 
       {/* Results */}
       {result && (
@@ -291,6 +306,7 @@ export function OptimizerTab({ settings, ticker, defaultRanges }: Props) {
               chartLoading={drillLoading}
               chartError={drillError}
               onToggleChart={handleToggleChart}
+              buyholdResult={buyholdResult}
             />
           </div>
         </>

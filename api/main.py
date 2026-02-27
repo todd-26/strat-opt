@@ -1,6 +1,8 @@
 import sys
 import json
+import math
 import asyncio
+import concurrent.futures
 from pathlib import Path
 from typing import AsyncGenerator
 
@@ -72,7 +74,6 @@ app.add_middleware(
 def _safe_float(val) -> float | None:
     """Return None for NaN/None, otherwise float."""
     try:
-        import math
         if val is None or math.isnan(float(val)):
             return None
         return float(val)
@@ -173,7 +174,7 @@ def run_signal(req: SignalRequest):
 
     positions, buy_dates, sell_dates = strat.run(df_ind, start_invested=req.start_invested)
 
-    bt = Backtester(0.04)
+    bt = Backtester(req.cash_rate)
     bt_result = bt.run(df_ind, positions, buy_dates, sell_dates)
 
     # Determine current signal from last two positions
@@ -220,7 +221,7 @@ def run_signal(req: SignalRequest):
 @app.post("/api/run/optimizer")
 async def run_optimizer(req: OptimizerRequest):
     async def event_stream() -> AsyncGenerator[str, None]:
-        loop = asyncio.get_event_loop()
+        loop = asyncio.get_running_loop()
         queue: asyncio.Queue = asyncio.Queue()
 
         def progress_callback(current: int, total: int):
@@ -252,66 +253,66 @@ async def run_optimizer(req: OptimizerRequest):
                 loop.call_soon_threadsafe(queue.put_nowait, ("error", str(exc)))
 
         # Run optimizer in a thread pool so it doesn't block the event loop
-        import concurrent.futures
         executor = concurrent.futures.ThreadPoolExecutor(max_workers=1)
-        future = loop.run_in_executor(executor, run_sync)
+        loop.run_in_executor(executor, run_sync)
 
-        while True:
-            try:
-                item = await asyncio.wait_for(queue.get(), timeout=300.0)
-            except asyncio.TimeoutError:
-                yield "event: error\ndata: {\"message\": \"Optimizer timed out\"}\n\n"
-                break
+        try:
+            while True:
+                try:
+                    item = await asyncio.wait_for(queue.get(), timeout=300.0)
+                except asyncio.TimeoutError:
+                    yield "event: error\ndata: {\"message\": \"Optimizer timed out\"}\n\n"
+                    break
 
-            kind = item[0]
+                kind = item[0]
 
-            if kind == "progress":
-                _, current, total = item
-                data = json.dumps({"current": current, "total": total})
-                yield f"event: progress\ndata: {data}\n\n"
+                if kind == "progress":
+                    _, current, total = item
+                    data = json.dumps({"current": current, "total": total})
+                    yield f"event: progress\ndata: {data}\n\n"
 
-            elif kind == "result":
-                _, best_params, results_df, best_result = item
+                elif kind == "result":
+                    _, best_params, results_df, best_result = item
 
-                best_bt = _build_backtest_result(best_result)
+                    best_bt = _build_backtest_result(best_result)
 
-                best_params_model = StrategyParams(
-                    MA=int(best_params["MA"]),
-                    DROP=float(best_params["DROP"]),
-                    CHG4=float(best_params["CHG4"]),
-                    RET3=float(best_params["RET3"]),
-                    SPREAD_LVL=float(best_params["SPREAD_LVL"]),
-                )
-
-                all_results = [
-                    OptimizerResultRow(
-                        MA=int(row["MA"]),
-                        DROP=float(row["DROP"]),
-                        CHG4=float(row["CHG4"]),
-                        RET3=float(row["RET3"]),
-                        SPREAD_LVL=float(row["SPREAD_LVL"]),
-                        APY=float(row["APY"]),
-                        final_value=float(row["final_value"]),
+                    best_params_model = StrategyParams(
+                        MA=int(best_params["MA"]),
+                        DROP=float(best_params["DROP"]),
+                        CHG4=float(best_params["CHG4"]),
+                        RET3=float(best_params["RET3"]),
+                        SPREAD_LVL=float(best_params["SPREAD_LVL"]),
                     )
-                    for _, row in results_df.iterrows()
-                ]
 
-                response = OptimizerResponse(
-                    best_params=best_params_model,
-                    best_result=best_bt,
-                    all_results=all_results,
-                )
-                data = response.model_dump_json()
-                yield f"event: result\ndata: {data}\n\n"
-                break
+                    all_results = [
+                        OptimizerResultRow(
+                            MA=int(row["MA"]),
+                            DROP=float(row["DROP"]),
+                            CHG4=float(row["CHG4"]),
+                            RET3=float(row["RET3"]),
+                            SPREAD_LVL=float(row["SPREAD_LVL"]),
+                            APY=float(row["APY"]),
+                            final_value=float(row["final_value"]),
+                        )
+                        for _, row in results_df.iterrows()
+                    ]
 
-            elif kind == "error":
-                _, msg = item
-                data = json.dumps({"message": msg})
-                yield f"event: error\ndata: {data}\n\n"
-                break
+                    response = OptimizerResponse(
+                        best_params=best_params_model,
+                        best_result=best_bt,
+                        all_results=all_results,
+                    )
+                    data = response.model_dump_json()
+                    yield f"event: result\ndata: {data}\n\n"
+                    break
 
-        executor.shutdown(wait=False)
+                elif kind == "error":
+                    _, msg = item
+                    data = json.dumps({"message": msg})
+                    yield f"event: error\ndata: {data}\n\n"
+                    break
+        finally:
+            executor.shutdown(wait=False)
 
     return StreamingResponse(
         event_stream(),
