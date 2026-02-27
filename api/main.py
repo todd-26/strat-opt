@@ -5,6 +5,9 @@ import asyncio
 import concurrent.futures
 from pathlib import Path
 from typing import AsyncGenerator
+from dotenv import load_dotenv
+
+load_dotenv(Path(__file__).parent.parent / ".env")
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -41,23 +44,6 @@ from models import (                               # noqa: E402
 app = FastAPI(title="strat-opt API")
 
 CONFIG_PATH = Path(__file__).parent / "config.json"
-
-FALLBACK_CONFIG = {
-    "defaultParams": {
-        "MA": 50,
-        "DROP": 0.017,
-        "CHG4": 0.165,
-        "RET3": -0.021,
-        "SPREAD_LVL": 7.0,
-    },
-    "defaultRanges": {
-        "MA":         {"min": 50,      "max": 50,      "step": 5},
-        "DROP":       {"min": 0.016,   "max": 0.016,   "step": 0.001},
-        "CHG4":       {"min": 0.16,    "max": 0.16,    "step": 0.005},
-        "RET3":       {"min": -0.0225, "max": -0.0225, "step": 0.0005},
-        "SPREAD_LVL": {"min": 7.0,     "max": 7.0,     "step": 0.1},
-    },
-}
 
 app.add_middleware(
     CORSMiddleware,
@@ -326,9 +312,7 @@ async def run_optimizer(req: OptimizerRequest):
 
 @app.get("/api/config")
 def get_config():
-    if CONFIG_PATH.exists():
-        return json.loads(CONFIG_PATH.read_text())
-    return FALLBACK_CONFIG
+    return json.loads(CONFIG_PATH.read_text())
 
 
 @app.post("/api/config")

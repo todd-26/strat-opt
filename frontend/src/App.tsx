@@ -7,7 +7,7 @@ import { SettingsSheet } from './components/Settings'
 import { OptimizerTab } from './components/tabs/OptimizerTab'
 import { BuyHoldTab } from './components/tabs/BuyHoldTab'
 import { SignalTab } from './components/tabs/SignalTab'
-import type { AppConfig } from './types'
+import type { AppConfig, StrategyParams } from './types'
 
 type Tab = 'optimizer' | 'buyhold' | 'signal'
 
@@ -19,28 +19,12 @@ const TABS: { id: Tab; label: string }[] = [
 
 const TICKER = 'SPHY'
 
-const FALLBACK_CONFIG: AppConfig = {
-  defaultParams: {
-    MA: 50,
-    DROP: 0.017,
-    CHG4: 0.165,
-    RET3: -0.021,
-    SPREAD_LVL: 7.0,
-  },
-  defaultRanges: {
-    MA:         { min: 50,      max: 50,      step: 5      },
-    DROP:       { min: 0.016,   max: 0.016,   step: 0.001  },
-    CHG4:       { min: 0.16,    max: 0.16,    step: 0.005  },
-    RET3:       { min: -0.0225, max: -0.0225, step: 0.0005 },
-    SPREAD_LVL: { min: 7.0,     max: 7.0,     step: 0.1    },
-  },
-}
-
 export default function App() {
   const { settings, updateSettings } = useSettings()
   const [activeTab, setActiveTab] = useState<Tab>('optimizer')
   const [settingsOpen, setSettingsOpen] = useState(false)
-  const [config, setConfig] = useState<AppConfig>(FALLBACK_CONFIG)
+  const [config, setConfig] = useState<AppConfig | null>(null)
+  const [configError, setConfigError] = useState<{ message: string; stack?: string } | null>(null)
 
   // Apply saved theme on mount
   useEffect(() => {
@@ -49,13 +33,34 @@ export default function App() {
 
   // Load config from API on mount
   useEffect(() => {
-    getConfig().then(setConfig).catch(() => {/* keep fallback */})
+    getConfig()
+      .then(setConfig)
+      .catch((e: unknown) => {
+        const err = e instanceof Error ? e : new Error(String(e))
+        setConfigError({ message: err.message, stack: err.stack })
+      })
   }, [])
 
   async function handleSaveConfig(newConfig: AppConfig) {
     await saveConfig(newConfig)
     setConfig(newConfig)
   }
+
+  const defaultStrategyParams: StrategyParams | null = config ? {
+    MA:         config.defaultParams.MA.value,
+    DROP:       config.defaultParams.DROP.value,
+    CHG4:       config.defaultParams.CHG4.value,
+    RET3:       config.defaultParams.RET3.value,
+    SPREAD_LVL: config.defaultParams.SPREAD_LVL.value,
+  } : null
+
+  const paramDescriptions = config ? {
+    MA:         config.defaultParams.MA.desc,
+    DROP:       config.defaultParams.DROP.desc,
+    CHG4:       config.defaultParams.CHG4.desc,
+    RET3:       config.defaultParams.RET3.desc,
+    SPREAD_LVL: config.defaultParams.SPREAD_LVL.desc,
+  } : undefined
 
   return (
     <div className="flex min-h-screen flex-col" style={{ background: 'var(--bg)' }}>
@@ -89,25 +94,49 @@ export default function App() {
 
       {/* Content */}
       <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-6">
-        {activeTab === 'optimizer' && (
-          <OptimizerTab settings={settings} ticker={TICKER} defaultRanges={config.defaultRanges} />
+        {!config && !configError && (
+          <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Loading…</p>
         )}
-        {activeTab === 'buyhold' && (
+        {config && activeTab === 'optimizer' && (
+          <OptimizerTab settings={settings} ticker={TICKER} defaultRanges={config.defaultRanges} paramDescriptions={paramDescriptions} />
+        )}
+        {config && activeTab === 'buyhold' && (
           <BuyHoldTab settings={settings} ticker={TICKER} />
         )}
-        {activeTab === 'signal' && (
-          <SignalTab settings={settings} ticker={TICKER} defaultParams={config.defaultParams} />
+        {config && activeTab === 'signal' && defaultStrategyParams && (
+          <SignalTab settings={settings} ticker={TICKER} defaultParams={defaultStrategyParams} paramDescriptions={paramDescriptions} />
         )}
       </main>
 
-      <SettingsSheet
-        open={settingsOpen}
-        onClose={() => setSettingsOpen(false)}
-        settings={settings}
-        onUpdate={updateSettings}
-        config={config}
-        onSaveConfig={handleSaveConfig}
-      />
+      {config && (
+        <SettingsSheet
+          open={settingsOpen}
+          onClose={() => setSettingsOpen(false)}
+          settings={settings}
+          onUpdate={updateSettings}
+          config={config}
+          onSaveConfig={handleSaveConfig}
+        />
+      )}
+
+      {/* Config load error modal */}
+      {configError && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.6)' }}>
+          <div className="mx-4 w-full max-w-lg rounded-lg border shadow-xl" style={{ background: 'var(--bg-card)', borderColor: 'var(--sell)' }}>
+            <div className="border-b px-4 py-3" style={{ borderColor: 'var(--border)' }}>
+              <h2 className="font-semibold" style={{ color: 'var(--sell)' }}>Failed to load config</h2>
+            </div>
+            <div className="px-4 py-3 space-y-2">
+              <p className="text-sm" style={{ color: 'var(--text)' }}>{configError.message}</p>
+              {configError.stack && (
+                <pre className="overflow-auto rounded p-2 text-xs" style={{ background: 'var(--bg-input)', color: 'var(--text-muted)', maxHeight: '240px' }}>
+                  {configError.stack}
+                </pre>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

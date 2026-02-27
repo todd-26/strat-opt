@@ -3,6 +3,7 @@
 # 
 # The price and dividend data come from the Alpha Vantage API.
 ###################################################################################
+import os
 import pandas as pd
 from pathlib import Path
 from data_source import ApiSource, ApiData, CsvSource
@@ -16,15 +17,20 @@ class AlphaVantage:
     :param input_type: Type of input data source to use (api or csv).
     :param input_dir: Directory for input CSV files.
     '''
-    APIKEY = "EVKWUR0CTY6V3AGY"
-    URL = f"https://www.alphavantage.co/query?function=TIME_SERIES_WEEKLY_ADJUSTED&symbol=TICKER&outputsize=full&datatype=csv&apikey={APIKEY}"
     DATE_FMT = "%Y-%m-%d"
 
     def __init__(self, ticker: str, input_type: str, input_dir: Path) -> None:
         self.ticker = ticker.upper()
-        self.url = self.URL.replace("TICKER", self.ticker)
         self.input_type = input_type
         self.input_dir = input_dir
+        if input_type == "api":
+            apikey = os.environ.get("ALPHA_VANTAGE_API_KEY")
+            url_template = os.environ.get("ALPHA_VANTAGE_URL")
+            if not apikey:
+                raise ValueError("ALPHA_VANTAGE_API_KEY environment variable is not set")
+            if not url_template:
+                raise ValueError("ALPHA_VANTAGE_URL environment variable is not set")
+            self.url = url_template.format(ticker=self.ticker, apikey=apikey)
 
     def get_data(self) -> pd.DataFrame:
         '''

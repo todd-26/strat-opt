@@ -11,13 +11,14 @@ export function useSignal() {
     ticker: string,
     params: StrategyParams,
     startInvested: number,
+    cashRate: number,
     inputType: string,
   ) {
     setLoading(true)
     setError(null)
     setResult(null)
     try {
-      const data = await runSignal(ticker, params, startInvested, inputType)
+      const data = await runSignal(ticker, params, startInvested, cashRate, inputType)
       setResult(data)
     } catch (err) {
       setError(String(err))

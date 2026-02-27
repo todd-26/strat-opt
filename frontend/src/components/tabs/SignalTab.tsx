@@ -10,6 +10,7 @@ interface Props {
   settings: Settings
   ticker: string
   defaultParams: StrategyParams
+  paramDescriptions?: Partial<Record<keyof StrategyParams, string>>
 }
 
 function fmt(v: number | null | undefined, decimals = 4): string {
@@ -17,15 +18,16 @@ function fmt(v: number | null | undefined, decimals = 4): string {
   return v.toFixed(decimals)
 }
 
-export function SignalTab({ settings, ticker, defaultParams }: Props) {
+export function SignalTab({ settings, ticker, defaultParams, paramDescriptions }: Props) {
   const { result, loading, error, run } = useSignal()
   const [params, setParams] = useState<StrategyParams>(defaultParams)
   const [startInvested, setStartInvested] = useState(settings.startInvested)
+  const [cashRate, setCashRate] = useState(settings.cashRate)
   const [inputType, setInputType] = useState(settings.inputType)
   const [collapsed, setCollapsed] = useState(false)
 
   function handleRun() {
-    run(ticker, params, startInvested, inputType)
+    run(ticker, params, startInvested, cashRate, inputType)
     setCollapsed(true)
   }
 
@@ -37,6 +39,7 @@ export function SignalTab({ settings, ticker, defaultParams }: Props) {
         params={params}
         onChange={setParams}
         collapsed={collapsed}
+        descriptions={paramDescriptions}
       />
 
       {/* Options row */}
@@ -45,6 +48,24 @@ export function SignalTab({ settings, ticker, defaultParams }: Props) {
         style={{ borderColor: 'var(--border)', background: 'var(--bg-card)' }}
       >
         <div className="flex flex-wrap items-end gap-4">
+          <div>
+            <label className="mb-1 block text-xs font-medium" style={{ color: 'var(--text-muted)' }}>
+              Cash Rate (annual)
+            </label>
+            <input
+              type="number"
+              value={cashRate}
+              step="0.0025"
+              onChange={(e) => setCashRate(parseFloat(e.target.value) || 0)}
+              className="w-28 rounded border px-2 py-1.5 text-sm"
+              style={{
+                background: 'var(--bg-input)',
+                borderColor: 'var(--border)',
+                color: 'var(--text)',
+              }}
+            />
+          </div>
+
           <div>
             <label className="mb-1 block text-xs font-medium" style={{ color: 'var(--text-muted)' }}>
               Starting Position

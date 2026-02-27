@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { X } from 'lucide-react'
 import { themes } from '../lib/themes'
-import type { AppConfig, ParamRanges, Settings } from '../types'
+import type { AppConfig, DefaultParams, ParamRanges, Settings } from '../types'
 
 interface Props {
   open: boolean
@@ -130,7 +130,7 @@ export function SettingsSheet({ open, onClose, settings, onUpdate, config, onSav
             <input
               type="number"
               value={settings.cashRate}
-              step="0.01"
+              step="0.0025"
               onChange={(e) => onUpdate({ cashRate: parseFloat(e.target.value) || 0 })}
               className="w-32 rounded border px-2 py-1.5 text-sm"
               style={{
@@ -161,34 +161,55 @@ export function SettingsSheet({ open, onClose, settings, onUpdate, config, onSav
 
           {/* Default parameters */}
           <Section title="Default Parameters">
-            <div className="space-y-2">
-              {PARAM_KEYS.map((key) => (
-                <div key={key} className="flex items-center justify-between gap-3">
-                  <label className="text-sm" style={{ color: 'var(--text-muted)' }}>
-                    {key}
-                  </label>
-                  <input
-                    type="number"
-                    value={localConfig.defaultParams[key]}
-                    step={key === 'MA' ? '1' : '0.001'}
-                    onChange={(e) =>
-                      setLocalConfig((prev) => ({
-                        ...prev,
-                        defaultParams: {
-                          ...prev.defaultParams,
-                          [key]: parseFloat(e.target.value) || 0,
-                        },
-                      }))
-                    }
-                    className="w-28 rounded border px-2 py-1 text-sm"
-                    style={{
-                      background: 'var(--bg-input)',
-                      borderColor: 'var(--border)',
-                      color: 'var(--text)',
-                    }}
-                  />
-                </div>
-              ))}
+            <div className="space-y-3">
+              <div
+                className="grid gap-2 text-xs font-semibold uppercase tracking-wide"
+                style={{ gridTemplateColumns: '5rem 6rem 1fr', color: 'var(--text-muted)' }}
+              >
+                <span>Param</span>
+                <span>Value</span>
+                <span>Description</span>
+              </div>
+              {PARAM_KEYS.map((key) => {
+                const entry = localConfig.defaultParams[key as keyof DefaultParams]
+                return (
+                  <div key={key} className="grid items-center gap-2" style={{ gridTemplateColumns: '5rem 6rem 1fr' }}>
+                    <span className="text-sm font-medium" style={{ color: 'var(--text)' }}>{key}</span>
+                    <input
+                      type="number"
+                      value={entry.value}
+                      step={key === 'MA' ? '1' : '0.001'}
+                      onChange={(e) =>
+                        setLocalConfig((prev) => ({
+                          ...prev,
+                          defaultParams: {
+                            ...prev.defaultParams,
+                            [key]: { ...prev.defaultParams[key as keyof DefaultParams], value: parseFloat(e.target.value) || 0 },
+                          },
+                        }))
+                      }
+                      className="w-full rounded border px-2 py-1 text-sm"
+                      style={{ background: 'var(--bg-input)', borderColor: 'var(--border)', color: 'var(--text)' }}
+                    />
+                    <input
+                      type="text"
+                      value={entry.desc}
+                      placeholder="description"
+                      onChange={(e) =>
+                        setLocalConfig((prev) => ({
+                          ...prev,
+                          defaultParams: {
+                            ...prev.defaultParams,
+                            [key]: { ...prev.defaultParams[key as keyof DefaultParams], desc: e.target.value },
+                          },
+                        }))
+                      }
+                      className="w-full rounded border px-2 py-1 text-sm"
+                      style={{ background: 'var(--bg-input)', borderColor: 'var(--border)', color: 'var(--text)' }}
+                    />
+                  </div>
+                )
+              })}
             </div>
           </Section>
 

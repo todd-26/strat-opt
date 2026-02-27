@@ -109,6 +109,20 @@ class DefaultRanges(BaseModel):
     SPREAD_LVL: ParamRange
 
 
+class ParamDef(BaseModel):
+    name: str
+    value: float
+    desc: str = ""
+
+
+class DefaultParams(BaseModel):
+    MA: ParamDef
+    DROP: ParamDef
+    CHG4: ParamDef
+    RET3: ParamDef
+    SPREAD_LVL: ParamDef
+
+
 class AppConfig(BaseModel):
-    defaultParams: StrategyParams
+    defaultParams: DefaultParams
     defaultRanges: DefaultRanges

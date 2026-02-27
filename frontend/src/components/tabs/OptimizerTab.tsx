@@ -12,9 +12,10 @@ interface Props {
   settings: Settings
   ticker: string
   defaultRanges: ParamRanges
+  paramDescriptions?: Partial<Record<keyof StrategyParams, string>>
 }
 
-export function OptimizerTab({ settings, ticker, defaultRanges }: Props) {
+export function OptimizerTab({ settings, ticker, defaultRanges, paramDescriptions }: Props) {
   const { result, progress, loading, error, run, cancel } = useOptimizer()
   const [ranges, setRanges] = useState<ParamRanges>(defaultRanges)
   const [inputType, setInputType] = useState(settings.inputType)
@@ -131,6 +132,7 @@ export function OptimizerTab({ settings, ticker, defaultRanges }: Props) {
         ranges={ranges}
         onChange={setRanges}
         collapsed={collapsed}
+        descriptions={paramDescriptions}
       />
 
       {/* Options + Run */}
@@ -146,7 +148,7 @@ export function OptimizerTab({ settings, ticker, defaultRanges }: Props) {
             <input
               type="number"
               value={cashRate}
-              step="0.01"
+              step="0.0025"
               onChange={(e) => setCashRate(parseFloat(e.target.value) || 0)}
               className="w-28 rounded border px-2 py-1.5 text-sm"
               style={{

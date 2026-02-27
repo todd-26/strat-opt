@@ -92,7 +92,16 @@ export interface ParamRanges {
   RET3: ParamRange
   SPREAD_LVL: ParamRange
 }
-export interface AppConfig { defaultParams: StrategyParams; defaultRanges: ParamRanges }
+
+export interface ParamDef { name: string; value: number; desc: string }
+export interface DefaultParams {
+  MA: ParamDef
+  DROP: ParamDef
+  CHG4: ParamDef
+  RET3: ParamDef
+  SPREAD_LVL: ParamDef
+}
+export interface AppConfig { defaultParams: DefaultParams; defaultRanges: ParamRanges }
 
 export interface Settings {
   theme: string

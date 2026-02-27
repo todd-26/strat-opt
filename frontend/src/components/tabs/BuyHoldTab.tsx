@@ -11,11 +11,10 @@ interface Props {
 
 export function BuyHoldTab({ settings, ticker }: Props) {
   const { result, loading, error, run } = useBuyHold()
-  const [cashRate, setCashRate] = useState(settings.cashRate)
   const [inputType, setInputType] = useState(settings.inputType)
 
   function handleRun() {
-    run(ticker, cashRate, inputType)
+    run(ticker, 0, inputType)
   }
 
   return (
@@ -26,24 +25,6 @@ export function BuyHoldTab({ settings, ticker }: Props) {
         style={{ borderColor: 'var(--border)', background: 'var(--bg-card)' }}
       >
         <div className="flex flex-wrap items-end gap-4">
-          <div>
-            <label className="mb-1 block text-xs font-medium" style={{ color: 'var(--text-muted)' }}>
-              Cash Rate (annual)
-            </label>
-            <input
-              type="number"
-              value={cashRate}
-              step="0.01"
-              onChange={(e) => setCashRate(parseFloat(e.target.value) || 0)}
-              className="w-28 rounded border px-2 py-1.5 text-sm"
-              style={{
-                background: 'var(--bg-input)',
-                borderColor: 'var(--border)',
-                color: 'var(--text)',
-              }}
-            />
-          </div>
-
           <div>
             <label className="mb-1 block text-xs font-medium" style={{ color: 'var(--text-muted)' }}>
               Data Source

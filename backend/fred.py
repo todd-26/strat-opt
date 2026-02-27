@@ -3,6 +3,7 @@
 # 
 # The spread data comes from FRED (Federal Reserve Bank of St. Louis).
 ###################################################################################
+import os
 import pandas as pd
 import numpy as np
 from pathlib import Path
@@ -15,21 +16,25 @@ class Fred:
     :param input_type: Type of input data source to use (api or csv).
     :param input_dir: Directory for input CSV files.
     '''
-    APIKEY = "71972aa18002734b7900f9f5a399e997"
-    URL = f"https://api.stlouisfed.org/fred/series/observations"
-
     def __init__(self, input_type: str, input_dir: Path) -> None:
-        self.url = self.URL
         self.input_type = input_type
         self.input_dir = input_dir
-        self.params = {
-        'api_key': self.APIKEY,
-        'series_id': 'BAMLH0A0HYM2',
-        'file_type': 'json',
-        'observation_start': '2012-06-29',
-        'frequency': 'wef', # weekly frequency taken on Fridays
-        'aggregation_method': 'eop' # end of period values
-    }
+        if input_type == "api":
+            apikey = os.environ.get("FRED_API_KEY")
+            url = os.environ.get("FRED_URL")
+            if not apikey:
+                raise ValueError("FRED_API_KEY environment variable is not set")
+            if not url:
+                raise ValueError("FRED_URL environment variable is not set")
+            self.url = url
+            self.params = {
+                'api_key': apikey,
+                'series_id': 'BAMLH0A0HYM2',
+                'file_type': 'json',
+                'observation_start': '2012-06-29',
+                'frequency': 'wef',  # weekly frequency taken on Fridays
+                'aggregation_method': 'eop'  # end of period values
+            }
 
     def get_data(self) -> pd.DataFrame:
         '''
