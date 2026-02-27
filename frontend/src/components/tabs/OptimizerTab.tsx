@@ -12,9 +12,10 @@ interface Props {
   settings: Settings
   ticker: string
   defaultRanges: ParamRanges
+  paramDescriptions?: Partial<Record<keyof StrategyParams, string>>
 }
 
-export function OptimizerTab({ settings, ticker, defaultRanges }: Props) {
+export function OptimizerTab({ settings, ticker, defaultRanges, paramDescriptions }: Props) {
   const { result, progress, loading, error, run, cancel } = useOptimizer()
   const [ranges, setRanges] = useState<ParamRanges>(defaultRanges)
   const [inputType, setInputType] = useState(settings.inputType)
@@ -131,6 +132,7 @@ export function OptimizerTab({ settings, ticker, defaultRanges }: Props) {
         ranges={ranges}
         onChange={setRanges}
         collapsed={collapsed}
+        descriptions={paramDescriptions}
       />
 
       {/* Options + Run */}

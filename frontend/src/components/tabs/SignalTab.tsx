@@ -10,6 +10,7 @@ interface Props {
   settings: Settings
   ticker: string
   defaultParams: StrategyParams
+  paramDescriptions?: Partial<Record<keyof StrategyParams, string>>
 }
 
 function fmt(v: number | null | undefined, decimals = 4): string {
@@ -17,7 +18,7 @@ function fmt(v: number | null | undefined, decimals = 4): string {
   return v.toFixed(decimals)
 }
 
-export function SignalTab({ settings, ticker, defaultParams }: Props) {
+export function SignalTab({ settings, ticker, defaultParams, paramDescriptions }: Props) {
   const { result, loading, error, run } = useSignal()
   const [params, setParams] = useState<StrategyParams>(defaultParams)
   const [startInvested, setStartInvested] = useState(settings.startInvested)
@@ -37,6 +38,7 @@ export function SignalTab({ settings, ticker, defaultParams }: Props) {
         params={params}
         onChange={setParams}
         collapsed={collapsed}
+        descriptions={paramDescriptions}
       />
 
       {/* Options row */}
