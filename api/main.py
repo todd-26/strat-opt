@@ -5,6 +5,9 @@ import asyncio
 import concurrent.futures
 from pathlib import Path
 from typing import AsyncGenerator
+from dotenv import load_dotenv
+
+load_dotenv(Path(__file__).parent.parent / ".env")
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -41,23 +44,6 @@ from models import (                               # noqa: E402
 app = FastAPI(title="strat-opt API")
 
 CONFIG_PATH = Path(__file__).parent / "config.json"
-
-FALLBACK_CONFIG = {
-    "defaultParams": {
-        "MA":         {"name": "MA",         "value": 50,      "desc": "Buy rule: price must be above its n-week moving average (uptrend confirmation)"},
-        "DROP":       {"name": "DROP",       "value": 0.016,   "desc": "Buy rule: spread must drop this % from its 4-week peak before re-entering"},
-        "CHG4":       {"name": "CHG4",       "value": 0.16,    "desc": "Sell rule: sell if 4-week credit spread change exceeds this threshold"},
-        "RET3":       {"name": "RET3",       "value": -0.0225, "desc": "Sell rule: sell if 3-week price return falls below this threshold"},
-        "SPREAD_LVL": {"name": "SPREAD_LVL", "value": 7.0,     "desc": "Sell rule: sell if absolute credit spread level exceeds this threshold"},
-    },
-    "defaultRanges": {
-        "MA":         {"min": 50,      "max": 50,      "step": 5},
-        "DROP":       {"min": 0.016,   "max": 0.016,   "step": 0.001},
-        "CHG4":       {"min": 0.16,    "max": 0.16,    "step": 0.005},
-        "RET3":       {"min": -0.0225, "max": -0.0225, "step": 0.0005},
-        "SPREAD_LVL": {"min": 7.0,     "max": 7.0,     "step": 0.1},
-    },
-}
 
 app.add_middleware(
     CORSMiddleware,
@@ -326,9 +312,7 @@ async def run_optimizer(req: OptimizerRequest):
 
 @app.get("/api/config")
 def get_config():
-    if CONFIG_PATH.exists():
-        return json.loads(CONFIG_PATH.read_text())
-    return FALLBACK_CONFIG
+    return json.loads(CONFIG_PATH.read_text())
 
 
 @app.post("/api/config")
