@@ -4,94 +4,190 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**strat-opt** is a financial strategy backtesting and optimization framework. It generates buy/sell signals for income-focused ETFs (currently SPHY — Invesco S&P 500 High Dividend ETF), backtests those signals against historical weekly price/dividend data merged with FRED credit spread data, and optimizes strategy parameters via grid search. This was originally created to find the optimal time to buy and sell SPHY. It was changed to take a stock symbol (ticker) as a parameter but it may not make sense to do so. The signals being tested will likely not apply to other securities. That remains to be seen.
+**strat-opt** is a financial strategy backtesting and optimization framework with a React/Vite frontend and FastAPI backend. It generates buy/sell signals for income-focused ETFs (currently SPHY — SPDR Portfolio High Yield Bond ETF), backtests those signals against historical weekly price/dividend data merged with FRED credit spread data, and optimizes strategy parameters via grid search.
 
-## History and purpose of this application
-I own a lot of SPHY and have been very happy with the return. However, I much prefer to own bonds as opposed to bond funds because their price can sometimes nosedive. If you own a bond you have default risk but other than that if you hold to maturity you know what you have. I trialed a free month of ChatGPT and had it help me discern what factors may influence SPHY going up or down. We then set up this framework to try different permutations of those factors. I took the results and use them in another application that will show me whether to buy, hold or sell.
+## Project Structure
 
-## Future Direction
-The end goal is a dynamic, multi-security framework driven by a React/Vite UI. The current SPHY-specific hardcoding is a starting point, not a target state. When making changes, avoid entrenching SPHY-specific logic further — prefer patterns that generalize.
-
-**Security/strategy packages**: Each security will have its own strategy class (already supported via `BaseStrategy`) paired with its own parameter definitions and data sources. These form a "package" that is selected at runtime, not hardcoded. Parameter definitions and their valid ranges will be externalized — stored in config files or a database — not in source code.
-
-**Runtime selection**: The user selects a security/strategy package, specifies parameter ranges to explore, and chooses a run type (backtest, current signal, buy-and-hold comparison, optimizer). The application loads the appropriate package and executes the requested run type.
-
-**UI**: A React/Vite frontend will replace the current CLI. It will present:
-- Security/strategy package selection
-- Parameter range inputs (driven by the selected package's parameter definitions)
-- Run type selection
-- Results displayed in the UI, exportable to CSV
-- Line graph visualization for backtest and buy-and-hold equity curves
-
-## Running the Code
-
-All commands run from the `backend/` directory. Python 3.13+ required. Dependencies: `pandas`, `numpy`, `requests`, `pandas-datareader`.
-
-```bash
-# Run SPHY strategy with current best parameters
-python main.py --ticker SPHY
-
-# Run parameter grid-search optimizer
-python main.py --ticker SPHY --optimize
-
-# Run buy-and-hold baseline for comparison
-python main.py --ticker SPHY --buyhold
-
-# Start in cash position (default is invested)
-python main.py --ticker SPHY --invested 0
-
-# Set annual cash yield rate (default 0.04)
-python main.py --ticker SPHY --cash-rate 0.05
-
-# Use live APIs instead of local CSVs (CSV is default)
-python main.py --ticker SPHY --input-type api
+```
+strat-opt/
+├── api/                    # FastAPI backend server
+│   ├── main.py             # API routes and SSE streaming
+│   ├── models.py           # Pydantic models
+│   ├── config.json         # Externalized parameter defaults and ranges
+│   └── requirements.txt
+├── backend/                # Core Python pipeline (strategy logic)
+│   ├── main.py             # CLI entry point (legacy, still works)
+│   ├── data_loader.py      # Loads and merges price + spread data
+│   ├── data_source.py      # CSV/API abstraction
+│   ├── alpha_vantage.py    # Price/dividend data source
+│   ├── fred.py             # Credit spread data source
+│   ├── indicators.py       # Technical indicator calculations
+│   ├── strategy_base.py    # Abstract strategy interface
+│   ├── strategy_sphy.py    # SPHY-specific trading rules
+│   ├── strategy_buyhold.py # Buy-and-hold baseline
+│   ├── backtester.py       # Converts positions to equity curves
+│   └── optimizer_sphy.py   # Grid search optimizer
+├── frontend/               # React/Vite UI
+│   ├── src/
+│   │   ├── App.tsx         # Main app with tab navigation
+│   │   ├── components/     # UI components
+│   │   ├── hooks/          # React hooks for API calls
+│   │   ├── lib/            # API client and themes
+│   │   └── types/          # TypeScript interfaces
+│   └── package.json
+├── inputs/                 # CSV data files
+│   ├── weekly-adjusted.csv # Alpha Vantage price/dividend data
+│   └── fred.csv            # FRED credit spread data
+├── .env                    # Environment variables (API keys)
+├── start.bat               # Dev: launches both frontend and backend
+└── start-prod.bat          # Prod: builds frontend, serves via FastAPI
 ```
 
-Input CSVs are in `inputs/`: `weekly-adjusted.csv` (Alpha Vantage price/dividend) and `fred.csv` (FRED daily spread data).
+## Running the Application
 
-Output CSVs are written to `backend/`: `strategy_output.csv`, `buyhold_output.csv`, `optimizer_results.csv`, `best_strategy_output.csv`.
+### Development Mode
+```bash
+# From project root - launches both servers
+start.bat
+
+# Or manually:
+# Terminal 1 - Backend (port 8000)
+cd api && uvicorn main:app --reload --host 0.0.0.0 --port 8000
+
+# Terminal 2 - Frontend (port 5173, proxies /api to backend)
+cd frontend && npm run dev
+```
+
+### Production Mode
+```bash
+start-prod.bat  # Builds frontend, serves everything from FastAPI on port 8000
+```
+
+### Legacy CLI (still functional)
+```bash
+cd backend
+python main.py --ticker SPHY              # Run with best parameters
+python main.py --ticker SPHY --optimize   # Run optimizer
+python main.py --ticker SPHY --buyhold    # Run buy-and-hold baseline
+python main.py --ticker SPHY --invested 0 # Start in cash
+python main.py --ticker SPHY --input-type api  # Use live APIs
+```
+
+## Environment Setup
+
+Copy `.env` to `.env.local` and add your API keys:
+```
+ALPHA_VANTAGE_API_KEY=your_key_here
+ALPHA_VANTAGE_URL=https://www.alphavantage.co/query?function=TIME_SERIES_WEEKLY_ADJUSTED&symbol={ticker}&outputsize=full&datatype=csv&apikey={apikey}
+FRED_API_KEY=your_key_here
+FRED_URL=https://api.stlouisfed.org/fred/series/observations
+```
+
+CSV input is the default and preferred mode; API mode hits Alpha Vantage and FRED live but is rate-limited.
 
 ## Architecture
 
-The pipeline is strictly layered — each module has one job and no cross-layer dependencies:
+### Data Flow
+```
+Frontend (React/Vite)
+    ↓ HTTP/SSE
+FastAPI Server (api/main.py)
+    ↓ imports
+Backend Pipeline:
+    data_loader → indicators → strategy → backtester
+                                  ↑
+                             optimizer (wraps strategy + backtester)
+```
 
-```
-main.py  →  data_loader  →  indicators  →  strategy  →  backtester
-                                               ↑
-                                          optimizer (wraps strategy + backtester)
-```
+### Backend Pipeline (backend/)
 
 **Data layer** (`data_loader.py`, `data_source.py`, `alpha_vantage.py`, `fred.py`):
-- `WeeklyDataLoader` loads SPHY weekly prices/dividends and FRED daily spreads, resamples FRED to weekly (W-FRI), merges them, and computes total return factor (`TR_factor`, `TR`). No indicators here.
-- `DataSource` / `CsvSource` / `ApiSource` abstract whether data comes from CSV files or live APIs. All external API keys are hardcoded in `alpha_vantage.py` and `fred.py`.
+- `WeeklyDataLoader` loads weekly prices/dividends and FRED daily spreads, resamples FRED to weekly (W-FRI), merges them, computes total return factor (`TR_factor`, `TR`)
+- `DataSource` / `CsvSource` / `ApiSource` abstract CSV vs live API data sources
 
 **Indicators** (`indicators.py`):
-- `IndicatorEngine` is stateless/functional. `apply_all()` adds: `MA` (n-week moving average of close), `chg4` (4-week spread change), `ret3` (3-week price return), `spread_delta` (week-over-week spread change).
+- `IndicatorEngine.apply_all()` adds: `MA` (n-week moving average), `chg4` (4-week spread change), `ret3` (3-week price return), `spread_delta` (week-over-week spread change)
 
 **Strategy** (`strategy_base.py`, `strategy_sphy.py`, `strategy_buyhold.py`):
-- `BaseStrategy` defines the abstract interface: `evaluate_sell(row, df, idx)`, `evaluate_buy(row, df, idx, was_sold)`, `run(df, start_invested)`. `run()` iterates weekly and maintains invested/cash state.
-- `SPHYStrategy` implements the SPHY rules (see below).
-- `BuyAndHoldStrategy` always returns positions = 1, used as baseline.
-
-**SPHY Strategy Rules** (the core trading logic):
-- **SELL if ANY of**:
-  - `spread > SPREAD_LVL`
-  - `chg4 > CHG4_THR`
-  - `ret3 < RET3_THR`
-- **BUY if ALL of** (and only after a prior SELL):
-  - `close > MA`
-  - Last 2 weekly `spread_delta` values are negative
-  - `spread ≤ recent_4wk_peak_spread × (1 − DROP)`
+- `BaseStrategy` defines abstract interface: `evaluate_sell()`, `evaluate_buy()`, `run()`
+- `SPHYStrategy` implements SPHY rules (see Trading Logic below)
+- `BuyAndHoldStrategy` always invested, used as baseline
 
 **Backtester** (`backtester.py`):
-- Converts positions array (0 or 1 per week) into a cumulative equity curve. Applies weekly `TR` when invested, weekly cash yield (annual rate ÷ 52) when not. Computes final value and APY.
+- Converts positions array to cumulative equity curve
+- Applies weekly TR when invested, cash yield when not
+- Computes final value and APY
 
 **Optimizer** (`optimizer_sphy.py`):
-- `SPHYOptimizer` runs a grid search over parameter combinations (`MA`, `DROP`, `CHG4_THR`, `RET3_THR`, `SPREAD_LVL`). For each combo: load data → apply indicators → run strategy → backtest → record APY. Returns `best_params`, `results_df`, and the full backtest result for best params.
+- Grid search over parameter combinations
+- Supports `progress_callback` for streaming progress to frontend
+
+### API Server (api/)
+
+FastAPI server with endpoints:
+- `GET /api/securities` — Returns available tickers (currently just SPHY)
+- `GET /api/config` — Returns externalized parameter defaults from `config.json`
+- `POST /api/config` — Saves parameter defaults to `config.json`
+- `POST /api/run/buyhold` — Runs buy-and-hold backtest
+- `POST /api/run/signal` — Runs strategy and returns current signal + trade history
+- `POST /api/run/optimizer` — Runs grid search with SSE streaming progress
+
+### Frontend (frontend/)
+
+React/Vite SPA with three tabs:
+- **Optimizer** — Grid search with parameter range inputs, streaming progress, sortable results table, drill-down charts
+- **Buy & Hold** — Baseline comparison run
+- **Current Signal** — Shows BUY/SELL/HOLD signal with current metrics and trade history
+
+Key features:
+- Theming system (4 themes: Slate, Navy & Gold, Charcoal & Green, High Contrast)
+- Settings persisted to localStorage (theme, input type, cash rate, start position)
+- Parameter defaults persisted to `api/config.json` via API
+- Equity curve charts with buy/sell markers, CSV/PNG export
+- Recharts for visualization
+
+## SPHY Trading Logic
+
+**SELL if ANY of:**
+- `spread > SPREAD_LVL` (absolute spread too high)
+- `chg4 > CHG4_THR` (4-week spread change too high)
+- `ret3 < RET3_THR` (3-week price return too negative)
+
+**BUY if ALL of** (and only after a prior SELL):
+- `close > MA` (price above moving average)
+- Last 2 weekly `spread_delta` values are negative (spreads falling)
+- `spread ≤ recent_4wk_peak × (1 − DROP)` (spread dropped from peak)
+
+## Externalized Configuration
+
+Parameter defaults and optimizer ranges are stored in `api/config.json`, not hardcoded:
+
+```json
+{
+  "defaultParams": {
+    "MA": { "name": "MA", "value": 50.0, "desc": "Buy rule: price must be above its n-week moving average" },
+    "DROP": { "name": "DROP", "value": 0.016, "desc": "Buy rule: spread must drop this % from its 4-week peak" },
+    ...
+  },
+  "defaultRanges": {
+    "MA": { "min": 50.0, "max": 50.0, "step": 5.0 },
+    ...
+  }
+}
+```
+
+The frontend loads this on startup and uses it to populate parameter inputs. Users can edit and save permanently via the Settings panel.
 
 ## Key Design Decisions
 
-- CSV input is the default and preferred mode; API mode (`--input-type api`) hits Alpha Vantage and FRED live but is rate-limited.
-- The optimizer grid in `optimizer_sphy.py` is currently narrowed around previously found best parameters (not a wide search). Widen the grids when exploring new parameter space.
-- `strategy_base.py` is designed to support additional assets (NEA, etc.) — new strategies just inherit `BaseStrategy` and implement the two evaluate methods.
-- The backtester is fully decoupled from strategy logic and reusable for any asset.
+- **CSV is default** — API mode is available but rate-limited; CSV provides consistent, fast local testing
+- **Streaming optimizer** — SSE pushes progress updates to frontend for responsive UI during long grid searches
+- **Strategy abstraction** — `BaseStrategy` supports additional securities; new strategies inherit and implement `evaluate_sell()` / `evaluate_buy()`
+- **Externalized parameters** — Defaults and ranges in `config.json`, not source code, enabling UI-driven tuning
+- **Decoupled backtester** — Reusable for any asset/strategy combination
+
+## Future Direction
+
+- Add more securities/strategies (each with own strategy class + parameter definitions)
+- Security/strategy package selection in UI
+- Potentially move config to database for multi-user scenarios
