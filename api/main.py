@@ -10,7 +10,7 @@ from dotenv import load_dotenv
 load_dotenv(Path(__file__).parent.parent / ".env")
 load_dotenv(Path(__file__).parent.parent / ".env.local", override=True)
 
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from fastapi.staticfiles import StaticFiles
@@ -23,9 +23,11 @@ sys.path.insert(0, str(CODE_DIR))
 from data_loader import WeeklyDataLoader          # noqa: E402
 from indicators import IndicatorEngine             # noqa: E402
 from strategy_sphy import SPHYStrategy             # noqa: E402
+from strategy_shym import SHYMStrategy             # noqa: E402
 from strategy_buyhold import BuyAndHoldStrategy    # noqa: E402
 from backtester import Backtester                  # noqa: E402
 from optimizer_sphy import SPHYOptimizer           # noqa: E402
+from optimizer_shym import SHYMOptimizer           # noqa: E402
 
 from models import (                               # noqa: E402
     BuyHoldRequest,
@@ -123,9 +125,22 @@ def _build_backtest_result(bt_result: dict) -> BacktestResult:
 # Routes
 # ---------------------------------------------------------------------------
 
+STRATEGY_CLASSES = {
+    "SPHY": SPHYStrategy,
+    "SHYM": SHYMStrategy,
+}
+
+OPTIMIZER_CLASSES = {
+    "SPHY": SPHYOptimizer,
+    "SHYM": SHYMOptimizer,
+}
+
+SECURITIES = list(STRATEGY_CLASSES.keys())
+
+
 @app.get("/api/securities")
 def get_securities():
-    return ["SPHY"]
+    return SECURITIES
 
 
 @app.post("/api/run/buyhold", response_model=BacktestResult)
@@ -151,7 +166,8 @@ def run_signal(req: SignalRequest):
 
     df_ind = IndicatorEngine.apply_all(df.copy(), p.MA)
 
-    strat = SPHYStrategy(
+    strategy_cls = STRATEGY_CLASSES.get(req.ticker.upper(), SPHYStrategy)
+    strat = strategy_cls(
         MA_LENGTH=p.MA,
         DROP=p.DROP,
         CHG4_THR=p.CHG4,
@@ -224,7 +240,8 @@ async def run_optimizer(req: OptimizerRequest):
                     "RET3": req.RET3,
                     "SPREAD_LVL": req.SPREAD_LVL,
                 }
-                opt = SPHYOptimizer(
+                optimizer_cls = OPTIMIZER_CLASSES.get(req.ticker.upper(), SPHYOptimizer)
+                opt = optimizer_cls(
                     input_type=req.input_type,
                     input_dir=INPUT_DIR,
                     cash_rate=req.cash_rate,
@@ -312,13 +329,20 @@ async def run_optimizer(req: OptimizerRequest):
 
 
 @app.get("/api/config")
-def get_config():
-    return json.loads(CONFIG_PATH.read_text())
+def get_config(ticker: str = Query(default="SPHY")):
+    full = json.loads(CONFIG_PATH.read_text())
+    ticker = ticker.upper()
+    if ticker not in full:
+        raise HTTPException(status_code=404, detail=f"No config found for ticker {ticker}")
+    return full[ticker]
 
 
 @app.post("/api/config")
-def save_config(config: AppConfig):
-    CONFIG_PATH.write_text(config.model_dump_json(indent=2))
+def save_config(config: AppConfig, ticker: str = Query(default="SPHY")):
+    ticker = ticker.upper()
+    full = json.loads(CONFIG_PATH.read_text())
+    full[ticker] = json.loads(config.model_dump_json())
+    CONFIG_PATH.write_text(json.dumps(full, indent=2))
     return {"ok": True}
 
 

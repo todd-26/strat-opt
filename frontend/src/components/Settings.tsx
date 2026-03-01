@@ -10,9 +10,10 @@ interface Props {
   onUpdate: (patch: Partial<Settings>) => void
   config: AppConfig
   onSaveConfig: (c: AppConfig) => Promise<void>
+  ticker: string
 }
 
-export function SettingsSheet({ open, onClose, settings, onUpdate, config, onSaveConfig }: Props) {
+export function SettingsSheet({ open, onClose, settings, onUpdate, config, onSaveConfig, ticker }: Props) {
   const [localConfig, setLocalConfig] = useState<AppConfig>(config)
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
 
@@ -160,7 +161,7 @@ export function SettingsSheet({ open, onClose, settings, onUpdate, config, onSav
           </Section>
 
           {/* Default parameters */}
-          <Section title="Default Parameters">
+          <Section title={`Default Parameters — ${ticker}`}>
             <div className="space-y-3">
               <div
                 className="grid gap-2 text-xs font-semibold uppercase tracking-wide"
@@ -214,7 +215,7 @@ export function SettingsSheet({ open, onClose, settings, onUpdate, config, onSav
           </Section>
 
           {/* Default optimizer ranges */}
-          <Section title="Default Optimizer Ranges">
+          <Section title={`Default Optimizer Ranges — ${ticker}`}>
             <div className="space-y-3">
               <div
                 className="grid grid-cols-4 gap-2 text-xs font-semibold uppercase tracking-wide"

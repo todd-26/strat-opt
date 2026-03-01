@@ -41,7 +41,7 @@ class AlphaVantage:
         if self.input_type == "api":
             data_source = ApiSource(self.url, ApiData.CSV)
         else:
-            data_source = CsvSource(f"{self.input_dir}/weekly-adjusted.csv")
+            data_source = CsvSource(f"{self.input_dir}/{self.ticker.lower()}-weekly-adjusted.csv")
         df = data_source.data
         df["date"] = pd.to_datetime(df["timestamp"], format=self.DATE_FMT, errors="coerce").dt.normalize()
         df = df.drop(columns=["open", "high", "low", "volume", "timestamp", "adjusted close"])  # Keep only relevant columns
