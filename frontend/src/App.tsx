@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useSettings } from './hooks/useSettings'
 import { applyTheme } from './lib/themes'
-import { getConfig, saveConfig } from './lib/api'
+import { getConfig, saveConfig, fetchSecurities } from './lib/api'
 import { Header } from './components/Header'
 import { SettingsSheet } from './components/Settings'
 import { OptimizerTab } from './components/tabs/OptimizerTab'
@@ -17,32 +17,39 @@ const TABS: { id: Tab; label: string }[] = [
   { id: 'signal', label: 'Current Signal' },
 ]
 
-const TICKER = 'SPHY'
-
 export default function App() {
   const { settings, updateSettings } = useSettings()
   const [activeTab, setActiveTab] = useState<Tab>('optimizer')
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [config, setConfig] = useState<AppConfig | null>(null)
   const [configError, setConfigError] = useState<{ message: string; stack?: string } | null>(null)
+  const [securities, setSecurities] = useState<string[]>(['SPHY'])
+  const [ticker, setTicker] = useState<string>('SPHY')
 
   // Apply saved theme on mount
   useEffect(() => {
     applyTheme(settings.theme)
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Load config from API on mount
+  // Load securities list once on mount
   useEffect(() => {
-    getConfig()
+    fetchSecurities().then(setSecurities).catch(() => {/* keep default */})
+  }, [])
+
+  // Reload config whenever the selected ticker changes
+  useEffect(() => {
+    setConfig(null)
+    setConfigError(null)
+    getConfig(ticker)
       .then(setConfig)
       .catch((e: unknown) => {
         const err = e instanceof Error ? e : new Error(String(e))
         setConfigError({ message: err.message, stack: err.stack })
       })
-  }, [])
+  }, [ticker])
 
   async function handleSaveConfig(newConfig: AppConfig) {
-    await saveConfig(newConfig)
+    await saveConfig(ticker, newConfig)
     setConfig(newConfig)
   }
 
@@ -64,7 +71,7 @@ export default function App() {
 
   return (
     <div className="flex min-h-screen flex-col" style={{ background: 'var(--bg)' }}>
-      <Header ticker={TICKER} onOpenSettings={() => setSettingsOpen(true)} />
+      <Header ticker={ticker} securities={securities} onTickerChange={(t) => { setTicker(t); setActiveTab('optimizer') }} onOpenSettings={() => setSettingsOpen(true)} />
 
       {/* Tab bar */}
       <div
@@ -98,13 +105,13 @@ export default function App() {
           <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Loading…</p>
         )}
         {config && activeTab === 'optimizer' && (
-          <OptimizerTab settings={settings} ticker={TICKER} defaultRanges={config.defaultRanges} paramDescriptions={paramDescriptions} />
+          <OptimizerTab key={ticker} settings={settings} ticker={ticker} defaultRanges={config.defaultRanges} paramDescriptions={paramDescriptions} />
         )}
         {config && activeTab === 'buyhold' && (
-          <BuyHoldTab settings={settings} ticker={TICKER} />
+          <BuyHoldTab key={ticker} settings={settings} ticker={ticker} />
         )}
         {config && activeTab === 'signal' && defaultStrategyParams && (
-          <SignalTab settings={settings} ticker={TICKER} defaultParams={defaultStrategyParams} paramDescriptions={paramDescriptions} />
+          <SignalTab key={ticker} settings={settings} ticker={ticker} defaultParams={defaultStrategyParams} paramDescriptions={paramDescriptions} />
         )}
       </main>
 
@@ -116,6 +123,7 @@ export default function App() {
           onUpdate={updateSettings}
           config={config}
           onSaveConfig={handleSaveConfig}
+          ticker={ticker}
         />
       )}
 
