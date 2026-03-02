@@ -297,6 +297,7 @@ async def run_optimizer(req: OptimizerRequest):
                             SPREAD_LVL=float(row["SPREAD_LVL"]),
                             APY=float(row["APY"]),
                             final_value=float(row["final_value"]),
+                            trade_count=int(row["trade_count"]),
                         )
                         for _, row in results_df.iterrows()
                     ]

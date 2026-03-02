@@ -69,6 +69,7 @@ class OptimizerResultRow(BaseModel):
     SPREAD_LVL: float
     APY: float
     final_value: float
+    trade_count: int
 
 
 class OptimizerResponse(BaseModel):
