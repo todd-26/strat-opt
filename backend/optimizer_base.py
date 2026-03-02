@@ -90,6 +90,7 @@ class BaseOptimizer(ABC):
                 "SPREAD_LVL": SPREAD_LVL,
                 "APY": bt_result["apy"],
                 "final_value": bt_result["final_value"],
+                "trade_count": len(sells),
             })
 
             current += 1

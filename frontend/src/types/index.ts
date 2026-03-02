@@ -38,6 +38,7 @@ export interface OptimizerResultRow {
   SPREAD_LVL: number
   APY: number
   final_value: number
+  trade_count: number
 }
 
 export interface OptimizerResponse {

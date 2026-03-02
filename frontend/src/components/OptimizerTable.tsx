@@ -1,5 +1,5 @@
 import { useState, Fragment } from 'react'
-import { LineChart, X, ChevronUp, ChevronDown } from 'lucide-react'
+import { LineChart, X, ChevronUp, ChevronDown, Info } from 'lucide-react'
 import type { OptimizerResultRow, StrategyParams, BacktestResult } from '../types'
 import { EquityCurveChart } from './EquityCurveChart'
 
@@ -26,7 +26,35 @@ function paramsMatch(a: StrategyParams, b: StrategyParams): boolean {
   return a.MA === b.MA && a.DROP === b.DROP && a.CHG4 === b.CHG4 && a.RET3 === b.RET3 && a.SPREAD_LVL === b.SPREAD_LVL
 }
 
-const cols: { key: SortKey; label: string; fmt: (v: number) => string }[] = [
+function InfoTooltip({ text }: { text: string }) {
+  const [show, setShow] = useState(false)
+  return (
+    <span
+      className="relative inline-flex items-center"
+      onMouseEnter={() => setShow(true)}
+      onMouseLeave={() => setShow(false)}
+    >
+      <Info size={11} style={{ color: 'var(--text-muted)', cursor: 'default', flexShrink: 0 }} />
+      {show && (
+        <span
+          className="absolute top-full left-1/2 mt-1.5 w-48 -translate-x-1/2 rounded border px-2 py-1.5 text-xs shadow-lg"
+          style={{
+            background: 'var(--bg-card)',
+            borderColor: 'var(--border)',
+            color: 'var(--text)',
+            zIndex: 50,
+            lineHeight: '1.45',
+            pointerEvents: 'none',
+          }}
+        >
+          {text}
+        </span>
+      )}
+    </span>
+  )
+}
+
+const cols: { key: SortKey; label: string; fmt: (v: number) => string; tooltip?: string }[] = [
   { key: 'MA',          label: 'MA',          fmt: (v) => String(v) },
   { key: 'DROP',        label: 'DROP',        fmt: (v) => v.toFixed(3) },
   { key: 'CHG4',        label: 'CHG4',        fmt: (v) => v.toFixed(3) },
@@ -34,6 +62,7 @@ const cols: { key: SortKey; label: string; fmt: (v: number) => string }[] = [
   { key: 'SPREAD_LVL',  label: 'SPREAD_LVL',  fmt: (v) => v.toFixed(1) },
   { key: 'APY',         label: 'APY %',       fmt: (v) => `${(v * 100).toFixed(2)}%` },
   { key: 'final_value', label: 'Final Value', fmt: (v) => v.toFixed(6) },
+  { key: 'trade_count', label: 'Trades',      fmt: (v) => String(v), tooltip: 'Number of sell events over the backtest period. Each sell is a potential taxable event.' },
 ]
 
 const TOTAL_COLS = cols.length + 1 // data cols + chart icon col
@@ -84,6 +113,7 @@ export function OptimizerTable({
                   {sortKey === c.key
                     ? sortDir === 'asc' ? <ChevronUp size={12} /> : <ChevronDown size={12} />
                     : null}
+                  {c.tooltip && <InfoTooltip text={c.tooltip} />}
                 </span>
               </th>
             ))}
