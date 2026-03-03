@@ -63,6 +63,14 @@ class BaseOptimizer(ABC):
         results_df : DataFrame
         best_result : dict
         """
+        # Validate all grids are non-empty before starting
+        empty = [name for name, grid in [
+            ("MA", self.MA_grid), ("DROP", self.DROP_grid), ("CHG4", self.CHG4_grid),
+            ("RET3", self.RET3_grid), ("SPREAD_LVL", self.SPREAD_grid),
+        ] if not grid]
+        if empty:
+            raise ValueError(f"Empty parameter grid(s): {', '.join(empty)} — check min/max/step values.")
+
         loader = WeeklyDataLoader(self.input_type, self.input_dir, ticker)
         df = loader.load(start_date=self.start_date, end_date=self.end_date)
 
