@@ -57,6 +57,10 @@ class TradeEvent(BaseModel):
     ret3: Optional[float] = None
     spread_delta: Optional[float] = None
     ma_value: Optional[float] = None
+    # Source data for popup derivations
+    spread_4wk_ago: Optional[float] = None   # for chg4 explanation
+    close_3wk_ago: Optional[float] = None    # for ret3 explanation
+    prev_spread_delta: Optional[float] = None  # prior week's delta (buy rule needs 2 consecutive)
 
 
 class BacktestResult(BaseModel):

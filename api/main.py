@@ -79,7 +79,8 @@ def _build_trade_history(bt_df, buy_dates, sell_dates) -> list[TradeEvent]:
     events: list[TradeEvent] = []
 
     for d in sell_dates:
-        row = bt_df.loc[d]
+        pos = bt_df.index.get_loc(d)
+        row = bt_df.iloc[pos]
         events.append(TradeEvent(
             date=d.strftime("%Y-%m-%d"),
             action="SELL",
@@ -89,10 +90,13 @@ def _build_trade_history(bt_df, buy_dates, sell_dates) -> list[TradeEvent]:
             ret3=_safe_float(row.get("ret3")),
             spread_delta=_safe_float(row.get("spread_delta")),
             ma_value=_safe_float(row.get(ma_col)) if ma_col else None,
+            spread_4wk_ago=_safe_float(bt_df.iloc[pos - 4]["Spread"]) if pos >= 4 else None,
+            close_3wk_ago=_safe_float(bt_df.iloc[pos - 3]["close"]) if pos >= 3 else None,
         ))
 
     for d in buy_dates:
-        row = bt_df.loc[d]
+        pos = bt_df.index.get_loc(d)
+        row = bt_df.iloc[pos]
         events.append(TradeEvent(
             date=d.strftime("%Y-%m-%d"),
             action="BUY",
@@ -102,6 +106,7 @@ def _build_trade_history(bt_df, buy_dates, sell_dates) -> list[TradeEvent]:
             ret3=_safe_float(row.get("ret3")),
             spread_delta=_safe_float(row.get("spread_delta")),
             ma_value=_safe_float(row.get(ma_col)) if ma_col else None,
+            prev_spread_delta=_safe_float(bt_df.iloc[pos - 1].get("spread_delta")) if pos >= 1 else None,
         ))
 
     events.sort(key=lambda e: e.date, reverse=True)
