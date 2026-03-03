@@ -33,3 +33,19 @@ The strategy is designed around credit spreads (FRED data) as a risk signal for 
 
 - **Sell early** if spreads spike (level or momentum), or if price already dropped
 - **Buy back cautiously** only when price is recovering (above MA), spreads are actively falling (2 consecutive negative deltas), and spreads have meaningfully pulled back from a recent peak (DROP threshold)
+
+---
+
+## SHYM
+
+SHYM (Xtrackers Short Duration High Yield Bond ETF) uses the **same strategy rules and parameters** as SPHY. Both inherit from `SpreadStrategy` in `strategy_spread.py`.
+
+The parameter values are tuned independently via the optimizer for each security. SHYM default grids are broad starting points until the optimizer finds security-specific best values.
+
+| Parameter | Role | Same as SPHY? |
+|-----------|------|---------------|
+| SPREAD_LVL | Absolute spread threshold for sell | Same rule, different optimal value |
+| CHG4_THR | 4-week spread momentum sell trigger | Same rule, different optimal value |
+| RET3_THR | 3-week price return sell trigger | Same rule, different optimal value |
+| MA | Moving average length for buy confirmation | Same rule, different optimal value |
+| DROP | Required spread pullback from 4-week peak for buy | Same rule, different optimal value |

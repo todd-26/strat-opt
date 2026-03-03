@@ -14,8 +14,7 @@ A React/Vite single-page application that provides a polished, professional inte
 
 **Themes**: The default is slate gray + white + teal. Additional themes are selectable in Settings:
 - Navy + white + gold (classic finance)
-- Charcoal + white + green (buy/sell signal-friendly)
-- Dark mode (dark background, light text, colored accents)
+- Charcoal + white + green (buy/sell signal-friendly; dark-ish)
 - High contrast (strong black/white, maximum readability)
 
 Themes are applied globally and persisted in localStorage.
@@ -27,7 +26,8 @@ Themes are applied globally and persisted in localStorage.
 ### Header
 A persistent top header containing:
 - App name on the left (e.g., **strat-opt**)
-- Currently selected security as a badge next to the name (e.g., `SPHY`)
+- Security **dropdown** next to the name (populated from `GET /api/securities`; currently SPHY and SHYM)
+- **From / To date inputs** for a global date range filter (blank = full data; not persisted; applies to all three tabs)
 - Gear icon on the right to open Settings
 
 ### Tab Navigation
@@ -92,12 +92,17 @@ Each strategy parameter gets a single value input (not a range). Pre-filled with
 - The current values of the key metrics that drove the decision (spread, MA, ret3, chg4, spread_delta, etc.).
 - The date the current signal was first triggered.
 
-**Right — Trade History**:
-A simple table of all historical buy/sell events with columns:
+**Trade History** (full width, below the signal/metrics):
+A table of all historical buy/sell events with columns:
 - Date
 - Action (Buy / Sell)
 - Price
-- Key metric values at the time of the signal
+- MA (moving average value at trade date)
+- Spread, chg4, ret3, Δspread
+
+Values that contributed to the decision are **bolded**:
+- SELL: bold any of spread / chg4 / ret3 that exceeded its threshold
+- BUY: bold Price and MA (close > MA) and Δspread (falling spreads)
 
 **Export**: CSV download of the trade history table.
 
@@ -198,4 +203,4 @@ interface AppConfig { defaultParams: StrategyParams; defaultRanges: ParamRanges 
 
 - **Initial**: Runs on `localhost` — React dev server (or built static files) + Python backend on a local port.
 - **Near-term**: Accessible from other devices on the local network by binding to `0.0.0.0`. No authentication required.
-- **No cloud hosting planned.** Keep deployment simple — a single `start.bat` or similar script to launch both the backend and frontend is desirable.
+- **No cloud hosting planned.** `serve.bat` launches the pre-built frontend + backend on port 8000. `start-prod.bat` rebuilds the frontend first, then serves.
