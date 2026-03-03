@@ -146,7 +146,7 @@ def get_securities():
 @app.post("/api/run/buyhold", response_model=BacktestResult)
 def run_buyhold(req: BuyHoldRequest):
     loader = WeeklyDataLoader(req.input_type, INPUT_DIR, req.ticker)
-    df = loader.load()
+    df = loader.load(start_date=req.start_date, end_date=req.end_date)
 
     strat = BuyAndHoldStrategy()
     positions, buys, sells = strat.run(df)
@@ -162,7 +162,7 @@ def run_signal(req: SignalRequest):
     p = req.params
 
     loader = WeeklyDataLoader(req.input_type, INPUT_DIR, req.ticker)
-    df = loader.load()
+    df = loader.load(start_date=req.start_date, end_date=req.end_date)
 
     df_ind = IndicatorEngine.apply_all(df.copy(), p.MA)
 
@@ -246,6 +246,8 @@ async def run_optimizer(req: OptimizerRequest):
                     input_dir=INPUT_DIR,
                     cash_rate=req.cash_rate,
                     param_grids=param_grids,
+                    start_date=req.start_date,
+                    end_date=req.end_date,
                 )
                 best_params, results_df, best_result = opt.run(
                     ticker=req.ticker,

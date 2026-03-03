@@ -28,10 +28,13 @@ class BaseOptimizer(ABC):
         Override any of the default grids. Keys: 'MA', 'DROP', 'CHG4', 'RET3', 'SPREAD_LVL'.
     """
 
-    def __init__(self, input_type: str, input_dir: Path, cash_rate: float, param_grids: dict = None):
+    def __init__(self, input_type: str, input_dir: Path, cash_rate: float, param_grids: dict = None,
+                 start_date: str = None, end_date: str = None):
         self.input_type = input_type
         self.input_dir = input_dir
         self.cash_rate = cash_rate
+        self.start_date = start_date
+        self.end_date = end_date
 
         if param_grids:
             if "MA" in param_grids:
@@ -61,7 +64,7 @@ class BaseOptimizer(ABC):
         best_result : dict
         """
         loader = WeeklyDataLoader(self.input_type, self.input_dir, ticker)
-        df = loader.load()
+        df = loader.load(start_date=self.start_date, end_date=self.end_date)
 
         results = []
         total = (len(self.MA_grid) * len(self.DROP_grid) * len(self.CHG4_grid) *

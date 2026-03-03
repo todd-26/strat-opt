@@ -10,7 +10,8 @@ class SHYMOptimizer(BaseOptimizer):
     Default grids are broad starting points; tune via the UI optimizer.
     """
 
-    def __init__(self, input_type: str, input_dir: Path, cash_rate: float, param_grids: dict = None):
+    def __init__(self, input_type: str, input_dir: Path, cash_rate: float, param_grids: dict = None,
+                 start_date: str = None, end_date: str = None):
         # SHYM default grids — starting points until optimizer discovers best values
         self.MA_grid = [50]
         self.DROP_grid = [0.016]
@@ -18,7 +19,7 @@ class SHYMOptimizer(BaseOptimizer):
         self.RET3_grid = [-0.021]
         self.SPREAD_grid = [7.0]
 
-        super().__init__(input_type, input_dir, cash_rate, param_grids)
+        super().__init__(input_type, input_dir, cash_rate, param_grids, start_date, end_date)
 
     def _create_strategy(self, MA, DROP, CHG4, RET3, SPREAD_LVL):
         return SHYMStrategy(
