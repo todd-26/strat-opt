@@ -14,6 +14,8 @@ class BuyHoldRequest(BaseModel):
     ticker: str = "SPHY"
     cash_rate: float = 0.04
     input_type: str = "csv"
+    start_date: Optional[str] = None
+    end_date: Optional[str] = None
 
 
 class SignalRequest(BaseModel):
@@ -22,6 +24,8 @@ class SignalRequest(BaseModel):
     start_invested: int = 1
     cash_rate: float = 0.04
     input_type: str = "csv"
+    start_date: Optional[str] = None
+    end_date: Optional[str] = None
 
 
 class OptimizerRequest(BaseModel):
@@ -35,6 +39,8 @@ class OptimizerRequest(BaseModel):
     start_invested: int = 1
     cash_rate: float = 0.04
     input_type: str = "csv"
+    start_date: Optional[str] = None
+    end_date: Optional[str] = None
 
 
 class EquityPoint(BaseModel):

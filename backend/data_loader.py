@@ -80,16 +80,21 @@ class WeeklyDataLoader:
     # ------------------------------------------------------------
     # Public entry: load everything
     # ------------------------------------------------------------
-    def load(self) -> pd.DataFrame:
+    def load(self, start_date: str = None, end_date: str = None) -> pd.DataFrame:
         """
-        Returns full weekly DataFrame with:
-        close, dividend, TR, Spread
+        Returns weekly DataFrame with: close, dividend, TR, Spread.
+        Optionally sliced to [start_date, end_date] (inclusive, YYYY-MM-DD).
         """
         price_df = self.load_price_dividend()
         spread_df = self.load_spread()
 
         weekly = self.merge_price_spread(price_df, spread_df)
         print("Data range:", weekly.index.min().date(), "to", weekly.index.max().date())
+
+        if start_date:
+            weekly = weekly.loc[pd.Timestamp(start_date):]
+        if end_date:
+            weekly = weekly.loc[:pd.Timestamp(end_date)]
 
         # Weekly return from TR
         weekly["Ret"] = weekly["TR"].pct_change()

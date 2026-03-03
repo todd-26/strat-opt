@@ -15,6 +15,8 @@ export function useOptimizer() {
     startInvested: number,
     cashRate: number,
     inputType: string,
+    startDate?: string,
+    endDate?: string,
   ) {
     // Cancel any in-flight run
     if (abortRef.current) {
@@ -36,6 +38,8 @@ export function useOptimizer() {
       start_invested: startInvested,
       cash_rate: cashRate,
       input_type: inputType,
+      start_date: startDate || undefined,
+      end_date: endDate || undefined,
     }
 
     const controller = streamOptimizer(req, {

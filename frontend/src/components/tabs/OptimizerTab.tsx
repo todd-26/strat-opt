@@ -13,9 +13,11 @@ interface Props {
   ticker: string
   defaultRanges: ParamRanges
   paramDescriptions?: Partial<Record<keyof StrategyParams, string>>
+  startDate?: string
+  endDate?: string
 }
 
-export function OptimizerTab({ settings, ticker, defaultRanges, paramDescriptions }: Props) {
+export function OptimizerTab({ settings, ticker, defaultRanges, paramDescriptions, startDate, endDate }: Props) {
   const { result, progress, loading, error, run, cancel } = useOptimizer()
   const [ranges, setRanges] = useState<ParamRanges>(defaultRanges)
   const [inputType, setInputType] = useState(settings.inputType)
@@ -48,14 +50,14 @@ export function OptimizerTab({ settings, ticker, defaultRanges, paramDescription
       RET3: rangeToArray(ranges.RET3),
       SPREAD_LVL: rangeToArray(ranges.SPREAD_LVL),
     }
-    run(ticker, grids, startInvested, cashRate, inputType)
+    run(ticker, grids, startInvested, cashRate, inputType, startDate, endDate)
     setCollapsed(true)
     setSelectedParams(null)
     setChartParams(null)
     setDrillResult(null)
     setBuyholdResult(null)
     setBuyholdError(null)
-    runBuyHold(ticker, cashRate, inputType)
+    runBuyHold(ticker, cashRate, inputType, startDate, endDate)
       .then(setBuyholdResult)
       .catch((e) => setBuyholdError(String(e)))
   }
@@ -107,6 +109,8 @@ export function OptimizerTab({ settings, ticker, defaultRanges, paramDescription
             start_invested: startInvested,
             cash_rate: cashRate,
             input_type: inputType,
+            start_date: startDate || undefined,
+            end_date: endDate || undefined,
           },
           {
             onProgress() {},

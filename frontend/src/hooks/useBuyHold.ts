@@ -7,12 +7,12 @@ export function useBuyHold() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  async function run(ticker: string, cashRate: number, inputType: string) {
+  async function run(ticker: string, cashRate: number, inputType: string, startDate?: string, endDate?: string) {
     setLoading(true)
     setError(null)
     setResult(null)
     try {
-      const data = await runBuyHold(ticker, cashRate, inputType)
+      const data = await runBuyHold(ticker, cashRate, inputType, startDate, endDate)
       setResult(data)
     } catch (err) {
       setError(String(err))

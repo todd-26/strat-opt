@@ -83,6 +83,8 @@ export interface OptimizerRequest {
   start_invested: number
   cash_rate: number
   input_type: string
+  start_date?: string
+  end_date?: string
 }
 
 export interface ParamRange { min: number; max: number; step: number }

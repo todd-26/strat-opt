@@ -25,6 +25,8 @@ export default function App() {
   const [configError, setConfigError] = useState<{ message: string; stack?: string } | null>(null)
   const [securities, setSecurities] = useState<string[]>(['SPHY'])
   const [ticker, setTicker] = useState<string>('SPHY')
+  const [startDate, setStartDate] = useState('')
+  const [endDate, setEndDate] = useState('')
 
   // Apply saved theme on mount
   useEffect(() => {
@@ -71,7 +73,16 @@ export default function App() {
 
   return (
     <div className="flex min-h-screen flex-col" style={{ background: 'var(--bg)' }}>
-      <Header ticker={ticker} securities={securities} onTickerChange={(t) => { setTicker(t); setActiveTab('optimizer') }} onOpenSettings={() => setSettingsOpen(true)} />
+      <Header
+        ticker={ticker}
+        securities={securities}
+        onTickerChange={(t) => { setTicker(t); setActiveTab('optimizer') }}
+        onOpenSettings={() => setSettingsOpen(true)}
+        startDate={startDate}
+        endDate={endDate}
+        onStartDateChange={setStartDate}
+        onEndDateChange={setEndDate}
+      />
 
       {/* Tab bar */}
       <div
@@ -105,13 +116,13 @@ export default function App() {
           <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Loading…</p>
         )}
         {config && activeTab === 'optimizer' && (
-          <OptimizerTab key={ticker} settings={settings} ticker={ticker} defaultRanges={config.defaultRanges} paramDescriptions={paramDescriptions} />
+          <OptimizerTab key={ticker} settings={settings} ticker={ticker} defaultRanges={config.defaultRanges} paramDescriptions={paramDescriptions} startDate={startDate} endDate={endDate} />
         )}
         {config && activeTab === 'buyhold' && (
-          <BuyHoldTab key={ticker} settings={settings} ticker={ticker} />
+          <BuyHoldTab key={ticker} settings={settings} ticker={ticker} startDate={startDate} endDate={endDate} />
         )}
         {config && activeTab === 'signal' && defaultStrategyParams && (
-          <SignalTab key={ticker} settings={settings} ticker={ticker} defaultParams={defaultStrategyParams} paramDescriptions={paramDescriptions} />
+          <SignalTab key={ticker} settings={settings} ticker={ticker} defaultParams={defaultStrategyParams} paramDescriptions={paramDescriptions} startDate={startDate} endDate={endDate} />
         )}
       </main>
 
