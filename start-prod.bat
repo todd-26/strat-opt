@@ -12,8 +12,5 @@ if errorlevel 1 (
 popd
 
 echo.
-echo Build complete. Starting production server on http://0.0.0.0:8000
-echo Press Ctrl+C to stop.
-echo.
-
-uvicorn main:app --host 0.0.0.0 --port 8000 --app-dir "%~dp0api"
+echo Build complete. Starting server...
+call "%~dp0serve.bat"
