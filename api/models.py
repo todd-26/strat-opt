@@ -56,6 +56,7 @@ class TradeEvent(BaseModel):
     chg4: Optional[float] = None
     ret3: Optional[float] = None
     spread_delta: Optional[float] = None
+    ma_value: Optional[float] = None
 
 
 class BacktestResult(BaseModel):
