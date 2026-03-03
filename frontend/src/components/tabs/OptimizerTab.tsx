@@ -34,6 +34,7 @@ export function OptimizerTab({ settings, ticker, defaultRanges, paramDescription
   const [drillError, setDrillError] = useState<string | null>(null)
   const [buyholdResult, setBuyholdResult] = useState<BacktestResult | null>(null)
   const [buyholdError, setBuyholdError] = useState<string | null>(null)
+  const [validationError, setValidationError] = useState<string | null>(null)
 
   // Highlight the best row when results arrive (no chart loaded yet)
   useEffect(() => {
@@ -43,6 +44,15 @@ export function OptimizerTab({ settings, ticker, defaultRanges, paramDescription
   }, [result])
 
   function handleRun() {
+    const invalid = (Object.entries(ranges) as [string, { min: number; max: number }][])
+      .filter(([, r]) => r.max < r.min)
+      .map(([k]) => k)
+    if (invalid.length > 0) {
+      setValidationError(`Max cannot be less than Min for: ${invalid.join(', ')}`)
+      return
+    }
+    setValidationError(null)
+
     const grids = {
       MA: rangeToArray(ranges.MA, 0).map(Math.round),
       DROP: rangeToArray(ranges.DROP),
@@ -249,7 +259,15 @@ export function OptimizerTab({ settings, ticker, defaultRanges, paramDescription
         </div>
       )}
 
-      {/* Error */}
+      {/* Validation / runtime errors */}
+      {validationError && (
+        <div
+          className="rounded-lg border px-4 py-3 text-sm"
+          style={{ borderColor: 'var(--sell)', background: '#fee2e2', color: '#991b1b' }}
+        >
+          {validationError}
+        </div>
+      )}
       {error && (
         <div
           className="rounded-lg border px-4 py-3 text-sm"
