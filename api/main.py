@@ -1,4 +1,5 @@
 import sys
+import re
 import json
 import math
 import asyncio
@@ -71,6 +72,10 @@ def _safe_float(val) -> float | None:
 
 
 def _build_trade_history(bt_df, buy_dates, sell_dates) -> list[TradeEvent]:
+    # Auto-detect the MA column (e.g. "MA50")
+    ma_cols = [c for c in bt_df.columns if re.match(r'^MA\d+$', c)]
+    ma_col = ma_cols[0] if ma_cols else None
+
     events: list[TradeEvent] = []
 
     for d in sell_dates:
@@ -83,6 +88,7 @@ def _build_trade_history(bt_df, buy_dates, sell_dates) -> list[TradeEvent]:
             chg4=_safe_float(row.get("chg4")),
             ret3=_safe_float(row.get("ret3")),
             spread_delta=_safe_float(row.get("spread_delta")),
+            ma_value=_safe_float(row.get(ma_col)) if ma_col else None,
         ))
 
     for d in buy_dates:
@@ -95,6 +101,7 @@ def _build_trade_history(bt_df, buy_dates, sell_dates) -> list[TradeEvent]:
             chg4=_safe_float(row.get("chg4")),
             ret3=_safe_float(row.get("ret3")),
             spread_delta=_safe_float(row.get("spread_delta")),
+            ma_value=_safe_float(row.get(ma_col)) if ma_col else None,
         ))
 
     events.sort(key=lambda e: e.date, reverse=True)

@@ -19,6 +19,7 @@ export interface TradeEvent {
   chg4?: number | null
   ret3?: number | null
   spread_delta?: number | null
+  ma_value?: number | null
 }
 
 export interface BacktestResult {

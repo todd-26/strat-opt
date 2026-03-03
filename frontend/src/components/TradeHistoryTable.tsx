@@ -1,7 +1,8 @@
-import type { TradeEvent } from '../types'
+import type { TradeEvent, StrategyParams } from '../types'
 
 interface Props {
   trades: TradeEvent[]
+  params?: StrategyParams
 }
 
 function fmt(v: number | null | undefined, decimals = 4): string {
@@ -9,7 +10,21 @@ function fmt(v: number | null | undefined, decimals = 4): string {
   return v.toFixed(decimals)
 }
 
-export function TradeHistoryTable({ trades }: Props) {
+function isBoldCell(t: TradeEvent, col: keyof TradeEvent, params?: StrategyParams): boolean {
+  if (!params) return false
+  if (t.action === 'SELL') {
+    if (col === 'spread')      return t.spread != null && t.spread > params.SPREAD_LVL
+    if (col === 'chg4')        return t.chg4 != null && t.chg4 > params.CHG4
+    if (col === 'ret3')        return t.ret3 != null && t.ret3 < params.RET3
+  }
+  if (t.action === 'BUY') {
+    if (col === 'price' || col === 'ma_value') return true
+    if (col === 'spread_delta') return t.spread_delta != null && t.spread_delta < 0
+  }
+  return false
+}
+
+export function TradeHistoryTable({ trades, params }: Props) {
   if (!trades.length) {
     return <p style={{ color: 'var(--text-muted)' }}>No trades recorded.</p>
   }
@@ -22,6 +37,7 @@ export function TradeHistoryTable({ trades }: Props) {
             <Th>Date</Th>
             <Th>Action</Th>
             <Th>Price</Th>
+            <Th>MA</Th>
             <Th>Spread</Th>
             <Th>chg4</Th>
             <Th>ret3</Th>
@@ -46,11 +62,12 @@ export function TradeHistoryTable({ trades }: Props) {
                   {t.action}
                 </span>
               </Td>
-              <Td>{fmt(t.price, 2)}</Td>
-              <Td>{fmt(t.spread, 2)}</Td>
-              <Td>{fmt(t.chg4, 4)}</Td>
-              <Td>{fmt(t.ret3, 4)}</Td>
-              <Td>{fmt(t.spread_delta, 4)}</Td>
+              <Td bold={isBoldCell(t, 'price', params)}>{fmt(t.price, 2)}</Td>
+              <Td bold={isBoldCell(t, 'ma_value', params)}>{fmt(t.ma_value, 2)}</Td>
+              <Td bold={isBoldCell(t, 'spread', params)}>{fmt(t.spread, 2)}</Td>
+              <Td bold={isBoldCell(t, 'chg4', params)}>{fmt(t.chg4, 4)}</Td>
+              <Td bold={isBoldCell(t, 'ret3', params)}>{fmt(t.ret3, 4)}</Td>
+              <Td bold={isBoldCell(t, 'spread_delta', params)}>{fmt(t.spread_delta, 4)}</Td>
             </tr>
           ))}
         </tbody>
@@ -63,6 +80,10 @@ function Th({ children }: { children: React.ReactNode }) {
   return <th className="px-3 py-2 text-left font-semibold uppercase tracking-wide text-xs">{children}</th>
 }
 
-function Td({ children }: { children: React.ReactNode }) {
-  return <td className="px-3 py-2">{children}</td>
+function Td({ children, bold }: { children: React.ReactNode; bold?: boolean }) {
+  return (
+    <td className="px-3 py-2" style={bold ? { fontWeight: 700 } : undefined}>
+      {children}
+    </td>
+  )
 }

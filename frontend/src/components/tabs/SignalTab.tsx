@@ -130,8 +130,8 @@ export function SignalTab({ settings, ticker, defaultParams, paramDescriptions, 
       {/* Results */}
       {result && (
         <>
+          {/* Signal + metrics row */}
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            {/* Signal + metrics */}
             <div className="space-y-3">
               <SignalBadge signal={result.signal} />
               <div
@@ -153,14 +153,14 @@ export function SignalTab({ settings, ticker, defaultParams, paramDescriptions, 
               </div>
               <MetricsCard apy={result.apy} finalValue={result.final_value} />
             </div>
+          </div>
 
-            {/* Trade history */}
-            <div>
-              <h3 className="mb-2 font-semibold" style={{ color: 'var(--text)' }}>
-                Trade History
-              </h3>
-              <TradeHistoryTable trades={result.trade_history} />
-            </div>
+          {/* Trade history — full width so all columns fit */}
+          <div>
+            <h3 className="mb-2 font-semibold" style={{ color: 'var(--text)' }}>
+              Trade History
+            </h3>
+            <TradeHistoryTable trades={result.trade_history} params={params} />
           </div>
         </>
       )}
