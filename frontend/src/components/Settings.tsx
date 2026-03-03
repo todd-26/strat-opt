@@ -126,37 +126,43 @@ export function SettingsSheet({ open, onClose, settings, onUpdate, config, onSav
             </div>
           </Section>
 
-          {/* Cash rate */}
-          <Section title="Cash Rate (annual)">
-            <input
-              type="number"
-              value={settings.cashRate}
-              step="0.0025"
-              onChange={(e) => onUpdate({ cashRate: parseFloat(e.target.value) || 0 })}
-              className="w-32 rounded border px-2 py-1.5 text-sm"
-              style={{
-                background: 'var(--bg-input)',
-                borderColor: 'var(--border)',
-                color: 'var(--text)',
-              }}
-            />
-          </Section>
-
-          {/* Starting position */}
-          <Section title="Starting Position">
-            <div className="flex gap-3">
-              {([1, 0] as const).map((v) => (
-                <label key={v} className="flex items-center gap-2 text-sm">
-                  <input
-                    type="radio"
-                    name="startInvested"
-                    value={v}
-                    checked={settings.startInvested === v}
-                    onChange={() => onUpdate({ startInvested: v })}
-                  />
-                  {v === 1 ? 'Invested' : 'Cash'}
+          {/* Run defaults (per-security, saved to config.json) */}
+          <Section title={`Run Defaults — ${ticker}`}>
+            <div className="space-y-3">
+              <div>
+                <label className="mb-1 block text-xs font-medium" style={{ color: 'var(--text-muted)' }}>
+                  Cash Rate (annual)
                 </label>
-              ))}
+                <input
+                  type="number"
+                  value={localConfig.cashRate}
+                  step="0.0025"
+                  onChange={(e) =>
+                    setLocalConfig((prev) => ({ ...prev, cashRate: parseFloat(e.target.value) || 0 }))
+                  }
+                  className="w-32 rounded border px-2 py-1.5 text-sm"
+                  style={{ background: 'var(--bg-input)', borderColor: 'var(--border)', color: 'var(--text)' }}
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-xs font-medium" style={{ color: 'var(--text-muted)' }}>
+                  Starting Position
+                </label>
+                <div className="flex gap-3">
+                  {([1, 0] as const).map((v) => (
+                    <label key={v} className="flex items-center gap-2 text-sm">
+                      <input
+                        type="radio"
+                        name="startInvested"
+                        value={v}
+                        checked={localConfig.startInvested === v}
+                        onChange={() => setLocalConfig((prev) => ({ ...prev, startInvested: v }))}
+                      />
+                      {v === 1 ? 'Invested' : 'Cash'}
+                    </label>
+                  ))}
+                </div>
+              </div>
             </div>
           </Section>
 

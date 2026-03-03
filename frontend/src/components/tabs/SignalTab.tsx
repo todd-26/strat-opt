@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useSignal } from '../../hooks/useSignal'
 import { ParameterPanel } from '../ParameterPanel'
 import { SignalBadge } from '../SignalBadge'
@@ -11,6 +11,8 @@ interface Props {
   ticker: string
   defaultParams: StrategyParams
   paramDescriptions?: Partial<Record<keyof StrategyParams, string>>
+  cashRate: number
+  startInvested: 0 | 1
   startDate?: string
   endDate?: string
 }
@@ -20,12 +22,17 @@ function fmt(v: number | null | undefined, decimals = 4): string {
   return v.toFixed(decimals)
 }
 
-export function SignalTab({ settings, ticker, defaultParams, paramDescriptions, startDate, endDate }: Props) {
+export function SignalTab({ settings, ticker, defaultParams, paramDescriptions, cashRate: cashRateProp, startInvested: startInvestedProp, startDate, endDate }: Props) {
   const { result, loading, error, run } = useSignal()
   const [params, setParams] = useState<StrategyParams>(defaultParams)
-  const [startInvested, setStartInvested] = useState(settings.startInvested)
-  const [cashRate, setCashRate] = useState(settings.cashRate)
+  const [startInvested, setStartInvested] = useState<0 | 1>(startInvestedProp)
+  const [cashRate, setCashRate] = useState(cashRateProp)
   const [inputType, setInputType] = useState(settings.inputType)
+
+  useEffect(() => {
+    setCashRate(cashRateProp)
+    setStartInvested(startInvestedProp)
+  }, [cashRateProp, startInvestedProp])
   const [collapsed, setCollapsed] = useState(false)
 
   function handleRun() {

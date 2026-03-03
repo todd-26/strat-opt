@@ -108,11 +108,14 @@ export interface DefaultParams {
   RET3: ParamDef
   SPREAD_LVL: ParamDef
 }
-export interface AppConfig { defaultParams: DefaultParams; defaultRanges: ParamRanges }
+export interface AppConfig {
+  defaultParams: DefaultParams
+  defaultRanges: ParamRanges
+  cashRate: number
+  startInvested: 0 | 1
+}
 
 export interface Settings {
   theme: string
   inputType: 'csv' | 'api'
-  cashRate: number
-  startInvested: 0 | 1
 }
