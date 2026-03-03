@@ -107,7 +107,7 @@ class SpreadStrategy(BaseStrategy):
         index = df.index
 
         invested = int(start_invested)
-        was_sold = False
+        was_sold = (start_invested == 0)
         positions = []
         buy_dates = []
         sell_dates = []
