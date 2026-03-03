@@ -9,7 +9,8 @@
       "Bash(cd /c/Users/Todd/OneDrive/Documents/Finance/strat-opt/frontend && npm run build 2>&1)",
       "Bash(cd \"C:\\\\Users\\\\Todd\\\\OneDrive\\\\Documents\\\\Finance\\\\strat-opt\\\\frontend\" && npm run build 2>&1)",
       "Bash(cd \"C:\\\\Users\\\\Todd\\\\OneDrive\\\\Documents\\\\Finance\\\\strat-opt\" && git check-ignore -v .env .env.example 2>&1)",
-      "Bash(ls:*)"
+      "Bash(ls:*)",
+      "Bash(python3:*)"
     ]
   }
 }
