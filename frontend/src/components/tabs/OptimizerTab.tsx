@@ -13,16 +13,23 @@ interface Props {
   ticker: string
   defaultRanges: ParamRanges
   paramDescriptions?: Partial<Record<keyof StrategyParams, string>>
+  cashRate: number
+  startInvested: 0 | 1
   startDate?: string
   endDate?: string
 }
 
-export function OptimizerTab({ settings, ticker, defaultRanges, paramDescriptions, startDate, endDate }: Props) {
+export function OptimizerTab({ settings, ticker, defaultRanges, paramDescriptions, cashRate: cashRateProp, startInvested: startInvestedProp, startDate, endDate }: Props) {
   const { result, progress, loading, error, run, cancel } = useOptimizer()
   const [ranges, setRanges] = useState<ParamRanges>(defaultRanges)
   const [inputType, setInputType] = useState(settings.inputType)
-  const [cashRate, setCashRate] = useState(settings.cashRate)
-  const [startInvested, setStartInvested] = useState(settings.startInvested)
+  const [cashRate, setCashRate] = useState(cashRateProp)
+  const [startInvested, setStartInvested] = useState<0 | 1>(startInvestedProp)
+
+  useEffect(() => {
+    setCashRate(cashRateProp)
+    setStartInvested(startInvestedProp)
+  }, [cashRateProp, startInvestedProp])
   const [collapsed, setCollapsed] = useState(false)
 
   // Row highlight (independent of chart)

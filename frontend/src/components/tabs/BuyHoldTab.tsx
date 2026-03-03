@@ -7,16 +7,17 @@ import type { Settings } from '../../types'
 interface Props {
   settings: Settings
   ticker: string
+  cashRate: number
   startDate?: string
   endDate?: string
 }
 
-export function BuyHoldTab({ settings, ticker, startDate, endDate }: Props) {
+export function BuyHoldTab({ settings, ticker, cashRate, startDate, endDate }: Props) {
   const { result, loading, error, run } = useBuyHold()
   const [inputType, setInputType] = useState(settings.inputType)
 
   function handleRun() {
-    run(ticker, 0, inputType, startDate, endDate)
+    run(ticker, cashRate, inputType, startDate, endDate)
   }
 
   return (

@@ -138,3 +138,5 @@ class DefaultParams(BaseModel):
 class AppConfig(BaseModel):
     defaultParams: DefaultParams
     defaultRanges: DefaultRanges
+    cashRate: float = 0.04
+    startInvested: int = 1

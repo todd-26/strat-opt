@@ -7,8 +7,6 @@ const STORAGE_KEY = 'strat-opt-settings'
 const defaults: Settings = {
   theme: 'slate',
   inputType: 'csv',
-  cashRate: 0.04,
-  startInvested: 1,
 }
 
 function loadSettings(): Settings {
