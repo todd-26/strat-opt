@@ -23,10 +23,14 @@ strat-opt/
 │   ├── fred.py             # Credit spread data source
 │   ├── indicators.py       # Technical indicator calculations
 │   ├── strategy_base.py    # Abstract strategy interface
+│   ├── strategy_spread.py  # Shared spread-strategy logic (SpreadStrategy)
 │   ├── strategy_sphy.py    # SPHY-specific trading rules
+│   ├── strategy_shym.py    # SHYM-specific trading rules
 │   ├── strategy_buyhold.py # Buy-and-hold baseline
 │   ├── backtester.py       # Converts positions to equity curves
-│   └── optimizer_sphy.py   # Grid search optimizer
+│   ├── optimizer_base.py   # Abstract BaseOptimizer with grid-search loop
+│   ├── optimizer_sphy.py   # SPHY grid-search optimizer
+│   └── optimizer_shym.py   # SHYM grid-search optimizer
 ├── frontend/               # React/Vite UI
 │   ├── src/
 │   │   ├── App.tsx         # Main app with tab navigation
@@ -36,31 +40,33 @@ strat-opt/
 │   │   └── types/          # TypeScript interfaces
 │   └── package.json
 ├── inputs/                 # CSV data files
-│   ├── weekly-adjusted.csv # Alpha Vantage price/dividend data
-│   └── fred.csv            # FRED credit spread data
+│   ├── sphy-weekly-adjusted.csv  # Alpha Vantage data for SPHY
+│   ├── shym-weekly-adjusted.csv  # Alpha Vantage data for SHYM
+│   └── fred.csv                  # FRED credit spread data
 ├── .env                    # Environment variables (API keys)
-├── start.bat               # Dev: launches both frontend and backend
-└── start-prod.bat          # Prod: builds frontend, serves via FastAPI
+├── serve.bat               # Normal use: serves pre-built frontend + API on :8000
+└── start-prod.bat          # Rebuilds frontend then serves on :8000
 ```
 
 ## Running the Application
 
-### Development Mode
+### Normal Use
 ```bash
-# From project root - launches both servers
-start.bat
-
-# Or manually:
-# Terminal 1 - Backend (port 8000)
-cd api && uvicorn main:app --reload --host 0.0.0.0 --port 8000
-
-# Terminal 2 - Frontend (port 5173, proxies /api to backend)
-cd frontend && npm run dev
+serve.bat       # Serves pre-built frontend + API on port 8000
 ```
 
-### Production Mode
+### After Frontend Changes
 ```bash
-start-prod.bat  # Builds frontend, serves everything from FastAPI on port 8000
+start-prod.bat  # Rebuilds frontend, then serves on port 8000
+```
+
+### Individual Servers (dev)
+```bash
+# Backend only
+api\dev.bat     # or: cd api && uvicorn main:app --reload --host 0.0.0.0 --port 8000
+
+# Frontend only (proxies /api to :8000)
+frontend\dev.bat  # or: cd frontend && npm run dev
 ```
 
 ### Legacy CLI (still functional)
@@ -108,9 +114,10 @@ Backend Pipeline:
 **Indicators** (`indicators.py`):
 - `IndicatorEngine.apply_all()` adds: `MA` (n-week moving average), `chg4` (4-week spread change), `ret3` (3-week price return), `spread_delta` (week-over-week spread change)
 
-**Strategy** (`strategy_base.py`, `strategy_sphy.py`, `strategy_buyhold.py`):
+**Strategy** (`strategy_base.py`, `strategy_spread.py`, `strategy_sphy.py`, `strategy_shym.py`, `strategy_buyhold.py`):
 - `BaseStrategy` defines abstract interface: `evaluate_sell()`, `evaluate_buy()`, `run()`
-- `SPHYStrategy` implements SPHY rules (see Trading Logic below)
+- `SpreadStrategy(BaseStrategy)` holds shared credit-spread logic; SPHY and SHYM inherit from it
+- `SPHYStrategy` / `SHYMStrategy` are siblings implementing security-specific rules
 - `BuyAndHoldStrategy` always invested, used as baseline
 
 **Backtester** (`backtester.py`):
@@ -118,19 +125,23 @@ Backend Pipeline:
 - Applies weekly TR when invested, cash yield when not
 - Computes final value and APY
 
-**Optimizer** (`optimizer_sphy.py`):
-- Grid search over parameter combinations
+**Optimizer** (`optimizer_base.py`, `optimizer_sphy.py`, `optimizer_shym.py`):
+- `BaseOptimizer` (abstract) contains the grid-search loop; subclasses set default grids and implement `_create_strategy()`
+- `SPHYOptimizer` / `SHYMOptimizer` are siblings
+- All accept `start_date`/`end_date` kwargs passed through to `loader.load()`
 - Supports `progress_callback` for streaming progress to frontend
 
 ### API Server (api/)
 
 FastAPI server with endpoints:
-- `GET /api/securities` — Returns available tickers (currently just SPHY)
+- `GET /api/securities` — Returns available tickers (`["SPHY", "SHYM"]`)
 - `GET /api/config` — Returns externalized parameter defaults from `config.json`
 - `POST /api/config` — Saves parameter defaults to `config.json`
 - `POST /api/run/buyhold` — Runs buy-and-hold backtest
 - `POST /api/run/signal` — Runs strategy and returns current signal + trade history
 - `POST /api/run/optimizer` — Runs grid search with SSE streaming progress
+
+All three run endpoints accept optional `start_date`/`end_date` (YYYY-MM-DD strings) to restrict the data window.
 
 ### Frontend (frontend/)
 
@@ -145,6 +156,8 @@ Key features:
 - Parameter defaults persisted to `api/config.json` via API
 - Equity curve charts with buy/sell markers, CSV/PNG export
 - Recharts for visualization
+- Global date range picker in `Header.tsx` (From/To); filters data for all three tabs; not persisted
+- Trade history table includes MA column; triggered values are bolded per trade action
 
 ## SPHY Trading Logic
 
@@ -189,5 +202,4 @@ The frontend loads this on startup and uses it to populate parameter inputs. Use
 ## Future Direction
 
 - Add more securities/strategies (each with own strategy class + parameter definitions)
-- Security/strategy package selection in UI
 - Potentially move config to database for multi-user scenarios
