@@ -1,7 +1,12 @@
 import pandas as pd
 import requests
 import io
+from datetime import date
 from enum import Enum
+
+# Keyed by (url, frozen params, fetch date). Cleared automatically on day change
+# (new date → new key) or process restart.
+_api_cache: dict = {}
 
 class ApiData(Enum):
     CSV = 1
@@ -39,14 +44,21 @@ class ApiSource(DataSource):
     def __init__(self, url: str, api_data: ApiData, data_node=None, params=None):
         super().__init__(params)
         self.url = url
+
+        params_key = frozenset(params.items()) if params else frozenset()
+        cache_key = (url, params_key, date.today())
+        if cache_key in _api_cache:
+            self.data = _api_cache[cache_key].copy()
+            return
+
         response = requests.get(self.url, params=params)
         response.raise_for_status()
         if api_data == ApiData.JSON:
             if data_node is None:
                 raise ValueError("data_node must be provided for JSON data.")
-            self.data = response.json()
-            json_data = self.data[data_node] #if data_node else self.data
-            self.data = pd.DataFrame(json_data)
+            self.data = pd.DataFrame(response.json()[data_node])
         elif api_data == ApiData.CSV:
             self.data = pd.read_csv(io.StringIO(response.text))
+
+        _api_cache[cache_key] = self.data.copy()
 
