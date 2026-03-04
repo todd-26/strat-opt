@@ -76,7 +76,7 @@
       },
       "RET3": {
         "name": "RET3",
-        "value": -0.019,
+        "value": -0.0185,
         "desc": "Sell rule: sell if 3-week price return falls below this % threshold"
       },
       "SPREAD_LVL": {

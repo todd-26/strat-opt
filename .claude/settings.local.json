@@ -11,7 +11,8 @@
       "Bash(cd \"C:\\\\Users\\\\Todd\\\\OneDrive\\\\Documents\\\\Finance\\\\strat-opt\" && git check-ignore -v .env .env.example 2>&1)",
       "Bash(ls:*)",
       "Bash(python3:*)",
-      "Bash(npx tsc:*)"
+      "Bash(npx tsc:*)",
+      "Bash(python:*)"
     ]
   }
 }

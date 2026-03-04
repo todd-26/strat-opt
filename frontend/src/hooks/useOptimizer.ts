@@ -17,6 +17,7 @@ export function useOptimizer() {
     inputType: string,
     startDate?: string,
     endDate?: string,
+    disabledFactors?: string[],
   ) {
     // Cancel any in-flight run
     if (abortRef.current) {
@@ -40,6 +41,7 @@ export function useOptimizer() {
       input_type: inputType,
       start_date: startDate || undefined,
       end_date: endDate || undefined,
+      disabled_factors: disabledFactors?.length ? disabledFactors : undefined,
     }
 
     const controller = streamOptimizer(req, {

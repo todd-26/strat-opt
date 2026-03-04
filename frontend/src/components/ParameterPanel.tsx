@@ -14,6 +14,8 @@ interface SingleProps {
   onChange: (p: StrategyParams) => void
   collapsed?: boolean
   descriptions?: Descriptions
+  disabledFactors?: Set<string>
+  onToggleFactor?: (factor: string) => void
 }
 
 interface RangeProps {
@@ -22,6 +24,8 @@ interface RangeProps {
   onChange: (r: ParamRanges) => void
   collapsed?: boolean
   descriptions?: Descriptions
+  disabledFactors?: Set<string>
+  onToggleFactor?: (factor: string) => void
 }
 
 type Props = SingleProps | RangeProps
@@ -56,9 +60,9 @@ export function ParameterPanel(props: Props) {
       {open && (
         <div className="border-t px-4 pb-4 pt-3" style={{ borderColor: 'var(--border)' }}>
           {props.mode === 'single' ? (
-            <SingleForm params={props.params} onChange={props.onChange} descriptions={props.descriptions} />
+            <SingleForm params={props.params} onChange={props.onChange} descriptions={props.descriptions} disabledFactors={props.disabledFactors} onToggleFactor={props.onToggleFactor} />
           ) : (
-            <RangeForm ranges={props.ranges} onChange={props.onChange} descriptions={props.descriptions} />
+            <RangeForm ranges={props.ranges} onChange={props.onChange} descriptions={props.descriptions} disabledFactors={props.disabledFactors} onToggleFactor={props.onToggleFactor} />
           )}
         </div>
       )}
@@ -68,26 +72,78 @@ export function ParameterPanel(props: Props) {
 
 // ── Single form ─────────────────────────────────────────────────────────────
 
+const SINGLE_FIELDS: { key: keyof StrategyParams; factor: string; label: string; step: string }[] = [
+  { key: 'SPREAD_LVL', factor: 'SPREAD_LVL', label: 'SPREAD_LVL', step: '0.5' },
+  { key: 'CHG4', factor: 'CHG4', label: 'CHG4', step: '0.001' },
+  { key: 'RET3', factor: 'RET3', label: 'RET3', step: '0.0005' },
+  { key: 'MA', factor: 'MA', label: 'MA (weeks)', step: '1' },
+  { key: 'DROP', factor: 'DROP', label: 'DROP', step: '0.001' },
+]
+
 function SingleForm({
   params,
   onChange,
   descriptions,
+  disabledFactors,
+  onToggleFactor,
 }: {
   params: StrategyParams
   onChange: (p: StrategyParams) => void
   descriptions?: Descriptions
+  disabledFactors?: Set<string>
+  onToggleFactor?: (factor: string) => void
 }) {
   function set<K extends keyof StrategyParams>(key: K, val: string) {
     onChange({ ...params, [key]: parseFloat(val) || 0 })
   }
 
+  const showCheckboxes = disabledFactors !== undefined && onToggleFactor !== undefined
+
   return (
-    <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
-      <Field label="MA (weeks)" value={String(params.MA)} onChange={(v) => set('MA', v)} step="1" tooltip={descriptions?.MA} />
-      <Field label="DROP" value={String(params.DROP)} onChange={(v) => set('DROP', v)} step="0.001" tooltip={descriptions?.DROP} />
-      <Field label="CHG4" value={String(params.CHG4)} onChange={(v) => set('CHG4', v)} step="0.001" tooltip={descriptions?.CHG4} />
-      <Field label="RET3" value={String(params.RET3)} onChange={(v) => set('RET3', v)} step="0.0005" tooltip={descriptions?.RET3} />
-      <Field label="SPREAD_LVL" value={String(params.SPREAD_LVL)} onChange={(v) => set('SPREAD_LVL', v)} step="0.5" tooltip={descriptions?.SPREAD_LVL} />
+    <div>
+      {/* Sell factors header */}
+      <div className="mb-1 text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>Sell Factors</div>
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 mb-3">
+        {SINGLE_FIELDS.filter(f => ['SPREAD_LVL', 'CHG4', 'RET3'].includes(f.factor)).map(f => {
+          const off = disabledFactors?.has(f.factor)
+          return (
+            <div key={f.key} className="flex items-end gap-2" style={{ opacity: off ? 0.45 : 1 }}>
+              {showCheckboxes && <FactorCheckbox checked={!off} onChange={() => onToggleFactor!(f.factor)} />}
+              <div className="flex-1">
+                <Field label={f.label} value={String(params[f.key])} onChange={(v) => set(f.key, v)} step={f.step} tooltip={descriptions?.[f.key]} disabled={off} />
+              </div>
+            </div>
+          )
+        })}
+      </div>
+
+      {/* Buy factors header */}
+      <div className="mb-1 text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>Buy Factors</div>
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+        {SINGLE_FIELDS.filter(f => ['MA', 'DROP'].includes(f.factor)).map(f => {
+          const off = disabledFactors?.has(f.factor)
+          return (
+            <div key={f.key} className="flex items-end gap-2" style={{ opacity: off ? 0.45 : 1 }}>
+              {showCheckboxes && <FactorCheckbox checked={!off} onChange={() => onToggleFactor!(f.factor)} />}
+              <div className="flex-1">
+                <Field label={f.label} value={String(params[f.key])} onChange={(v) => set(f.key, v)} step={f.step} tooltip={descriptions?.[f.key]} disabled={off} />
+              </div>
+            </div>
+          )
+        })}
+        {/* SPREAD_DELTA — no numeric input */}
+        {showCheckboxes && (
+          <div className="flex items-end gap-2" style={{ opacity: disabledFactors?.has('SPREAD_DELTA') ? 0.45 : 1 }}>
+            <FactorCheckbox checked={!disabledFactors?.has('SPREAD_DELTA')} onChange={() => onToggleFactor!('SPREAD_DELTA')} />
+            <div className="flex-1">
+              <div className="mb-1 text-xs font-medium" style={{ color: 'var(--text-muted)' }}>Δspread</div>
+              <div className="rounded border px-2 py-1.5 text-sm" style={{ background: 'var(--bg-input)', borderColor: 'var(--border)', color: 'var(--text-muted)' }}>
+                2 consecutive falling
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   )
 }
@@ -102,15 +158,24 @@ const PARAM_LABELS: Record<keyof ParamRanges, string> = {
   SPREAD_LVL: 'SPREAD_LVL',
 }
 
+const RANGE_SELL_KEYS: (keyof ParamRanges)[] = ['SPREAD_LVL', 'CHG4', 'RET3']
+const RANGE_BUY_KEYS: (keyof ParamRanges)[] = ['MA', 'DROP']
+
 function RangeForm({
   ranges,
   onChange,
   descriptions,
+  disabledFactors,
+  onToggleFactor,
 }: {
   ranges: ParamRanges
   onChange: (r: ParamRanges) => void
   descriptions?: Descriptions
+  disabledFactors?: Set<string>
+  onToggleFactor?: (factor: string) => void
 }) {
+  const showCheckboxes = disabledFactors !== undefined && onToggleFactor !== undefined
+
   function setField(param: keyof ParamRanges, field: keyof ParamRange, val: string) {
     onChange({
       ...ranges,
@@ -118,39 +183,51 @@ function RangeForm({
     })
   }
 
+  function renderRow(param: keyof ParamRanges) {
+    const off = disabledFactors?.has(param)
+    return (
+      <div key={param} className="grid grid-cols-[auto_1fr_1fr_1fr_1fr] gap-2 items-center" style={{ opacity: off ? 0.45 : 1 }}>
+        <div className="flex items-center gap-1" style={{ minWidth: showCheckboxes ? 130 : 110 }}>
+          {showCheckboxes && <FactorCheckbox checked={!off} onChange={() => onToggleFactor!(param)} />}
+          <span className="text-sm font-medium" style={{ color: 'var(--text)' }}>
+            {PARAM_LABELS[param]}
+          </span>
+          {descriptions?.[param] && <InfoTooltip text={descriptions[param]!} />}
+        </div>
+        <Field value={String(ranges[param].min)} onChange={(v) => setField(param, 'min', v)} step={String(ranges[param].step)} disabled={off} />
+        <Field value={String(ranges[param].max)} onChange={(v) => setField(param, 'max', v)} step={String(ranges[param].step)} disabled={off} />
+        <Field value={String(ranges[param].step)} onChange={(v) => setField(param, 'step', v)} step={param === 'MA' ? '1' : '0.0001'} disabled={off} />
+      </div>
+    )
+  }
+
   return (
     <div className="space-y-3">
-      <div className="grid grid-cols-4 gap-2 text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>
-        <span>Parameter</span>
+      <div className="grid grid-cols-[auto_1fr_1fr_1fr_1fr] gap-2 text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>
+        <span style={{ minWidth: showCheckboxes ? 130 : 110 }}>Parameter</span>
         <span>Min</span>
         <span>Max</span>
         <span>Step</span>
       </div>
-      {(Object.keys(ranges) as (keyof ParamRanges)[]).map((param) => (
-        <div key={param} className="grid grid-cols-4 gap-2 items-center">
-          <div className="flex items-center gap-1">
-            <span className="text-sm font-medium" style={{ color: 'var(--text)' }}>
-              {PARAM_LABELS[param]}
-            </span>
-            {descriptions?.[param] && <InfoTooltip text={descriptions[param]!} />}
+
+      {/* Sell factors */}
+      <div className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>Sell Factors</div>
+      {RANGE_SELL_KEYS.map(renderRow)}
+
+      {/* Buy factors */}
+      <div className="text-xs font-semibold uppercase tracking-wide pt-1" style={{ color: 'var(--text-muted)' }}>Buy Factors</div>
+      {RANGE_BUY_KEYS.map(renderRow)}
+
+      {/* SPREAD_DELTA row — no numeric range */}
+      {showCheckboxes && (
+        <div className="grid grid-cols-[auto_1fr_1fr_1fr_1fr] gap-2 items-center" style={{ opacity: disabledFactors?.has('SPREAD_DELTA') ? 0.45 : 1 }}>
+          <div className="flex items-center gap-1" style={{ minWidth: 130 }}>
+            <FactorCheckbox checked={!disabledFactors?.has('SPREAD_DELTA')} onChange={() => onToggleFactor!('SPREAD_DELTA')} />
+            <span className="text-sm font-medium" style={{ color: 'var(--text)' }}>Δspread</span>
           </div>
-          <Field
-            value={String(ranges[param].min)}
-            onChange={(v) => setField(param, 'min', v)}
-            step={String(ranges[param].step)}
-          />
-          <Field
-            value={String(ranges[param].max)}
-            onChange={(v) => setField(param, 'max', v)}
-            step={String(ranges[param].step)}
-          />
-          <Field
-            value={String(ranges[param].step)}
-            onChange={(v) => setField(param, 'step', v)}
-            step={param === 'MA' ? '1' : '0.0001'}
-          />
+          <div className="col-span-3 text-sm" style={{ color: 'var(--text-muted)' }}>2 consecutive falling (no range)</div>
         </div>
-      ))}
+      )}
     </div>
   )
 }
@@ -163,12 +240,14 @@ function Field({
   onChange,
   step,
   tooltip,
+  disabled,
 }: {
   label?: string
   value: string
   onChange: (v: string) => void
   step?: string
   tooltip?: string
+  disabled?: boolean
 }) {
   const [local, setLocal] = useState(value)
   const [editing, setEditing] = useState(false)
@@ -200,11 +279,12 @@ function Field({
         type="number"
         value={editing ? local : value}
         step={step}
+        disabled={disabled}
         onFocus={() => setEditing(true)}
         onChange={(e) => { setEditing(true); setLocal(e.target.value) }}
         onBlur={commit}
         onKeyDown={(e) => { if (e.key === 'Enter') commit() }}
-        className="w-full rounded border px-2 py-1.5 text-sm"
+        className="w-full rounded border px-2 py-1.5 text-sm disabled:opacity-50"
         style={{
           background: 'var(--bg-input)',
           borderColor: 'var(--border)',
@@ -212,6 +292,21 @@ function Field({
         }}
       />
     </div>
+  )
+}
+
+// ── Checkbox ─────────────────────────────────────────────────────────────────
+
+function FactorCheckbox({ checked, onChange }: { checked: boolean; onChange: () => void }) {
+  return (
+    <input
+      type="checkbox"
+      checked={checked}
+      onChange={onChange}
+      className="h-4 w-4 rounded border mb-1 shrink-0 cursor-pointer accent-[var(--accent)]"
+      style={{ borderColor: 'var(--border)' }}
+      title={checked ? 'Factor enabled — click to disable' : 'Factor disabled — click to enable'}
+    />
   )
 }
 

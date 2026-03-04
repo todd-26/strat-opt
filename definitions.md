@@ -27,6 +27,18 @@
 | `spread_delta` | `Spread.diff()` — week-over-week spread change | BUY rule: last 2 must both be negative |
 | `MA{n}` | `close.rolling(n).mean()` | BUY rule: price > MA |
 
+### Disabling Individual Factors
+
+Any of the 6 factors can be disabled via a checkbox in the UI. This enables "what if" testing (e.g., "what if SPREAD_LVL didn't matter?").
+
+- **Disabled sell factor** → never triggers (treated as `False`)
+- **Disabled buy factor** → always passes (treated as `True`)
+- `SPREAD_DELTA` has no numeric value but is still disableable
+
+In the optimizer, disabled factors collapse their grid to a single placeholder `[0]`, reducing total combinations.
+
+Backend: `SpreadStrategy.__init__` accepts `disabled: set` of factor names. `BaseOptimizer.__init__` accepts `disabled_factors: set`. API endpoints accept `disabled_factors: list[str]`.
+
 ### The Intuition
 
 The strategy is designed around credit spreads (FRED data) as a risk signal for SPHY, since SPHY holds high-yield bonds whose value falls when credit risk rises:
@@ -41,6 +53,22 @@ The strategy is designed around credit spreads (FRED data) as a risk signal for 
 SHYM (Xtrackers Short Duration High Yield Bond ETF) uses the **same strategy rules and parameters** as SPHY. Both inherit from `SpreadStrategy` in `strategy_spread.py`.
 
 The parameter values are tuned independently via the optimizer for each security. SHYM default grids are broad starting points until the optimizer finds security-specific best values.
+
+| Parameter | Role | Same as SPHY? |
+|-----------|------|---------------|
+| SPREAD_LVL | Absolute spread threshold for sell | Same rule, different optimal value |
+| CHG4_THR | 4-week spread momentum sell trigger | Same rule, different optimal value |
+| RET3_THR | 3-week price return sell trigger | Same rule, different optimal value |
+| MA | Moving average length for buy confirmation | Same rule, different optimal value |
+| DROP | Required spread pullback from 4-week peak for buy | Same rule, different optimal value |
+
+---
+
+## NEA
+
+NEA (Nuveen AMT-Free Quality Municipal Income Fund) uses the **same strategy rules and parameters** as SPHY. Both inherit from `SpreadStrategy` in `strategy_spread.py`.
+
+The parameter values are tuned independently via the optimizer for each security. NEA default grids are broad starting points until the optimizer finds security-specific best values.
 
 | Parameter | Role | Same as SPHY? |
 |-----------|------|---------------|

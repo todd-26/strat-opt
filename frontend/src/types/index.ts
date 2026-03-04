@@ -91,6 +91,7 @@ export interface OptimizerRequest {
   input_type: string
   start_date?: string
   end_date?: string
+  disabled_factors?: string[]
 }
 
 export interface ParamRange { min: number; max: number; step: number }

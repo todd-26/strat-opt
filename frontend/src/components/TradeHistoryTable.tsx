@@ -5,6 +5,7 @@ import type { TradeEvent, StrategyParams } from '../types'
 interface Props {
   trades: TradeEvent[]
   params?: StrategyParams
+  disabledFactors?: Set<string>
 }
 
 interface Popup {
@@ -24,8 +25,20 @@ function fmtPct(v: number | null | undefined): string {
   return (v * 100).toFixed(2) + '%'
 }
 
-function isBoldCell(t: TradeEvent, col: keyof TradeEvent, params?: StrategyParams): boolean {
+const COL_FACTOR_MAP: Partial<Record<keyof TradeEvent, string>> = {
+  spread: 'SPREAD_LVL',
+  chg4: 'CHG4',
+  ret3: 'RET3',
+  price: 'MA',
+  ma_value: 'MA',
+  spread_drop: 'DROP',
+  spread_delta: 'SPREAD_DELTA',
+}
+
+function isBoldCell(t: TradeEvent, col: keyof TradeEvent, params?: StrategyParams, disabledFactors?: Set<string>): boolean {
   if (!params) return false
+  const factor = COL_FACTOR_MAP[col]
+  if (factor && disabledFactors?.has(factor)) return false
   if (t.action === 'SELL') {
     if (col === 'spread')      return t.spread != null && t.spread > params.SPREAD_LVL
     if (col === 'chg4')        return t.chg4 != null && t.chg4 > params.CHG4
@@ -39,7 +52,9 @@ function isBoldCell(t: TradeEvent, col: keyof TradeEvent, params?: StrategyParam
   return false
 }
 
-function getPopup(t: TradeEvent, col: keyof TradeEvent, params: StrategyParams): { title: string; lines: string[] } | null {
+function getPopup(t: TradeEvent, col: keyof TradeEvent, params: StrategyParams, disabledFactors?: Set<string>): { title: string; lines: string[] } | null {
+  const factor = COL_FACTOR_MAP[col]
+  if (factor && disabledFactors?.has(factor)) return null
   if (t.action === 'SELL') {
     if (col === 'spread') return {
       title: 'Sell Rule: Spread Level',
@@ -102,7 +117,7 @@ function getPopup(t: TradeEvent, col: keyof TradeEvent, params: StrategyParams):
   return null
 }
 
-export function TradeHistoryTable({ trades, params }: Props) {
+export function TradeHistoryTable({ trades, params, disabledFactors }: Props) {
   const [popup, setPopup] = useState<Popup | null>(null)
 
   useEffect(() => {
@@ -118,7 +133,7 @@ export function TradeHistoryTable({ trades, params }: Props) {
 
   function handleBoldClick(e: React.MouseEvent, t: TradeEvent, col: keyof TradeEvent) {
     if (!params) return
-    const info = getPopup(t, col, params)
+    const info = getPopup(t, col, params, disabledFactors)
     if (!info) return
     e.stopPropagation()
     // Keep popup on screen
@@ -128,7 +143,7 @@ export function TradeHistoryTable({ trades, params }: Props) {
   }
 
   function boldClick(t: TradeEvent, col: keyof TradeEvent) {
-    if (!isBoldCell(t, col, params) || !params) return undefined
+    if (!isBoldCell(t, col, params, disabledFactors) || !params) return undefined
     return (e: React.MouseEvent) => handleBoldClick(e, t, col)
   }
 
