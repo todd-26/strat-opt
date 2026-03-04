@@ -158,7 +158,8 @@ Key features:
 - Equity curve charts with buy/sell markers, CSV/PNG export
 - Recharts for visualization
 - Global date range picker in `Header.tsx` (From/To); filters data for all three tabs; not persisted
-- Trade history table includes MA column; triggered values are bolded per trade action
+- Trade history table includes MA and Drop columns; triggered values are bolded per trade action
+- Drop column shows % drop from 4-week spread peak (BUY rule: spread must drop at least DROP threshold); clickable popup shows peak, current, drop %, and threshold
 
 ## SPHY Trading Logic
 
@@ -167,10 +168,11 @@ Key features:
 - `chg4 > CHG4_THR` (4-week spread change too high)
 - `ret3 < RET3_THR` (3-week price return too negative)
 
-**BUY if ALL of** (only when not currently invested; starting in cash counts as already sold):
+**BUY if ALL of** (only when not currently invested; starting in cash counts as already sold; also requires no sell condition active):
 - `close > MA` (price above moving average)
 - Last 2 weekly `spread_delta` values are negative (spreads falling)
 - `spread ≤ recent_4wk_peak × (1 − DROP)` (spread dropped from peak)
+- No sell condition is true (spread ≤ SPREAD_LVL, chg4 ≤ CHG4_THR, ret3 ≥ RET3_THR)
 
 ## Externalized Configuration
 

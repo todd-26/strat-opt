@@ -23,6 +23,8 @@ export interface TradeEvent {
   spread_4wk_ago?: number | null
   close_3wk_ago?: number | null
   prev_spread_delta?: number | null
+  spread_drop?: number | null
+  spread_4wk_peak?: number | null
 }
 
 export interface BacktestResult {

@@ -119,7 +119,7 @@ class SpreadStrategy(BaseStrategy):
                     was_sold = True
                     sell_dates.append(index[i])
             else:
-                if was_sold and buy_mask[i]:
+                if was_sold and buy_mask[i] and not sell_mask[i]:
                     invested = 1
                     buy_dates.append(index[i])
             positions.append(invested)

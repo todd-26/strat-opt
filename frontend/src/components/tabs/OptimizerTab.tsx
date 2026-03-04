@@ -5,6 +5,7 @@ import type { ParamRanges } from '../ParameterPanel'
 import { OptimizerTable } from '../OptimizerTable'
 import { EquityCurveChart } from '../EquityCurveChart'
 import { MetricsCard } from '../MetricsCard'
+import { NumInput } from '../NumInput'
 import type { Settings, StrategyParams, BacktestResult } from '../../types'
 import { streamOptimizer, runBuyHold } from '../../lib/api'
 
@@ -166,11 +167,10 @@ export function OptimizerTab({ settings, ticker, defaultRanges, paramDescription
             <label className="mb-1 block text-xs font-medium" style={{ color: 'var(--text-muted)' }}>
               Cash Rate
             </label>
-            <input
-              type="number"
+            <NumInput
               value={cashRate}
               step="0.0025"
-              onChange={(e) => setCashRate(parseFloat(e.target.value) || 0)}
+              onChange={setCashRate}
               className="w-28 rounded border px-2 py-1.5 text-sm"
               style={{
                 background: 'var(--bg-input)',

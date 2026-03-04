@@ -114,5 +114,63 @@
     },
     "cashRate": 0.023,
     "startInvested": 0
+  },
+  "NEA": {
+    "defaultParams": {
+      "MA": {
+        "name": "MA",
+        "value": 32.0,
+        "desc": "Buy rule: price must be above its n-week moving average (uptrend confirmation)"
+      },
+      "DROP": {
+        "name": "DROP",
+        "value": 0.015,
+        "desc": "Buy rule: spread must drop this % from its 4-week peak before re-entering"
+      },
+      "CHG4": {
+        "name": "CHG4",
+        "value": 0.175,
+        "desc": "Sell rule: sell if 4-week credit spread change exceeds this % threshold"
+      },
+      "RET3": {
+        "name": "RET3",
+        "value": -0.11,
+        "desc": "Sell rule: sell if 3-week price return falls below this % threshold"
+      },
+      "SPREAD_LVL": {
+        "name": "SPREAD_LVL",
+        "value": 7.0,
+        "desc": "Sell rule: sell if absolute credit spread level exceeds this threshold"
+      }
+    },
+    "defaultRanges": {
+      "MA": {
+        "min": 28.0,
+        "max": 32.0,
+        "step": 1.0
+      },
+      "DROP": {
+        "min": 0.015,
+        "max": 0.015,
+        "step": 0.001
+      },
+      "CHG4": {
+        "min": 0.16,
+        "max": 0.175,
+        "step": 0.005
+      },
+      "RET3": {
+        "min": -0.11,
+        "max": 0.0,
+        "step": 0.005
+      },
+      "SPREAD_LVL": {
+        "min": 7.0,
+        "max": 7.0,
+        "step": 0.1
+      }
+    },
+    "cashRate": 0.023,
+    "startInvested": 1
   }
 }
