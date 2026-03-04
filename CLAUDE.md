@@ -110,6 +110,7 @@ Backend Pipeline:
 **Data layer** (`data_loader.py`, `data_source.py`, `alpha_vantage.py`, `fred.py`):
 - `WeeklyDataLoader` loads weekly prices/dividends and FRED daily spreads, resamples FRED to weekly (W-FRI), merges them, computes total return factor (`TR_factor`, `TR`)
 - `DataSource` / `CsvSource` / `ApiSource` abstract CSV vs live API data sources
+- `ApiSource` caches responses in a module-level dict keyed by `(url, params, date)`; cache is valid for the calendar day and cleared on process restart
 
 **Indicators** (`indicators.py`):
 - `IndicatorEngine.apply_all()` adds: `MA` (n-week moving average), `chg4` (4-week spread change), `ret3` (3-week price return), `spread_delta` (week-over-week spread change)
@@ -152,8 +153,8 @@ React/Vite SPA with three tabs:
 
 Key features:
 - Theming system (4 themes: Slate, Navy & Gold, Charcoal & Green, High Contrast)
-- Settings persisted to localStorage (theme, input type, cash rate, start position)
-- Parameter defaults persisted to `api/config.json` via API
+- Theme and input type persisted to localStorage; cash rate and start position persisted to `api/config.json` (per-security)
+- Parameter defaults, cash rate, and start position persisted to `api/config.json` via API
 - Equity curve charts with buy/sell markers, CSV/PNG export
 - Recharts for visualization
 - Global date range picker in `Header.tsx` (From/To); filters data for all three tabs; not persisted
@@ -166,7 +167,7 @@ Key features:
 - `chg4 > CHG4_THR` (4-week spread change too high)
 - `ret3 < RET3_THR` (3-week price return too negative)
 
-**BUY if ALL of** (and only after a prior SELL):
+**BUY if ALL of** (only when not currently invested; starting in cash counts as already sold):
 - `close > MA` (price above moving average)
 - Last 2 weekly `spread_delta` values are negative (spreads falling)
 - `spread ≤ recent_4wk_peak × (1 − DROP)` (spread dropped from peak)
@@ -177,15 +178,19 @@ Parameter defaults and optimizer ranges are stored in `api/config.json`, not har
 
 ```json
 {
-  "defaultParams": {
-    "MA": { "name": "MA", "value": 50.0, "desc": "Buy rule: price must be above its n-week moving average" },
-    "DROP": { "name": "DROP", "value": 0.016, "desc": "Buy rule: spread must drop this % from its 4-week peak" },
-    ...
+  "SPHY": {
+    "defaultParams": {
+      "MA": { "name": "MA", "value": 50.0, "desc": "..." },
+      ...
+    },
+    "defaultRanges": {
+      "MA": { "min": 50.0, "max": 50.0, "step": 5.0 },
+      ...
+    },
+    "cashRate": 0.04,
+    "startInvested": 1
   },
-  "defaultRanges": {
-    "MA": { "min": 50.0, "max": 50.0, "step": 5.0 },
-    ...
-  }
+  "SHYM": { ... }
 }
 ```
 

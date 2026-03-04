@@ -10,7 +10,7 @@
 | **CHG4_THR** | 4-week % change in credit spread (`chg4`) | If spread has risen more than this over 4 weeks, momentum is bad — sell | 16% |
 | **RET3_THR** | 3-week price return of SPHY (`ret3`) | If the price has dropped more than this over 3 weeks, sell | −2.25% |
 
-### BUY Triggers — buy only if **ALL** of these are true (and only after a prior sell)
+### BUY Triggers — buy only if **ALL** of these are true (when not currently invested; starting in cash counts as already sold)
 
 | Parameter | What it measures | Role | Best value |
 |-----------|-----------------|------|------------|
