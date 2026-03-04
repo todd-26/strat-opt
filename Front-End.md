@@ -151,8 +151,8 @@ Accessible via the gear icon in the header. Contains:
 7. **Save Permanently** — button at the bottom. POSTs `defaultParams` and `defaultRanges` to `POST /api/config`, which writes `api/config.json` to disk. Button shows: "Save Permanently" (idle), "Saving…" (in-flight), "Saved!" (success, reverts after 2 s), "Error — try again" (failure).
 
 **Persistence split**:
-- Theme, Input Source, Cash Rate, Starting Position are persisted in `localStorage`.
-- Default Parameters and Default Optimizer Ranges are persisted in `api/config.json` via the API. They are **not** stored in `localStorage`.
+- Theme and Input Source are persisted in `localStorage`.
+- Cash Rate, Starting Position, Default Parameters, and Default Optimizer Ranges are persisted in `api/config.json` via the API (per-security). They are **not** stored in `localStorage`.
 
 ---
 
@@ -163,16 +163,21 @@ Server-side JSON file storing the two sets of editable defaults. Created on firs
 
 ```json
 {
-  "defaultParams": {
-    "MA": 50, "DROP": 0.017, "CHG4": 0.165, "RET3": -0.021, "SPREAD_LVL": 7.0
+  "SPHY": {
+    "defaultParams": {
+      "MA": 50, "DROP": 0.017, "CHG4": 0.165, "RET3": -0.021, "SPREAD_LVL": 7.0
+    },
+    "defaultRanges": {
+      "MA":         { "min": 50,      "max": 50,      "step": 5      },
+      "DROP":       { "min": 0.016,   "max": 0.016,   "step": 0.001  },
+      "CHG4":       { "min": 0.16,    "max": 0.16,    "step": 0.005  },
+      "RET3":       { "min": -0.0225, "max": -0.0225, "step": 0.0005 },
+      "SPREAD_LVL": { "min": 7.0,     "max": 7.0,     "step": 0.1    }
+    },
+    "cashRate": 0.04,
+    "startInvested": 1
   },
-  "defaultRanges": {
-    "MA":         { "min": 50,      "max": 50,      "step": 5      },
-    "DROP":       { "min": 0.016,   "max": 0.016,   "step": 0.001  },
-    "CHG4":       { "min": 0.16,    "max": 0.16,    "step": 0.005  },
-    "RET3":       { "min": -0.0225, "max": -0.0225, "step": 0.0005 },
-    "SPREAD_LVL": { "min": 7.0,     "max": 7.0,     "step": 0.1    }
-  }
+  "SHYM": { ... }
 }
 ```
 
@@ -187,7 +192,7 @@ Accepts an `AppConfig` body and writes it to `api/config.json`. Returns `{"ok": 
 ```typescript
 interface ParamRange { min: number; max: number; step: number }
 interface ParamRanges { MA: ParamRange; DROP: ParamRange; CHG4: ParamRange; RET3: ParamRange; SPREAD_LVL: ParamRange }
-interface AppConfig { defaultParams: StrategyParams; defaultRanges: ParamRanges }
+interface AppConfig { defaultParams: DefaultParams; defaultRanges: ParamRanges; cashRate: number; startInvested: 0 | 1 }
 ```
 `ParameterPanel.tsx` re-exports `ParamRange` and `ParamRanges` for backwards compatibility.
 
