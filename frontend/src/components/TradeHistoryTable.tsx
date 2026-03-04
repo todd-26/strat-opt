@@ -34,6 +34,7 @@ function isBoldCell(t: TradeEvent, col: keyof TradeEvent, params?: StrategyParam
   if (t.action === 'BUY') {
     if (col === 'price' || col === 'ma_value') return true
     if (col === 'spread_delta') return t.spread_delta != null && t.spread_delta < 0
+    if (col === 'spread_drop') return t.spread_drop != null && t.spread_drop >= params.DROP
   }
   return false
 }
@@ -76,6 +77,16 @@ function getPopup(t: TradeEvent, col: keyof TradeEvent, params: StrategyParams):
         `Close:  $${fmt(t.price, 4)}`,
         `MA:      $${fmt(t.ma_value, 4)}`,
         `$${fmt(t.price, 4)} > $${fmt(t.ma_value, 4)}  →  uptrend confirmed`,
+      ],
+    }
+    if (col === 'spread_drop') return {
+      title: 'Buy Rule: Spread Drop from Peak',
+      lines: [
+        `4-wk peak:   ${fmt(t.spread_4wk_peak, 2)}`,
+        `Current:     ${fmt(t.spread, 2)}`,
+        `Drop:        ${fmtPct(t.spread_drop)}`,
+        `Threshold:   ${fmtPct(params.DROP)}`,
+        `${fmtPct(t.spread_drop)} ≥ ${fmtPct(params.DROP)}  →  spread retreated enough`,
       ],
     }
     if (col === 'spread_delta') {
@@ -132,6 +143,7 @@ export function TradeHistoryTable({ trades, params }: Props) {
               <Th tooltip="Closing price at trade date. Bold on BUY: close must be above MA.">Price</Th>
               <Th tooltip="n-week moving average of close price. Bold on BUY: close must be above MA.">MA</Th>
               <Th tooltip="Credit spread at trade date. Sell rule: triggers if spread > SPREAD_LVL threshold.">Spread</Th>
+              <Th tooltip="% drop from 4-week spread peak. Buy rule: must drop at least DROP threshold.">Drop</Th>
               <Th tooltip="4-week % change in credit spread. Sell rule: triggers if chg4 > CHG4 threshold.">chg4</Th>
               <Th tooltip="3-week price return. Sell rule: triggers if ret3 < RET3 threshold.">ret3</Th>
               <Th tooltip="Week-over-week change in credit spread. Buy rule: last 2 consecutive values must both be negative." tooltipAlign="right">Δspread</Th>
@@ -158,6 +170,7 @@ export function TradeHistoryTable({ trades, params }: Props) {
                 <Td bold={isBoldCell(t, 'price', params)} onClick={boldClick(t, 'price')}>{fmt(t.price, 2)}</Td>
                 <Td bold={isBoldCell(t, 'ma_value', params)} onClick={boldClick(t, 'ma_value')}>{fmt(t.ma_value, 2)}</Td>
                 <Td bold={isBoldCell(t, 'spread', params)} onClick={boldClick(t, 'spread')}>{fmt(t.spread, 2)}</Td>
+                <Td bold={isBoldCell(t, 'spread_drop', params)} onClick={boldClick(t, 'spread_drop')}>{fmtPct(t.spread_drop)}</Td>
                 <Td bold={isBoldCell(t, 'chg4', params)} onClick={boldClick(t, 'chg4')}>{fmt(t.chg4, 4)}</Td>
                 <Td bold={isBoldCell(t, 'ret3', params)} onClick={boldClick(t, 'ret3')}>{fmt(t.ret3, 4)}</Td>
                 <Td bold={isBoldCell(t, 'spread_delta', params)} onClick={boldClick(t, 'spread_delta')}>{fmt(t.spread_delta, 4)}</Td>

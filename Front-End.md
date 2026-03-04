@@ -93,19 +93,20 @@ Each strategy parameter gets a single value input (not a range). Pre-filled with
 - The date the current signal was first triggered.
 
 **Trade History** (full width, below the signal/metrics):
-A table of all historical buy/sell events with columns: Date, Action, Price, MA, Spread, chg4, ret3, Δspread.
+A table of all historical buy/sell events with columns: Date, Action, Price, MA, Spread, Drop, chg4, ret3, Δspread.
 
 Column headers have ⓘ hover tooltips explaining each metric (drop downward to avoid clipping; Δspread tooltip is right-aligned to avoid right-edge overflow).
 
 Values that contributed to the decision are **bolded** (dotted underline, pointer cursor):
 - SELL: bold any of spread / chg4 / ret3 that exceeded its threshold
-- BUY: bold Price and MA (close > MA) and Δspread (falling spreads)
+- BUY: bold Price and MA (close > MA), Drop (spread drop from 4-week peak ≥ DROP threshold), and Δspread (falling spreads)
 
 Clicking a bolded value opens a popup showing the derivation:
 - spread: value vs SPREAD_LVL threshold
 - chg4: % change vs threshold + spread 4 wks ago → now
 - ret3: % return vs threshold + price 3 wks ago → now
 - Price / MA: close vs MA value (shown to 4 decimal places to avoid rounding ambiguity)
+- Drop: 4-week peak spread, current spread, actual drop %, and DROP threshold
 - Δspread: this week's delta + prior week's delta (confirms both negative)
 
 **Export**: CSV download of the trade history table.

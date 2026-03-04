@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { X } from 'lucide-react'
 import { themes } from '../lib/themes'
+import { NumInput } from './NumInput'
 import type { AppConfig, DefaultParams, ParamRanges, Settings } from '../types'
 
 interface Props {
@@ -49,6 +50,7 @@ export function SettingsSheet({ open, onClose, settings, onUpdate, config, onSav
 
   const PARAM_KEYS = ['MA', 'DROP', 'CHG4', 'RET3', 'SPREAD_LVL'] as const
   type ParamKey = typeof PARAM_KEYS[number]
+  const PARAM_STEPS: Record<ParamKey, string> = { MA: '1', DROP: '0.001', CHG4: '0.005', RET3: '0.0005', SPREAD_LVL: '0.5' }
 
   return (
     <>
@@ -133,13 +135,10 @@ export function SettingsSheet({ open, onClose, settings, onUpdate, config, onSav
                 <label className="mb-1 block text-xs font-medium" style={{ color: 'var(--text-muted)' }}>
                   Cash Rate (annual)
                 </label>
-                <input
-                  type="number"
+                <NumInput
                   value={localConfig.cashRate}
                   step="0.0025"
-                  onChange={(e) =>
-                    setLocalConfig((prev) => ({ ...prev, cashRate: parseFloat(e.target.value) || 0 }))
-                  }
+                  onChange={(n) => setLocalConfig((prev) => ({ ...prev, cashRate: n }))}
                   className="w-32 rounded border px-2 py-1.5 text-sm"
                   style={{ background: 'var(--bg-input)', borderColor: 'var(--border)', color: 'var(--text)' }}
                 />
@@ -182,16 +181,15 @@ export function SettingsSheet({ open, onClose, settings, onUpdate, config, onSav
                 return (
                   <div key={key} className="grid items-center gap-2" style={{ gridTemplateColumns: '5rem 6rem 1fr' }}>
                     <span className="text-sm font-medium" style={{ color: 'var(--text)' }}>{key}</span>
-                    <input
-                      type="number"
+                    <NumInput
                       value={entry.value}
-                      step={key === 'MA' ? '1' : '0.001'}
-                      onChange={(e) =>
+                      step={PARAM_STEPS[key]}
+                      onChange={(n) =>
                         setLocalConfig((prev) => ({
                           ...prev,
                           defaultParams: {
                             ...prev.defaultParams,
-                            [key]: { ...prev.defaultParams[key as keyof DefaultParams], value: parseFloat(e.target.value) || 0 },
+                            [key]: { ...prev.defaultParams[key as keyof DefaultParams], value: n },
                           },
                         }))
                       }
@@ -240,19 +238,18 @@ export function SettingsSheet({ open, onClose, settings, onUpdate, config, onSav
                       {param}
                     </span>
                     {(['min', 'max', 'step'] as const).map((field) => (
-                      <input
+                      <NumInput
                         key={field}
-                        type="number"
                         value={r[field]}
-                        step={param === 'MA' ? '1' : '0.0001'}
-                        onChange={(e) =>
+                        step={field === 'step' ? PARAM_STEPS[param as ParamKey] : String(r.step)}
+                        onChange={(n) =>
                           setLocalConfig((prev) => ({
                             ...prev,
                             defaultRanges: {
                               ...prev.defaultRanges,
                               [param]: {
                                 ...prev.defaultRanges[param as keyof ParamRanges],
-                                [field]: parseFloat(e.target.value) || 0,
+                                [field]: n,
                               },
                             },
                           }))
@@ -311,3 +308,4 @@ function Swatch({ color }: { color: string }) {
     />
   )
 }
+

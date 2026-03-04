@@ -61,6 +61,8 @@ class TradeEvent(BaseModel):
     spread_4wk_ago: Optional[float] = None   # for chg4 explanation
     close_3wk_ago: Optional[float] = None    # for ret3 explanation
     prev_spread_delta: Optional[float] = None  # prior week's delta (buy rule needs 2 consecutive)
+    spread_drop: Optional[float] = None      # 1 - (spread / 4wk_peak) — actual drop %
+    spread_4wk_peak: Optional[float] = None  # the 4-week peak used in the calculation
 
 
 class BacktestResult(BaseModel):

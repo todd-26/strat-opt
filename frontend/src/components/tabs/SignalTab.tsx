@@ -4,6 +4,7 @@ import { ParameterPanel } from '../ParameterPanel'
 import { SignalBadge } from '../SignalBadge'
 import { TradeHistoryTable } from '../TradeHistoryTable'
 import { MetricsCard } from '../MetricsCard'
+import { NumInput } from '../NumInput'
 import type { Settings, StrategyParams } from '../../types'
 
 interface Props {
@@ -61,11 +62,10 @@ export function SignalTab({ settings, ticker, defaultParams, paramDescriptions, 
             <label className="mb-1 block text-xs font-medium" style={{ color: 'var(--text-muted)' }}>
               Cash Rate (annual)
             </label>
-            <input
-              type="number"
+            <NumInput
               value={cashRate}
               step="0.0025"
-              onChange={(e) => setCashRate(parseFloat(e.target.value) || 0)}
+              onChange={setCashRate}
               className="w-28 rounded border px-2 py-1.5 text-sm"
               style={{
                 background: 'var(--bg-input)',

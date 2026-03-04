@@ -86,8 +86,8 @@ function SingleForm({
       <Field label="MA (weeks)" value={String(params.MA)} onChange={(v) => set('MA', v)} step="1" tooltip={descriptions?.MA} />
       <Field label="DROP" value={String(params.DROP)} onChange={(v) => set('DROP', v)} step="0.001" tooltip={descriptions?.DROP} />
       <Field label="CHG4" value={String(params.CHG4)} onChange={(v) => set('CHG4', v)} step="0.001" tooltip={descriptions?.CHG4} />
-      <Field label="RET3" value={String(params.RET3)} onChange={(v) => set('RET3', v)} step="0.001" tooltip={descriptions?.RET3} />
-      <Field label="SPREAD_LVL" value={String(params.SPREAD_LVL)} onChange={(v) => set('SPREAD_LVL', v)} step="0.1" tooltip={descriptions?.SPREAD_LVL} />
+      <Field label="RET3" value={String(params.RET3)} onChange={(v) => set('RET3', v)} step="0.0005" tooltip={descriptions?.RET3} />
+      <Field label="SPREAD_LVL" value={String(params.SPREAD_LVL)} onChange={(v) => set('SPREAD_LVL', v)} step="0.5" tooltip={descriptions?.SPREAD_LVL} />
     </div>
   )
 }
@@ -170,6 +170,22 @@ function Field({
   step?: string
   tooltip?: string
 }) {
+  const [local, setLocal] = useState(value)
+  const [editing, setEditing] = useState(false)
+
+  // Sync from parent when not actively editing
+  if (!editing && local !== value) setLocal(value)
+
+  function commit() {
+    setEditing(false)
+    const n = parseFloat(local)
+    if (!isNaN(n)) {
+      onChange(String(n))
+    } else {
+      setLocal(value) // revert invalid input
+    }
+  }
+
   return (
     <div>
       {label && (
@@ -182,9 +198,12 @@ function Field({
       )}
       <input
         type="number"
-        value={value}
+        value={editing ? local : value}
         step={step}
-        onChange={(e) => onChange(e.target.value)}
+        onFocus={() => setEditing(true)}
+        onChange={(e) => { setEditing(true); setLocal(e.target.value) }}
+        onBlur={commit}
+        onKeyDown={(e) => { if (e.key === 'Enter') commit() }}
         className="w-full rounded border px-2 py-1.5 text-sm"
         style={{
           background: 'var(--bg-input)',

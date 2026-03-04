@@ -24,7 +24,7 @@ export function Header({ ticker, securities, onTickerChange, onOpenSettings, sta
       style={{ background: 'var(--bg-header)', color: 'var(--text-header)' }}
     >
       <div className="flex items-center gap-3">
-        <span className="text-lg font-bold tracking-tight">strat-opt</span>
+        <span className="text-lg font-bold tracking-tight">QuantEdge</span>
         <select
           value={ticker}
           onChange={(e) => onTickerChange(e.target.value)}

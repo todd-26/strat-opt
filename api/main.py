@@ -25,10 +25,12 @@ from data_loader import WeeklyDataLoader          # noqa: E402
 from indicators import IndicatorEngine             # noqa: E402
 from strategy_sphy import SPHYStrategy             # noqa: E402
 from strategy_shym import SHYMStrategy             # noqa: E402
+from strategy_nea import NEAStrategy               # noqa: E402
 from strategy_buyhold import BuyAndHoldStrategy    # noqa: E402
 from backtester import Backtester                  # noqa: E402
 from optimizer_sphy import SPHYOptimizer           # noqa: E402
 from optimizer_shym import SHYMOptimizer           # noqa: E402
+from optimizer_nea import NEAOptimizer             # noqa: E402
 
 from models import (                               # noqa: E402
     BuyHoldRequest,
@@ -97,6 +99,12 @@ def _build_trade_history(bt_df, buy_dates, sell_dates) -> list[TradeEvent]:
     for d in buy_dates:
         pos = bt_df.index.get_loc(d)
         row = bt_df.iloc[pos]
+        # Compute drop from 4-week spread peak (buy rule: spread <= peak * (1 - DROP))
+        start = max(0, pos - 3)
+        spreads_window = bt_df.iloc[start:pos + 1]["Spread"]
+        peak = spreads_window.max()
+        spread_val = row.get("Spread")
+        drop = 1 - (spread_val / peak) if (peak and not math.isnan(peak) and spread_val is not None and not math.isnan(spread_val)) else None
         events.append(TradeEvent(
             date=d.strftime("%Y-%m-%d"),
             action="BUY",
@@ -107,6 +115,8 @@ def _build_trade_history(bt_df, buy_dates, sell_dates) -> list[TradeEvent]:
             spread_delta=_safe_float(row.get("spread_delta")),
             ma_value=_safe_float(row.get(ma_col)) if ma_col else None,
             prev_spread_delta=_safe_float(bt_df.iloc[pos - 1].get("spread_delta")) if pos >= 1 else None,
+            spread_drop=_safe_float(drop),
+            spread_4wk_peak=_safe_float(peak),
         ))
 
     events.sort(key=lambda e: e.date, reverse=True)
@@ -140,11 +150,13 @@ def _build_backtest_result(bt_result: dict) -> BacktestResult:
 STRATEGY_CLASSES = {
     "SPHY": SPHYStrategy,
     "SHYM": SHYMStrategy,
+    "NEA":  NEAStrategy,
 }
 
 OPTIMIZER_CLASSES = {
     "SPHY": SPHYOptimizer,
     "SHYM": SHYMOptimizer,
+    "NEA":  NEAOptimizer,
 }
 
 SECURITIES = list(STRATEGY_CLASSES.keys())
