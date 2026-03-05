@@ -376,7 +376,7 @@ def get_config(ticker: str = Query(default="SPHY")):
     ticker = ticker.upper()
     if ticker not in full:
         raise HTTPException(status_code=404, detail=f"No config found for ticker {ticker}")
-    return full[ticker]
+    return AppConfig(**full[ticker]).model_dump()
 
 
 @app.post("/api/config")

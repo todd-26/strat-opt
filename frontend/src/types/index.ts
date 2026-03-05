@@ -116,6 +116,7 @@ export interface AppConfig {
   defaultRanges: ParamRanges
   cashRate: number
   startInvested: 0 | 1
+  disabledFactors: string[]
 }
 
 export interface Settings {

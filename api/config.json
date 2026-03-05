@@ -55,7 +55,13 @@
       }
     },
     "cashRate": 0.04,
-    "startInvested": 1
+    "startInvested": 1,
+    "disabledFactors": [
+      "SPREAD_LVL",
+      "CHG4",
+      "MA",
+      "DROP"
+    ]
   },
   "SHYM": {
     "defaultParams": {
@@ -113,7 +119,10 @@
       }
     },
     "cashRate": 0.023,
-    "startInvested": 0
+    "startInvested": 0,
+    "disabledFactors": [
+      "SPREAD_LVL"
+    ]
   },
   "NEA": {
     "defaultParams": {
@@ -171,6 +180,10 @@
       }
     },
     "cashRate": 0.023,
-    "startInvested": 1
+    "startInvested": 1,
+    "disabledFactors": [
+      "SPREAD_LVL",
+      "RET3"
+    ]
   }
 }

@@ -149,13 +149,14 @@ Accessible via the gear icon in the header. Contains:
 2. **Input Source** — toggle between CSV (local files) and API (live Alpha Vantage / FRED).
 3. **Default Cash Rate** — annual cash yield rate (decimal, e.g., 0.04).
 4. **Default Starting Position** — radio: Invested or Cash.
-5. **Default Parameter Values** — inputs to set the default parameter values that pre-fill the Current Signal tab on page load. Edits are local until "Save Permanently" is clicked.
-6. **Default Optimizer Ranges** — min/max/step inputs for each of the 5 strategy parameters, pre-filling the Optimizer tab's range grid on page load. Edits are local until "Save Permanently" is clicked.
+5. **Disabled Factors** — checkboxes for all 6 factors, grouped under "Sell Factors" (SPREAD_LVL, CHG4, RET3) and "Buy Factors" (MA, DROP, SPREAD_DELTA). Checked = disabled. Persisted in `config.json` alongside other per-security defaults; tabs initialize from these on page load.
+6. **Default Parameter Values** — inputs to set the default parameter values that pre-fill the Current Signal tab on page load. Edits are local until "Save Permanently" is clicked.
+7. **Default Optimizer Ranges** — min/max/step inputs for each of the 5 strategy parameters, pre-filling the Optimizer tab's range grid on page load. Edits are local until "Save Permanently" is clicked.
 7. **Save Permanently** — button at the bottom. POSTs `defaultParams` and `defaultRanges` to `POST /api/config`, which writes `api/config.json` to disk. Button shows: "Save Permanently" (idle), "Saving…" (in-flight), "Saved!" (success, reverts after 2 s), "Error — try again" (failure).
 
 **Persistence split**:
 - Theme and Input Source are persisted in `localStorage`.
-- Cash Rate, Starting Position, Default Parameters, and Default Optimizer Ranges are persisted in `api/config.json` via the API (per-security). They are **not** stored in `localStorage`.
+- Cash Rate, Starting Position, Disabled Factors, Default Parameters, and Default Optimizer Ranges are persisted in `api/config.json` via the API (per-security). They are **not** stored in `localStorage`.
 
 ---
 
@@ -178,7 +179,8 @@ Server-side JSON file storing the two sets of editable defaults. Created on firs
       "SPREAD_LVL": { "min": 7.0,     "max": 7.0,     "step": 0.1    }
     },
     "cashRate": 0.04,
-    "startInvested": 1
+    "startInvested": 1,
+    "disabledFactors": []
   },
   "SHYM": { ... }
 }

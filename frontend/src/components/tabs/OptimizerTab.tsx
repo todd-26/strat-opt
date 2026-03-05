@@ -18,9 +18,10 @@ interface Props {
   startInvested: 0 | 1
   startDate?: string
   endDate?: string
+  defaultDisabledFactors?: string[]
 }
 
-export function OptimizerTab({ settings, ticker, defaultRanges, paramDescriptions, cashRate: cashRateProp, startInvested: startInvestedProp, startDate, endDate }: Props) {
+export function OptimizerTab({ settings, ticker, defaultRanges, paramDescriptions, cashRate: cashRateProp, startInvested: startInvestedProp, startDate, endDate, defaultDisabledFactors }: Props) {
   const { result, progress, loading, error, run, cancel } = useOptimizer()
   const [ranges, setRanges] = useState<ParamRanges>(defaultRanges)
   const [inputType, setInputType] = useState(settings.inputType)
@@ -32,7 +33,7 @@ export function OptimizerTab({ settings, ticker, defaultRanges, paramDescription
     setStartInvested(startInvestedProp)
   }, [cashRateProp, startInvestedProp])
   const [collapsed, setCollapsed] = useState(false)
-  const [disabledFactors, setDisabledFactors] = useState<Set<string>>(new Set())
+  const [disabledFactors, setDisabledFactors] = useState<Set<string>>(new Set(defaultDisabledFactors ?? []))
   function toggleFactor(f: string) {
     setDisabledFactors(prev => { const n = new Set(prev); n.has(f) ? n.delete(f) : n.add(f); return n })
   }

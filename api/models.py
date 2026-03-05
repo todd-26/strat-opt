@@ -144,3 +144,4 @@ class AppConfig(BaseModel):
     defaultRanges: DefaultRanges
     cashRate: float = 0.04
     startInvested: int = 1
+    disabledFactors: list[str] = []

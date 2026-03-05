@@ -196,13 +196,14 @@ Parameter defaults and optimizer ranges are stored in `api/config.json`, not har
       ...
     },
     "cashRate": 0.04,
-    "startInvested": 1
+    "startInvested": 1,
+    "disabledFactors": []
   },
   "SHYM": { ... }
 }
 ```
 
-The frontend loads this on startup and uses it to populate parameter inputs. Users can edit and save permanently via the Settings panel.
+The frontend loads this on startup and uses it to populate parameter inputs, initialize disabled factor checkboxes, and set run defaults. Users can edit and save permanently via the Settings panel.
 
 ## Key Design Decisions
 
