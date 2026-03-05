@@ -18,9 +18,10 @@ interface Props {
   startInvested: 0 | 1
   startDate?: string
   endDate?: string
+  defaultDisabledFactors?: string[]
 }
 
-export function OptimizerTab({ settings, ticker, defaultRanges, paramDescriptions, cashRate: cashRateProp, startInvested: startInvestedProp, startDate, endDate }: Props) {
+export function OptimizerTab({ settings, ticker, defaultRanges, paramDescriptions, cashRate: cashRateProp, startInvested: startInvestedProp, startDate, endDate, defaultDisabledFactors }: Props) {
   const { result, progress, loading, error, run, cancel } = useOptimizer()
   const [ranges, setRanges] = useState<ParamRanges>(defaultRanges)
   const [inputType, setInputType] = useState(settings.inputType)
@@ -32,6 +33,10 @@ export function OptimizerTab({ settings, ticker, defaultRanges, paramDescription
     setStartInvested(startInvestedProp)
   }, [cashRateProp, startInvestedProp])
   const [collapsed, setCollapsed] = useState(false)
+  const [disabledFactors, setDisabledFactors] = useState<Set<string>>(new Set(defaultDisabledFactors ?? []))
+  function toggleFactor(f: string) {
+    setDisabledFactors(prev => { const n = new Set(prev); n.has(f) ? n.delete(f) : n.add(f); return n })
+  }
 
   // Row highlight (independent of chart)
   const [selectedParams, setSelectedParams] = useState<StrategyParams | null>(null)
@@ -53,7 +58,7 @@ export function OptimizerTab({ settings, ticker, defaultRanges, paramDescription
 
   function handleRun() {
     const invalid = (Object.entries(ranges) as [string, { min: number; max: number }][])
-      .filter(([, r]) => r.max < r.min)
+      .filter(([k, r]) => r.max < r.min && !disabledFactors.has(k))
       .map(([k]) => k)
     if (invalid.length > 0) {
       setValidationError(`Max cannot be less than Min for: ${invalid.join(', ')}`)
@@ -61,14 +66,15 @@ export function OptimizerTab({ settings, ticker, defaultRanges, paramDescription
     }
     setValidationError(null)
 
+    const disabledArr = disabledFactors.size ? [...disabledFactors] : undefined
     const grids = {
-      MA: rangeToArray(ranges.MA, 0).map(Math.round),
-      DROP: rangeToArray(ranges.DROP),
-      CHG4: rangeToArray(ranges.CHG4),
-      RET3: rangeToArray(ranges.RET3),
-      SPREAD_LVL: rangeToArray(ranges.SPREAD_LVL),
+      MA: disabledFactors.has('MA') ? [0] : rangeToArray(ranges.MA, 0).map(Math.round),
+      DROP: disabledFactors.has('DROP') ? [0] : rangeToArray(ranges.DROP),
+      CHG4: disabledFactors.has('CHG4') ? [0] : rangeToArray(ranges.CHG4),
+      RET3: disabledFactors.has('RET3') ? [0] : rangeToArray(ranges.RET3),
+      SPREAD_LVL: disabledFactors.has('SPREAD_LVL') ? [0] : rangeToArray(ranges.SPREAD_LVL),
     }
-    run(ticker, grids, startInvested, cashRate, inputType, startDate, endDate)
+    run(ticker, grids, startInvested, cashRate, inputType, startDate, endDate, disabledArr)
     setCollapsed(true)
     setSelectedParams(null)
     setChartParams(null)
@@ -129,6 +135,7 @@ export function OptimizerTab({ settings, ticker, defaultRanges, paramDescription
             input_type: inputType,
             start_date: startDate || undefined,
             end_date: endDate || undefined,
+            disabled_factors: disabledFactors.size ? [...disabledFactors] : undefined,
           },
           {
             onProgress() {},
@@ -155,6 +162,8 @@ export function OptimizerTab({ settings, ticker, defaultRanges, paramDescription
         onChange={setRanges}
         collapsed={collapsed}
         descriptions={paramDescriptions}
+        disabledFactors={disabledFactors}
+        onToggleFactor={toggleFactor}
       />
 
       {/* Options + Run */}

@@ -167,6 +167,19 @@ def get_securities():
     return SECURITIES
 
 
+@app.get("/api/date-range")
+def get_date_range(ticker: str = Query(default="SPHY"), input_type: str = Query(default="csv")):
+    """Return the min/max dates available for a ticker's data."""
+    loader = WeeklyDataLoader(input_type, INPUT_DIR, ticker)
+    price_df = loader.load_price_dividend()
+    spread_df = loader.load_spread()
+    weekly = loader.merge_price_spread(price_df, spread_df)
+    return {
+        "min": weekly.index.min().strftime("%Y-%m-%d"),
+        "max": weekly.index.max().strftime("%Y-%m-%d"),
+    }
+
+
 @app.post("/api/run/buyhold", response_model=BacktestResult)
 def run_buyhold(req: BuyHoldRequest):
     loader = WeeklyDataLoader(req.input_type, INPUT_DIR, req.ticker)
@@ -197,6 +210,7 @@ def run_signal(req: SignalRequest):
         CHG4_THR=p.CHG4,
         RET3_THR=p.RET3,
         SPREAD_LVL=p.SPREAD_LVL,
+        disabled=set(req.disabled_factors),
     )
 
     positions, buy_dates, sell_dates = strat.run(df_ind, start_invested=req.start_invested)
@@ -272,6 +286,7 @@ async def run_optimizer(req: OptimizerRequest):
                     param_grids=param_grids,
                     start_date=req.start_date,
                     end_date=req.end_date,
+                    disabled_factors=set(req.disabled_factors),
                 )
                 best_params, results_df, best_result = opt.run(
                     ticker=req.ticker,
@@ -361,7 +376,7 @@ def get_config(ticker: str = Query(default="SPHY")):
     ticker = ticker.upper()
     if ticker not in full:
         raise HTTPException(status_code=404, detail=f"No config found for ticker {ticker}")
-    return full[ticker]
+    return AppConfig(**full[ticker]).model_dump()
 
 
 @app.post("/api/config")

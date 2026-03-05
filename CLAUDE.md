@@ -120,22 +120,26 @@ Backend Pipeline:
 - `SpreadStrategy(BaseStrategy)` holds shared credit-spread logic; SPHY and SHYM inherit from it
 - `SPHYStrategy` / `SHYMStrategy` are siblings implementing security-specific rules
 - `BuyAndHoldStrategy` always invested, used as baseline
+- `SpreadStrategy` accepts `disabled` set of factor names; disabled sell factors → never trigger, disabled buy factors → always pass
+- Valid factor names: `SPREAD_LVL`, `CHG4`, `RET3` (sell), `MA`, `DROP`, `SPREAD_DELTA` (buy)
 
 **Backtester** (`backtester.py`):
 - Converts positions array to cumulative equity curve
 - Applies weekly TR when invested, cash yield when not
 - Computes final value and APY
 
-**Optimizer** (`optimizer_base.py`, `optimizer_sphy.py`, `optimizer_shym.py`):
+**Optimizer** (`optimizer_base.py`, `optimizer_sphy.py`, `optimizer_shym.py`, `optimizer_nea.py`):
 - `BaseOptimizer` (abstract) contains the grid-search loop; subclasses set default grids and implement `_create_strategy()`
-- `SPHYOptimizer` / `SHYMOptimizer` are siblings
+- `SPHYOptimizer` / `SHYMOptimizer` / `NEAOptimizer` are siblings
 - All accept `start_date`/`end_date` kwargs passed through to `loader.load()`
+- All accept `disabled_factors` set; disabled grids collapse to `[0]` (single placeholder) to reduce combinations
 - Supports `progress_callback` for streaming progress to frontend
 
 ### API Server (api/)
 
 FastAPI server with endpoints:
-- `GET /api/securities` — Returns available tickers (`["SPHY", "SHYM"]`)
+- `GET /api/securities` — Returns available tickers (`["SPHY", "SHYM", "NEA"]`)
+- `GET /api/date-range` — Returns `{ min, max }` date strings for a ticker's data
 - `GET /api/config` — Returns externalized parameter defaults from `config.json`
 - `POST /api/config` — Saves parameter defaults to `config.json`
 - `POST /api/run/buyhold` — Runs buy-and-hold backtest
@@ -143,6 +147,7 @@ FastAPI server with endpoints:
 - `POST /api/run/optimizer` — Runs grid search with SSE streaming progress
 
 All three run endpoints accept optional `start_date`/`end_date` (YYYY-MM-DD strings) to restrict the data window.
+Signal and optimizer endpoints accept `disabled_factors` (list of factor names to ignore).
 
 ### Frontend (frontend/)
 
@@ -157,7 +162,8 @@ Key features:
 - Parameter defaults, cash rate, and start position persisted to `api/config.json` via API
 - Equity curve charts with buy/sell markers, CSV/PNG export
 - Recharts for visualization
-- Global date range picker in `Header.tsx` (From/To); filters data for all three tabs; not persisted
+- Global date range picker in `Header.tsx` (From/To); filters data for all three tabs; not persisted; shows actual data range as placeholder when empty
+- Factor disable checkboxes in ParameterPanel (both single and range modes); disabled factors are skipped in strategy evaluation and optimizer grid iteration
 - Trade history table includes MA and Drop columns; triggered values are bolded per trade action
 - Drop column shows % drop from 4-week spread peak (BUY rule: spread must drop at least DROP threshold); clickable popup shows peak, current, drop %, and threshold
 
@@ -190,13 +196,14 @@ Parameter defaults and optimizer ranges are stored in `api/config.json`, not har
       ...
     },
     "cashRate": 0.04,
-    "startInvested": 1
+    "startInvested": 1,
+    "disabledFactors": []
   },
   "SHYM": { ... }
 }
 ```
 
-The frontend loads this on startup and uses it to populate parameter inputs. Users can edit and save permanently via the Settings panel.
+The frontend loads this on startup and uses it to populate parameter inputs, initialize disabled factor checkboxes, and set run defaults. Users can edit and save permanently via the Settings panel.
 
 ## Key Design Decisions
 

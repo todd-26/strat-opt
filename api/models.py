@@ -26,6 +26,7 @@ class SignalRequest(BaseModel):
     input_type: str = "csv"
     start_date: Optional[str] = None
     end_date: Optional[str] = None
+    disabled_factors: list[str] = []
 
 
 class OptimizerRequest(BaseModel):
@@ -41,6 +42,7 @@ class OptimizerRequest(BaseModel):
     input_type: str = "csv"
     start_date: Optional[str] = None
     end_date: Optional[str] = None
+    disabled_factors: list[str] = []
 
 
 class EquityPoint(BaseModel):
@@ -142,3 +144,4 @@ class AppConfig(BaseModel):
     defaultRanges: DefaultRanges
     cashRate: float = 0.04
     startInvested: int = 1
+    disabledFactors: list[str] = []

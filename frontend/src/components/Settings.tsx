@@ -165,6 +165,56 @@ export function SettingsSheet({ open, onClose, settings, onUpdate, config, onSav
             </div>
           </Section>
 
+          {/* Disabled Factors */}
+          <Section title={`Disabled Factors — ${ticker}`}>
+            <div className="space-y-2">
+              <div>
+                <span className="text-xs font-medium" style={{ color: 'var(--text-muted)' }}>Sell Factors</span>
+                <div className="mt-1 space-y-1">
+                  {(['SPREAD_LVL', 'CHG4', 'RET3'] as const).map((f) => (
+                    <label key={f} className="flex items-center gap-2 text-sm">
+                      <input
+                        type="checkbox"
+                        checked={localConfig.disabledFactors.includes(f)}
+                        onChange={() =>
+                          setLocalConfig((prev) => ({
+                            ...prev,
+                            disabledFactors: prev.disabledFactors.includes(f)
+                              ? prev.disabledFactors.filter((x) => x !== f)
+                              : [...prev.disabledFactors, f],
+                          }))
+                        }
+                      />
+                      {f}
+                    </label>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <span className="text-xs font-medium" style={{ color: 'var(--text-muted)' }}>Buy Factors</span>
+                <div className="mt-1 space-y-1">
+                  {(['MA', 'DROP', 'SPREAD_DELTA'] as const).map((f) => (
+                    <label key={f} className="flex items-center gap-2 text-sm">
+                      <input
+                        type="checkbox"
+                        checked={localConfig.disabledFactors.includes(f)}
+                        onChange={() =>
+                          setLocalConfig((prev) => ({
+                            ...prev,
+                            disabledFactors: prev.disabledFactors.includes(f)
+                              ? prev.disabledFactors.filter((x) => x !== f)
+                              : [...prev.disabledFactors, f],
+                          }))
+                        }
+                      />
+                      {f}
+                    </label>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </Section>
+
           {/* Default parameters */}
           <Section title={`Default Parameters — ${ticker}`}>
             <div className="space-y-3">

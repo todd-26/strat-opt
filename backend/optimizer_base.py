@@ -29,12 +29,13 @@ class BaseOptimizer(ABC):
     """
 
     def __init__(self, input_type: str, input_dir: Path, cash_rate: float, param_grids: dict = None,
-                 start_date: str = None, end_date: str = None):
+                 start_date: str = None, end_date: str = None, disabled_factors: set = ()):
         self.input_type = input_type
         self.input_dir = input_dir
         self.cash_rate = cash_rate
         self.start_date = start_date
         self.end_date = end_date
+        self.disabled = set(disabled_factors)
 
         if param_grids:
             if "MA" in param_grids:
@@ -49,7 +50,7 @@ class BaseOptimizer(ABC):
                 self.SPREAD_grid = param_grids["SPREAD_LVL"]
 
     @abstractmethod
-    def _create_strategy(self, MA, DROP, CHG4, RET3, SPREAD_LVL):
+    def _create_strategy(self, MA, DROP, CHG4, RET3, SPREAD_LVL, disabled=()):
         """Return a strategy instance for this security."""
         pass
 
@@ -63,11 +64,21 @@ class BaseOptimizer(ABC):
         results_df : DataFrame
         best_result : dict
         """
-        # Validate all grids are non-empty before starting
-        empty = [name for name, grid in [
-            ("MA", self.MA_grid), ("DROP", self.DROP_grid), ("CHG4", self.CHG4_grid),
-            ("RET3", self.RET3_grid), ("SPREAD_LVL", self.SPREAD_grid),
-        ] if not grid]
+        # Collapse disabled factor grids to a single placeholder value
+        MA_grid = [0] if "MA" in self.disabled else self.MA_grid
+        DROP_grid = [0] if "DROP" in self.disabled else self.DROP_grid
+        CHG4_grid = [0] if "CHG4" in self.disabled else self.CHG4_grid
+        RET3_grid = [0] if "RET3" in self.disabled else self.RET3_grid
+        SPREAD_grid = [0] if "SPREAD_LVL" in self.disabled else self.SPREAD_grid
+
+        # Validate all enabled grids are non-empty before starting
+        empty = [name for name, grid, disabled in [
+            ("MA", MA_grid, "MA" in self.disabled),
+            ("DROP", DROP_grid, "DROP" in self.disabled),
+            ("CHG4", CHG4_grid, "CHG4" in self.disabled),
+            ("RET3", RET3_grid, "RET3" in self.disabled),
+            ("SPREAD_LVL", SPREAD_grid, "SPREAD_LVL" in self.disabled),
+        ] if not grid and not disabled]
         if empty:
             raise ValueError(f"Empty parameter grid(s): {', '.join(empty)} — check min/max/step values.")
 
@@ -75,19 +86,19 @@ class BaseOptimizer(ABC):
         df = loader.load(start_date=self.start_date, end_date=self.end_date)
 
         results = []
-        total = (len(self.MA_grid) * len(self.DROP_grid) * len(self.CHG4_grid) *
-                 len(self.RET3_grid) * len(self.SPREAD_grid))
+        total = (len(MA_grid) * len(DROP_grid) * len(CHG4_grid) *
+                 len(RET3_grid) * len(SPREAD_grid))
         current = 0
 
         for MA, DROP, CHG4, RET3, SPREAD_LVL in itertools.product(
-            self.MA_grid,
-            self.DROP_grid,
-            self.CHG4_grid,
-            self.RET3_grid,
-            self.SPREAD_grid,
+            MA_grid,
+            DROP_grid,
+            CHG4_grid,
+            RET3_grid,
+            SPREAD_grid,
         ):
             df_ind = IndicatorEngine.apply_all(df.copy(), MA)
-            strat = self._create_strategy(MA, DROP, CHG4, RET3, SPREAD_LVL)
+            strat = self._create_strategy(MA, DROP, CHG4, RET3, SPREAD_LVL, disabled=self.disabled)
             positions, buys, sells = strat.run(df_ind, start_invested=start_invested)
 
             bt = Backtester(self.cash_rate)
@@ -127,6 +138,7 @@ class BaseOptimizer(ABC):
             best_params["CHG4"],
             best_params["RET3"],
             best_params["SPREAD_LVL"],
+            disabled=self.disabled,
         )
         positions, buys, sells = best_strat.run(df_best, start_invested=start_invested)
         bt = Backtester(self.cash_rate)

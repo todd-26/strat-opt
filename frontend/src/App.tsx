@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useSettings } from './hooks/useSettings'
 import { applyTheme } from './lib/themes'
-import { getConfig, saveConfig, fetchSecurities } from './lib/api'
+import { getConfig, saveConfig, fetchSecurities, getDateRange } from './lib/api'
 import { Header } from './components/Header'
 import { SettingsSheet } from './components/Settings'
 import { OptimizerTab } from './components/tabs/OptimizerTab'
@@ -27,6 +27,7 @@ export default function App() {
   const [ticker, setTicker] = useState<string>('SPHY')
   const [startDate, setStartDate] = useState('')
   const [endDate, setEndDate] = useState('')
+  const [dateRange, setDateRange] = useState<{ min: string; max: string } | null>(null)
 
   // Apply saved theme on mount
   useEffect(() => {
@@ -38,7 +39,7 @@ export default function App() {
     fetchSecurities().then(setSecurities).catch(() => {/* keep default */})
   }, [])
 
-  // Reload config whenever the selected ticker changes
+  // Reload config and date range whenever the selected ticker changes
   useEffect(() => {
     setConfig(null)
     setConfigError(null)
@@ -48,6 +49,9 @@ export default function App() {
         const err = e instanceof Error ? e : new Error(String(e))
         setConfigError({ message: err.message, stack: err.stack })
       })
+    getDateRange(ticker)
+      .then(setDateRange)
+      .catch(() => setDateRange(null))
   }, [ticker])
 
   async function handleSaveConfig(newConfig: AppConfig) {
@@ -82,6 +86,7 @@ export default function App() {
         endDate={endDate}
         onStartDateChange={setStartDate}
         onEndDateChange={setEndDate}
+        dateRange={dateRange}
       />
 
       {/* Tab bar */}
@@ -116,13 +121,13 @@ export default function App() {
           <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Loading…</p>
         )}
         {config && activeTab === 'optimizer' && (
-          <OptimizerTab key={ticker} settings={settings} ticker={ticker} defaultRanges={config.defaultRanges} paramDescriptions={paramDescriptions} startDate={startDate} endDate={endDate} cashRate={config.cashRate} startInvested={config.startInvested} />
+          <OptimizerTab key={ticker} settings={settings} ticker={ticker} defaultRanges={config.defaultRanges} paramDescriptions={paramDescriptions} startDate={startDate} endDate={endDate} cashRate={config.cashRate} startInvested={config.startInvested} defaultDisabledFactors={config.disabledFactors} />
         )}
         {config && activeTab === 'buyhold' && (
           <BuyHoldTab key={ticker} settings={settings} ticker={ticker} startDate={startDate} endDate={endDate} cashRate={config.cashRate} />
         )}
         {config && activeTab === 'signal' && defaultStrategyParams && (
-          <SignalTab key={ticker} settings={settings} ticker={ticker} defaultParams={defaultStrategyParams} paramDescriptions={paramDescriptions} startDate={startDate} endDate={endDate} cashRate={config.cashRate} startInvested={config.startInvested} />
+          <SignalTab key={ticker} settings={settings} ticker={ticker} defaultParams={defaultStrategyParams} paramDescriptions={paramDescriptions} startDate={startDate} endDate={endDate} cashRate={config.cashRate} startInvested={config.startInvested} defaultDisabledFactors={config.disabledFactors} />
         )}
       </main>
 

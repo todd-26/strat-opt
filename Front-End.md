@@ -27,7 +27,7 @@ Themes are applied globally and persisted in localStorage.
 A persistent top header containing:
 - App name on the left (e.g., **strat-opt**)
 - Security **dropdown** next to the name (populated from `GET /api/securities`; currently SPHY and SHYM)
-- **From / To date inputs** for a global date range filter (blank = full data; not persisted; applies to all three tabs)
+- **From / To date inputs** for a global date range filter (blank = full data; not persisted; applies to all three tabs). When empty, shows the actual data range (min/max dates) as placeholder text, fetched from `GET /api/date-range`. An **X** button appears when either date is customized to clear both back to empty.
 - Gear icon on the right to open Settings
 
 ### Tab Navigation
@@ -40,6 +40,8 @@ Each tab has its own independent state (parameters, results).
 
 ### Parameter Panel (per tab)
 Each tab has a collapsible parameter panel. It starts expanded. After a run completes successfully, it collapses automatically so results get full focus. The user can re-expand it at any time.
+
+**Factor Checkboxes**: Each factor has a checkbox to enable/disable it. Factors are grouped under "Sell Factors" (SPREAD_LVL, CHG4, RET3) and "Buy Factors" (MA, DROP, Δspread) headers. Disabled factors grey out their inputs (opacity 0.45). `SPREAD_DELTA` (Δspread) has a checkbox but no numeric input — it shows "2 consecutive falling" as a label. In the optimizer, disabled factors collapse their grid to a single placeholder value, reducing total combinations.
 
 ### Results Area
 Results are displayed **side by side**: the chart on the left, key summary metrics on the right. Both are given equal visual prominence.
@@ -97,9 +99,9 @@ A table of all historical buy/sell events with columns: Date, Action, Price, MA,
 
 Column headers have ⓘ hover tooltips explaining each metric (drop downward to avoid clipping; Δspread tooltip is right-aligned to avoid right-edge overflow).
 
-Values that contributed to the decision are **bolded** (dotted underline, pointer cursor):
-- SELL: bold any of spread / chg4 / ret3 that exceeded its threshold
-- BUY: bold Price and MA (close > MA), Drop (spread drop from 4-week peak ≥ DROP threshold), and Δspread (falling spreads)
+Values that contributed to the decision are **bolded** (dotted underline, pointer cursor). **Disabled factors** are never bolded and their popups are suppressed:
+- SELL: bold any of spread / chg4 / ret3 that exceeded its threshold (unless that factor is disabled)
+- BUY: bold Price and MA (close > MA), Drop (spread drop from 4-week peak ≥ DROP threshold), and Δspread (falling spreads) (unless that factor is disabled)
 
 Clicking a bolded value opens a popup showing the derivation:
 - spread: value vs SPREAD_LVL threshold
@@ -135,7 +137,7 @@ Clicking a bolded value opens a popup showing the derivation:
 - Errors (backend failures, bad parameters, etc.) appear as a **dismissible error banner** at the top of the results area.
 - The banner includes the error message and a close (×) button.
 - Form validation errors appear inline below the relevant input field before a run is triggered.
-- Optimizer tab validates that max ≥ min for every parameter range before submitting; shows an inline error naming the offending parameter(s) and does not run.
+- Optimizer tab validates that max ≥ min for every **enabled** parameter range before submitting; disabled factors skip validation. Shows an inline error naming the offending parameter(s) and does not run.
 
 ---
 
@@ -147,13 +149,14 @@ Accessible via the gear icon in the header. Contains:
 2. **Input Source** — toggle between CSV (local files) and API (live Alpha Vantage / FRED).
 3. **Default Cash Rate** — annual cash yield rate (decimal, e.g., 0.04).
 4. **Default Starting Position** — radio: Invested or Cash.
-5. **Default Parameter Values** — inputs to set the default parameter values that pre-fill the Current Signal tab on page load. Edits are local until "Save Permanently" is clicked.
-6. **Default Optimizer Ranges** — min/max/step inputs for each of the 5 strategy parameters, pre-filling the Optimizer tab's range grid on page load. Edits are local until "Save Permanently" is clicked.
+5. **Disabled Factors** — checkboxes for all 6 factors, grouped under "Sell Factors" (SPREAD_LVL, CHG4, RET3) and "Buy Factors" (MA, DROP, SPREAD_DELTA). Checked = disabled. Persisted in `config.json` alongside other per-security defaults; tabs initialize from these on page load.
+6. **Default Parameter Values** — inputs to set the default parameter values that pre-fill the Current Signal tab on page load. Edits are local until "Save Permanently" is clicked.
+7. **Default Optimizer Ranges** — min/max/step inputs for each of the 5 strategy parameters, pre-filling the Optimizer tab's range grid on page load. Edits are local until "Save Permanently" is clicked.
 7. **Save Permanently** — button at the bottom. POSTs `defaultParams` and `defaultRanges` to `POST /api/config`, which writes `api/config.json` to disk. Button shows: "Save Permanently" (idle), "Saving…" (in-flight), "Saved!" (success, reverts after 2 s), "Error — try again" (failure).
 
 **Persistence split**:
 - Theme and Input Source are persisted in `localStorage`.
-- Cash Rate, Starting Position, Default Parameters, and Default Optimizer Ranges are persisted in `api/config.json` via the API (per-security). They are **not** stored in `localStorage`.
+- Cash Rate, Starting Position, Disabled Factors, Default Parameters, and Default Optimizer Ranges are persisted in `api/config.json` via the API (per-security). They are **not** stored in `localStorage`.
 
 ---
 
@@ -176,7 +179,8 @@ Server-side JSON file storing the two sets of editable defaults. Created on firs
       "SPREAD_LVL": { "min": 7.0,     "max": 7.0,     "step": 0.1    }
     },
     "cashRate": 0.04,
-    "startInvested": 1
+    "startInvested": 1,
+    "disabledFactors": []
   },
   "SHYM": { ... }
 }

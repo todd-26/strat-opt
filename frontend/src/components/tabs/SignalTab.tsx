@@ -16,6 +16,7 @@ interface Props {
   startInvested: 0 | 1
   startDate?: string
   endDate?: string
+  defaultDisabledFactors?: string[]
 }
 
 function fmt(v: number | null | undefined, decimals = 4): string {
@@ -23,7 +24,7 @@ function fmt(v: number | null | undefined, decimals = 4): string {
   return v.toFixed(decimals)
 }
 
-export function SignalTab({ settings, ticker, defaultParams, paramDescriptions, cashRate: cashRateProp, startInvested: startInvestedProp, startDate, endDate }: Props) {
+export function SignalTab({ settings, ticker, defaultParams, paramDescriptions, cashRate: cashRateProp, startInvested: startInvestedProp, startDate, endDate, defaultDisabledFactors }: Props) {
   const { result, loading, error, run } = useSignal()
   const [params, setParams] = useState<StrategyParams>(defaultParams)
   const [startInvested, setStartInvested] = useState<0 | 1>(startInvestedProp)
@@ -35,9 +36,13 @@ export function SignalTab({ settings, ticker, defaultParams, paramDescriptions, 
     setStartInvested(startInvestedProp)
   }, [cashRateProp, startInvestedProp])
   const [collapsed, setCollapsed] = useState(false)
+  const [disabledFactors, setDisabledFactors] = useState<Set<string>>(new Set(defaultDisabledFactors ?? []))
+  function toggleFactor(f: string) {
+    setDisabledFactors(prev => { const n = new Set(prev); n.has(f) ? n.delete(f) : n.add(f); return n })
+  }
 
   function handleRun() {
-    run(ticker, params, startInvested, cashRate, inputType, startDate, endDate)
+    run(ticker, params, startInvested, cashRate, inputType, startDate, endDate, disabledFactors.size ? [...disabledFactors] : undefined)
     setCollapsed(true)
   }
 
@@ -50,6 +55,8 @@ export function SignalTab({ settings, ticker, defaultParams, paramDescriptions, 
         onChange={setParams}
         collapsed={collapsed}
         descriptions={paramDescriptions}
+        disabledFactors={disabledFactors}
+        onToggleFactor={toggleFactor}
       />
 
       {/* Options row */}
@@ -167,7 +174,7 @@ export function SignalTab({ settings, ticker, defaultParams, paramDescriptions, 
             <h3 className="mb-2 font-semibold" style={{ color: 'var(--text)' }}>
               Trade History
             </h3>
-            <TradeHistoryTable trades={result.trade_history} params={params} />
+            <TradeHistoryTable trades={result.trade_history} params={params} disabledFactors={disabledFactors} />
           </div>
         </>
       )}
