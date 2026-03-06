@@ -128,6 +128,8 @@ class SignalMetrics(BaseModel):
     yield2_chg4: Optional[float] = None
     curve_chg4: Optional[float] = None
     yield10_delta: Optional[float] = None
+    spread_drop: Optional[float] = None
+    spread_4wk_peak: Optional[float] = None
     last_date: str
     close: float
 
@@ -138,6 +140,8 @@ class SignalResponse(BaseModel):
     trade_history: list[TradeEvent]
     apy: float
     final_value: float
+    data_start: str
+    data_end: str
 
 
 class ParamRange(BaseModel):

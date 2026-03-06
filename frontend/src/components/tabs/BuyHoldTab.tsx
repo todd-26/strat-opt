@@ -47,6 +47,17 @@ export function BuyHoldTab({ settings, ticker, cashRate, startDate, endDate }: P
             </select>
           </div>
 
+          {result && (
+            <div>
+              <label className="mb-1 block text-xs font-medium" style={{ color: 'var(--text-muted)' }}>
+                Date Range Used
+              </label>
+              <span className="text-sm font-semibold" style={{ color: 'var(--text)' }}>
+                {result.equity_curve[0]?.date} – {result.equity_curve[result.equity_curve.length - 1]?.date}
+              </span>
+            </div>
+          )}
+
           <button
             onClick={handleRun}
             disabled={loading}

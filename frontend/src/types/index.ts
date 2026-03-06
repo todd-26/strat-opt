@@ -81,6 +81,8 @@ export interface SignalMetrics {
   yield2_chg4?: number | null
   curve_chg4?: number | null
   yield10_delta?: number | null
+  spread_drop?: number | null
+  spread_4wk_peak?: number | null
   last_date: string
   close: number
 }
@@ -91,6 +93,8 @@ export interface SignalResponse {
   trade_history: TradeEvent[]
   apy: number
   final_value: number
+  data_start: string
+  data_end: string
 }
 
 export interface OptimizerGrids {

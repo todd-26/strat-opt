@@ -120,6 +120,17 @@ export function SignalTab({ settings, ticker, defaultParams, paramDescriptions, 
             </select>
           </div>
 
+          {result && (
+            <div>
+              <label className="mb-1 block text-xs font-medium" style={{ color: 'var(--text-muted)' }}>
+                Date Range Used
+              </label>
+              <span className="text-sm font-semibold" style={{ color: 'var(--text)' }}>
+                {result.data_start} – {result.data_end}
+              </span>
+            </div>
+          )}
+
           <button
             onClick={handleRun}
             disabled={loading}
@@ -171,6 +182,35 @@ export function SignalTab({ settings, ticker, defaultParams, paramDescriptions, 
               </div>
               <MetricsCard apy={result.apy} finalValue={result.final_value} />
             </div>
+
+            {/* Factor values panel */}
+            <div
+              className="rounded-lg border p-4 self-start"
+              style={{ borderColor: 'var(--border)', background: 'var(--bg-card)' }}
+            >
+              <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>
+                Factor Values
+              </h3>
+
+              <div className="mb-1 text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>Sell — trigger if ANY true</div>
+              <dl className="mb-4 space-y-1.5 text-sm">
+                <ThresholdRow label="Spread"    value={result.metrics.spread}       disabled={disabledFactors.has('SPREAD_LVL')} />
+                <ThresholdRow label="chg4"      value={result.metrics.chg4}          disabled={disabledFactors.has('CHG4')} pct />
+                <ThresholdRow label="ret3"      value={result.metrics.ret3}          disabled={disabledFactors.has('RET3')} pct />
+                <ThresholdRow label="10yr chg4" value={result.metrics.yield10_chg4}  disabled={disabledFactors.has('YIELD10_CHG4')} pct />
+                <ThresholdRow label="2yr chg4"  value={result.metrics.yield2_chg4}   disabled={disabledFactors.has('YIELD2_CHG4')} pct />
+                <ThresholdRow label="ΔCurve"    value={result.metrics.curve_chg4}    disabled={disabledFactors.has('CURVE_CHG4')} />
+              </dl>
+
+              <div className="mb-1 text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>Buy — ALL must be true</div>
+              <dl className="space-y-1.5 text-sm">
+                <ThresholdRow label="Close"    value={result.metrics.close}        disabled={disabledFactors.has('MA')} />
+                <ThresholdRow label="MA"       value={result.metrics.ma}           disabled={disabledFactors.has('MA')} />
+                <ThresholdRow label="4wk peak" value={result.metrics.spread_4wk_peak} disabled={disabledFactors.has('DROP')} />
+                <ThresholdRow label="Δspread"  value={result.metrics.spread_delta} disabled={disabledFactors.has('SPREAD_DELTA')} />
+                <ThresholdRow label="Δyield10" value={result.metrics.yield10_delta} disabled={disabledFactors.has('YIELD10_DELTA')} />
+              </dl>
+            </div>
           </div>
 
           {/* Trade history — full width so all columns fit */}
@@ -192,6 +232,28 @@ function MetricRow({ label, value }: { label: string; value: string }) {
       <dt style={{ color: 'var(--text-muted)' }}>{label}</dt>
       <dd className="font-medium" style={{ color: 'var(--text)' }}>
         {value}
+      </dd>
+    </div>
+  )
+}
+
+function ThresholdRow({ label, value, disabled, pct }: {
+  label: string
+  value: number | null | undefined
+  disabled?: boolean
+  pct?: boolean
+}) {
+  const display = value == null
+    ? '—'
+    : pct
+      ? `${(value * 100).toFixed(2)}%`
+      : value.toFixed(4)
+  return (
+    <div className="flex justify-between" style={{ opacity: disabled ? 0.35 : 1 }}>
+      <dt style={{ color: 'var(--text-muted)' }}>{label}</dt>
+      <dd className="font-medium tabular-nums" style={{ color: 'var(--text)' }}>
+        {display}
+        {disabled && <span className="ml-1 text-xs" style={{ color: 'var(--text-muted)' }}>(off)</span>}
       </dd>
     </div>
   )
