@@ -16,7 +16,6 @@ strat-opt/
 │   ├── config.json         # Externalized parameter defaults and ranges
 │   └── requirements.txt
 ├── backend/                # Core Python pipeline (strategy logic)
-│   ├── main.py             # CLI entry point (legacy, still works)
 │   ├── data_loader.py      # Loads and merges price + spread data
 │   ├── data_source.py      # CSV/API abstraction
 │   ├── alpha_vantage.py    # Price/dividend data source
@@ -87,16 +86,6 @@ api\dev.bat     # or: cd api && uvicorn main:app --reload --host 0.0.0.0 --port 
 
 # Frontend only (proxies /api to :8000)
 frontend\dev.bat  # or: cd frontend && npm run dev
-```
-
-### Legacy CLI (still functional)
-```bash
-cd backend
-python main.py --ticker SPHY              # Run with best parameters
-python main.py --ticker SPHY --optimize   # Run optimizer
-python main.py --ticker SPHY --buyhold    # Run buy-and-hold baseline
-python main.py --ticker SPHY --invested 0 # Start in cash
-python main.py --ticker SPHY --input-type api  # Use live APIs
 ```
 
 ## Environment Setup
