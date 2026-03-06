@@ -27,7 +27,7 @@ Themes are applied globally and persisted in localStorage.
 A persistent top header containing:
 - App name on the left (e.g., **strat-opt**)
 - Security **dropdown** next to the name (populated from `GET /api/securities`; currently SPHY and SHYM)
-- **From / To date inputs** for a global date range filter (blank = full data; not persisted; applies to all three tabs). When empty, shows the actual data range (min/max dates) as placeholder text, fetched from `GET /api/date-range`. An **X** button appears when either date is customized to clear both back to empty.
+- **From / To date inputs** for a global date range filter (not persisted; applies to all three tabs). By default they display the actual data range (min/max) for the selected security, fetched from `GET /api/date-range`; internally stored as `''` (no filter) until the user changes them. Uses `<input type="date">` — browser native calendar, enforces valid dates. A small popover appears below each field on focus with **Today** (clamped to data range) and **Clear** (resets field to default range) buttons. On blur, validates: end < start or date out of data range shows an error popup and clears the bad field. An **X** button appears when either date is customized to reset both to default.
 - Gear icon on the right to open Settings
 
 ### Tab Navigation
@@ -41,7 +41,7 @@ Each tab has its own independent state (parameters, results).
 ### Parameter Panel (per tab)
 Each tab has a collapsible parameter panel. It starts expanded. After a run completes successfully, it collapses automatically so results get full focus. The user can re-expand it at any time.
 
-**Factor Checkboxes**: Each factor has a checkbox to enable/disable it. Factors are grouped under "Sell Factors" (SPREAD_LVL, CHG4, RET3, YIELD10_CHG4, YIELD2_CHG4, CURVE_CHG4) and "Buy Factors" (MA, DROP, Δspread, Δyield10) headers. Disabled factors grey out their inputs (opacity 0.45). `SPREAD_DELTA` (Δspread) and `YIELD10_DELTA` (Δyield10) have a checkbox but no numeric input — they show "2 consecutive falling" as a label. In the optimizer, disabled factors collapse their grid to a single placeholder value, reducing total combinations.
+**Factor Checkboxes**: Each factor has a checkbox to enable/disable it. Factors are grouped under "Sell Factors" (SPREAD_LVL, CHG4, RET3, YIELD10_CHG4, YIELD2_CHG4, CURVE_CHG4) and "Buy Factors" (MA, DROP, SPREAD_DELTA, YIELD10_DELTA) headers. Disabled factors grey out their inputs (opacity 0.45). `SPREAD_DELTA` and `YIELD10_DELTA` are fully numeric inputs (integer, default 2) controlling how many consecutive falling weeks are required — they behave identically to all other parameters. In the optimizer, disabled factors collapse their grid to a single placeholder value, reducing total combinations.
 
 ### Results Area
 Results are displayed **side by side**: the chart on the left, key summary metrics on the right. Both are given equal visual prominence.

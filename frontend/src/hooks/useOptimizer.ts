@@ -39,6 +39,8 @@ export function useOptimizer() {
       YIELD10_CHG4: grids.YIELD10_CHG4,
       YIELD2_CHG4: grids.YIELD2_CHG4,
       CURVE_CHG4: grids.CURVE_CHG4,
+      SPREAD_DELTA: grids.SPREAD_DELTA,
+      YIELD10_DELTA: grids.YIELD10_DELTA,
       start_invested: startInvested,
       cash_rate: cashRate,
       input_type: inputType,

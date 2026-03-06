@@ -73,7 +73,7 @@ def _safe_float(val) -> float | None:
         return None
 
 
-def _build_trade_history(bt_df, buy_dates, sell_dates) -> list[TradeEvent]:
+def _build_trade_history(bt_df, buy_dates, sell_dates, spread_delta_n=2, yield10_delta_n=2) -> list[TradeEvent]:
     # Auto-detect the MA column (e.g. "MA50")
     ma_cols = [c for c in bt_df.columns if re.match(r'^MA\d+$', c)]
     ma_col = ma_cols[0] if ma_cols else None
@@ -121,21 +121,27 @@ def _build_trade_history(bt_df, buy_dates, sell_dates) -> list[TradeEvent]:
             ret3=_safe_float(row.get("ret3")),
             spread_delta=_safe_float(row.get("spread_delta")),
             ma_value=_safe_float(row.get(ma_col)) if ma_col else None,
-            prev_spread_delta=_safe_float(bt_df.iloc[pos - 1].get("spread_delta")) if pos >= 1 else None,
+            spread_delta_history=[
+                _safe_float(bt_df.iloc[pos - (spread_delta_n - 1 - i)].get("spread_delta"))
+                for i in range(spread_delta_n) if pos - (spread_delta_n - 1 - i) >= 0
+            ] or None,
             spread_drop=_safe_float(drop),
             spread_4wk_peak=_safe_float(peak),
             yield10_chg4=_safe_float(row.get("yield10_chg4")),
             yield2_chg4=_safe_float(row.get("yield2_chg4")),
             curve_chg4=_safe_float(row.get("curve_chg4")),
             yield10_delta=_safe_float(row.get("yield10_delta")),
-            prev_yield10_delta=_safe_float(bt_df.iloc[pos - 1].get("yield10_delta")) if pos >= 1 else None,
+            yield10_delta_history=[
+                _safe_float(bt_df.iloc[pos - (yield10_delta_n - 1 - i)].get("yield10_delta"))
+                for i in range(yield10_delta_n) if pos - (yield10_delta_n - 1 - i) >= 0
+            ] or None,
         ))
 
     events.sort(key=lambda e: e.date, reverse=True)
     return events
 
 
-def _build_backtest_result(bt_result: dict) -> BacktestResult:
+def _build_backtest_result(bt_result: dict, spread_delta_n=2, yield10_delta_n=2) -> BacktestResult:
     df = bt_result["df"]
     buy_dates = bt_result["buy_dates"]
     sell_dates = bt_result["sell_dates"]
@@ -149,7 +155,7 @@ def _build_backtest_result(bt_result: dict) -> BacktestResult:
         equity_curve=equity_curve,
         buy_dates=[d.strftime("%Y-%m-%d") for d in buy_dates],
         sell_dates=[d.strftime("%Y-%m-%d") for d in sell_dates],
-        trade_history=_build_trade_history(df, buy_dates, sell_dates),
+        trade_history=_build_trade_history(df, buy_dates, sell_dates, spread_delta_n, yield10_delta_n),
         final_value=bt_result["final_value"],
         apy=bt_result["apy"],
     )
@@ -225,6 +231,8 @@ def run_signal(req: SignalRequest):
         YIELD10_CHG4_THR=p.YIELD10_CHG4,
         YIELD2_CHG4_THR=p.YIELD2_CHG4,
         CURVE_CHG4_THR=p.CURVE_CHG4,
+        SPREAD_DELTA_N=p.SPREAD_DELTA,
+        YIELD10_DELTA_N=p.YIELD10_DELTA,
         disabled=set(req.disabled_factors),
     )
 
@@ -267,7 +275,7 @@ def run_signal(req: SignalRequest):
         close=float(last_row["close"]),
     )
 
-    trade_history = _build_trade_history(bt_result["df"], buy_dates, sell_dates)
+    trade_history = _build_trade_history(bt_result["df"], buy_dates, sell_dates, p.SPREAD_DELTA, p.YIELD10_DELTA)
 
     return SignalResponse(
         signal=signal,
@@ -299,6 +307,8 @@ async def run_optimizer(req: OptimizerRequest):
                     "YIELD10_CHG4": req.YIELD10_CHG4,
                     "YIELD2_CHG4": req.YIELD2_CHG4,
                     "CURVE_CHG4": req.CURVE_CHG4,
+                    "SPREAD_DELTA": req.SPREAD_DELTA,
+                    "YIELD10_DELTA": req.YIELD10_DELTA,
                 }
                 optimizer_cls = OPTIMIZER_CLASSES.get(req.ticker.upper(), SPHYOptimizer)
                 opt = optimizer_cls(
@@ -341,7 +351,7 @@ async def run_optimizer(req: OptimizerRequest):
                 elif kind == "result":
                     _, best_params, results_df, best_result = item
 
-                    best_bt = _build_backtest_result(best_result)
+                    best_bt = _build_backtest_result(best_result, int(best_params["SPREAD_DELTA"]), int(best_params["YIELD10_DELTA"]))
 
                     best_params_model = StrategyParams(
                         MA=int(best_params["MA"]),
@@ -352,6 +362,8 @@ async def run_optimizer(req: OptimizerRequest):
                         YIELD10_CHG4=float(best_params["YIELD10_CHG4"]),
                         YIELD2_CHG4=float(best_params["YIELD2_CHG4"]),
                         CURVE_CHG4=float(best_params["CURVE_CHG4"]),
+                        SPREAD_DELTA=int(best_params["SPREAD_DELTA"]),
+                        YIELD10_DELTA=int(best_params["YIELD10_DELTA"]),
                     )
 
                     all_results = [
@@ -364,6 +376,8 @@ async def run_optimizer(req: OptimizerRequest):
                             YIELD10_CHG4=float(row["YIELD10_CHG4"]),
                             YIELD2_CHG4=float(row["YIELD2_CHG4"]),
                             CURVE_CHG4=float(row["CURVE_CHG4"]),
+                            SPREAD_DELTA=int(row["SPREAD_DELTA"]),
+                            YIELD10_DELTA=int(row["YIELD10_DELTA"]),
                             APY=float(row["APY"]),
                             final_value=float(row["final_value"]),
                             trade_count=int(row["trade_count"]),

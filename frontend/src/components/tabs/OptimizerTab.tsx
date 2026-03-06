@@ -76,6 +76,8 @@ export function OptimizerTab({ settings, ticker, defaultRanges, paramDescription
       YIELD10_CHG4: disabledFactors.has('YIELD10_CHG4') ? [0] : rangeToArray(ranges.YIELD10_CHG4),
       YIELD2_CHG4: disabledFactors.has('YIELD2_CHG4') ? [0] : rangeToArray(ranges.YIELD2_CHG4),
       CURVE_CHG4: disabledFactors.has('CURVE_CHG4') ? [0] : rangeToArray(ranges.CURVE_CHG4),
+      SPREAD_DELTA: disabledFactors.has('SPREAD_DELTA') ? [0] : rangeToArray(ranges.SPREAD_DELTA, 0).map(Math.round),
+      YIELD10_DELTA: disabledFactors.has('YIELD10_DELTA') ? [0] : rangeToArray(ranges.YIELD10_DELTA, 0).map(Math.round),
     }
     run(ticker, grids, startInvested, cashRate, inputType, startDate, endDate, disabledArr)
     setCollapsed(true)
@@ -100,7 +102,9 @@ export function OptimizerTab({ settings, ticker, defaultRanges, paramDescription
       chartParams.SPREAD_LVL === params.SPREAD_LVL &&
       chartParams.YIELD10_CHG4 === params.YIELD10_CHG4 &&
       chartParams.YIELD2_CHG4 === params.YIELD2_CHG4 &&
-      chartParams.CURVE_CHG4 === params.CURVE_CHG4
+      chartParams.CURVE_CHG4 === params.CURVE_CHG4 &&
+      chartParams.SPREAD_DELTA === params.SPREAD_DELTA &&
+      chartParams.YIELD10_DELTA === params.YIELD10_DELTA
     ) {
       setChartParams(null)
       setDrillResult(null)
@@ -120,7 +124,9 @@ export function OptimizerTab({ settings, ticker, defaultRanges, paramDescription
       result.best_params.SPREAD_LVL === params.SPREAD_LVL &&
       result.best_params.YIELD10_CHG4 === params.YIELD10_CHG4 &&
       result.best_params.YIELD2_CHG4 === params.YIELD2_CHG4 &&
-      result.best_params.CURVE_CHG4 === params.CURVE_CHG4
+      result.best_params.CURVE_CHG4 === params.CURVE_CHG4 &&
+      result.best_params.SPREAD_DELTA === params.SPREAD_DELTA &&
+      result.best_params.YIELD10_DELTA === params.YIELD10_DELTA
     ) {
       setDrillResult(result.best_result)
       return
@@ -142,6 +148,8 @@ export function OptimizerTab({ settings, ticker, defaultRanges, paramDescription
             YIELD10_CHG4: [params.YIELD10_CHG4],
             YIELD2_CHG4: [params.YIELD2_CHG4],
             CURVE_CHG4: [params.CURVE_CHG4],
+            SPREAD_DELTA: [params.SPREAD_DELTA],
+            YIELD10_DELTA: [params.YIELD10_DELTA],
             start_invested: startInvested,
             cash_rate: cashRate,
             input_type: inputType,

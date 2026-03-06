@@ -54,10 +54,15 @@ class BaseOptimizer(ABC):
                 self.YIELD2_CHG4_grid = param_grids["YIELD2_CHG4"]
             if "CURVE_CHG4" in param_grids:
                 self.CURVE_CHG4_grid = param_grids["CURVE_CHG4"]
+            if "SPREAD_DELTA" in param_grids:
+                self.SPREAD_DELTA_grid = param_grids["SPREAD_DELTA"]
+            if "YIELD10_DELTA" in param_grids:
+                self.YIELD10_DELTA_grid = param_grids["YIELD10_DELTA"]
 
     @abstractmethod
     def _create_strategy(self, MA, DROP, CHG4, RET3, SPREAD_LVL,
-                         YIELD10_CHG4=0, YIELD2_CHG4=0, CURVE_CHG4=0, disabled=()):
+                         YIELD10_CHG4=0, YIELD2_CHG4=0, CURVE_CHG4=0,
+                         SPREAD_DELTA=2, YIELD10_DELTA=2, disabled=()):
         """Return a strategy instance for this security."""
         pass
 
@@ -80,6 +85,8 @@ class BaseOptimizer(ABC):
         YIELD10_CHG4_grid = [0] if "YIELD10_CHG4" in self.disabled else self.YIELD10_CHG4_grid
         YIELD2_CHG4_grid  = [0] if "YIELD2_CHG4" in self.disabled else self.YIELD2_CHG4_grid
         CURVE_CHG4_grid   = [0] if "CURVE_CHG4" in self.disabled else self.CURVE_CHG4_grid
+        SPREAD_DELTA_grid = [0] if "SPREAD_DELTA" in self.disabled else self.SPREAD_DELTA_grid
+        YIELD10_DELTA_grid = [0] if "YIELD10_DELTA" in self.disabled else self.YIELD10_DELTA_grid
 
         # Validate all enabled grids are non-empty before starting
         empty = [name for name, grid, disabled in [
@@ -91,6 +98,8 @@ class BaseOptimizer(ABC):
             ("YIELD10_CHG4", YIELD10_CHG4_grid, "YIELD10_CHG4" in self.disabled),
             ("YIELD2_CHG4", YIELD2_CHG4_grid, "YIELD2_CHG4" in self.disabled),
             ("CURVE_CHG4", CURVE_CHG4_grid, "CURVE_CHG4" in self.disabled),
+            ("SPREAD_DELTA", SPREAD_DELTA_grid, "SPREAD_DELTA" in self.disabled),
+            ("YIELD10_DELTA", YIELD10_DELTA_grid, "YIELD10_DELTA" in self.disabled),
         ] if not grid and not disabled]
         if empty:
             raise ValueError(f"Empty parameter grid(s): {', '.join(empty)} — check min/max/step values.")
@@ -101,10 +110,11 @@ class BaseOptimizer(ABC):
         results = []
         total = (len(MA_grid) * len(DROP_grid) * len(CHG4_grid) *
                  len(RET3_grid) * len(SPREAD_grid) *
-                 len(YIELD10_CHG4_grid) * len(YIELD2_CHG4_grid) * len(CURVE_CHG4_grid))
+                 len(YIELD10_CHG4_grid) * len(YIELD2_CHG4_grid) * len(CURVE_CHG4_grid) *
+                 len(SPREAD_DELTA_grid) * len(YIELD10_DELTA_grid))
         current = 0
 
-        for MA, DROP, CHG4, RET3, SPREAD_LVL, YIELD10_CHG4, YIELD2_CHG4, CURVE_CHG4 in itertools.product(
+        for MA, DROP, CHG4, RET3, SPREAD_LVL, YIELD10_CHG4, YIELD2_CHG4, CURVE_CHG4, SPREAD_DELTA, YIELD10_DELTA in itertools.product(
             MA_grid,
             DROP_grid,
             CHG4_grid,
@@ -113,10 +123,13 @@ class BaseOptimizer(ABC):
             YIELD10_CHG4_grid,
             YIELD2_CHG4_grid,
             CURVE_CHG4_grid,
+            SPREAD_DELTA_grid,
+            YIELD10_DELTA_grid,
         ):
             df_ind = IndicatorEngine.apply_all(df.copy(), MA)
             strat = self._create_strategy(MA, DROP, CHG4, RET3, SPREAD_LVL,
                                           YIELD10_CHG4, YIELD2_CHG4, CURVE_CHG4,
+                                          SPREAD_DELTA, YIELD10_DELTA,
                                           disabled=self.disabled)
             positions, buys, sells = strat.run(df_ind, start_invested=start_invested)
 
@@ -132,6 +145,8 @@ class BaseOptimizer(ABC):
                 "YIELD10_CHG4": YIELD10_CHG4,
                 "YIELD2_CHG4": YIELD2_CHG4,
                 "CURVE_CHG4": CURVE_CHG4,
+                "SPREAD_DELTA": SPREAD_DELTA,
+                "YIELD10_DELTA": YIELD10_DELTA,
                 "APY": bt_result["apy"],
                 "final_value": bt_result["final_value"],
                 "trade_count": len(sells),
@@ -154,6 +169,8 @@ class BaseOptimizer(ABC):
             "YIELD10_CHG4": best_row["YIELD10_CHG4"],
             "YIELD2_CHG4": best_row["YIELD2_CHG4"],
             "CURVE_CHG4": best_row["CURVE_CHG4"],
+            "SPREAD_DELTA": int(best_row["SPREAD_DELTA"]),
+            "YIELD10_DELTA": int(best_row["YIELD10_DELTA"]),
         }
 
         df_best = IndicatorEngine.apply_all(df.copy(), best_params["MA"])
@@ -166,6 +183,8 @@ class BaseOptimizer(ABC):
             best_params["YIELD10_CHG4"],
             best_params["YIELD2_CHG4"],
             best_params["CURVE_CHG4"],
+            best_params["SPREAD_DELTA"],
+            best_params["YIELD10_DELTA"],
             disabled=self.disabled,
         )
         positions, buys, sells = best_strat.run(df_best, start_invested=start_invested)

@@ -21,7 +21,8 @@ class SpreadStrategy(BaseStrategy):
     """
 
     def __init__(self, MA_LENGTH, DROP, CHG4_THR, RET3_THR, SPREAD_LVL,
-                 YIELD10_CHG4_THR=0, YIELD2_CHG4_THR=0, CURVE_CHG4_THR=0, disabled=()):
+                 YIELD10_CHG4_THR=0, YIELD2_CHG4_THR=0, CURVE_CHG4_THR=0,
+                 SPREAD_DELTA_N=2, YIELD10_DELTA_N=2, disabled=()):
         self.MA_LENGTH = MA_LENGTH
         self.DROP = DROP
         self.CHG4_THR = CHG4_THR
@@ -30,6 +31,8 @@ class SpreadStrategy(BaseStrategy):
         self.YIELD10_CHG4_THR = YIELD10_CHG4_THR
         self.YIELD2_CHG4_THR = YIELD2_CHG4_THR
         self.CURVE_CHG4_THR = CURVE_CHG4_THR
+        self.SPREAD_DELTA_N = int(SPREAD_DELTA_N)
+        self.YIELD10_DELTA_N = int(YIELD10_DELTA_N)
         self.disabled = set(disabled)
 
     # ------------------------------------------------------------------
@@ -55,13 +58,13 @@ class SpreadStrategy(BaseStrategy):
         past = df.loc[:idx]
         if len(past) < 3:
             return False
-        cond2 = True if "SPREAD_DELTA" in self.disabled else (past["spread_delta"].tail(2) < 0).all()
+        cond2 = True if "SPREAD_DELTA" in self.disabled else (past["spread_delta"].tail(self.SPREAD_DELTA_N) < 0).all()
         spreads = past["Spread"].iloc[-4:]
         recent_peak = spreads.max()
         if "DROP" not in self.disabled and (pd.isna(recent_peak) or pd.isna(row["Spread"])):
             return False
         cond3 = True if "DROP" in self.disabled else (row["Spread"] <= recent_peak * (1 - self.DROP))
-        cond4 = True if "YIELD10_DELTA" in self.disabled else (past["yield10_delta"].tail(2) < 0).all()
+        cond4 = True if "YIELD10_DELTA" in self.disabled else (past["yield10_delta"].tail(self.YIELD10_DELTA_N) < 0).all()
         return bool(cond1 and cond2 and cond3 and cond4)
 
     # ------------------------------------------------------------------
@@ -91,9 +94,9 @@ class SpreadStrategy(BaseStrategy):
 
         # Buy: all conditions true. Disabled factors → True (always pass).
         buy_ma          = pd.Series(True, index=df.index) if "MA" in self.disabled else (df["close"] > df[ma_col])
-        buy_delta       = pd.Series(True, index=df.index) if "SPREAD_DELTA" in self.disabled else (df["spread_delta"].rolling(2).max() < 0)
+        buy_delta       = pd.Series(True, index=df.index) if "SPREAD_DELTA" in self.disabled else (df["spread_delta"].rolling(self.SPREAD_DELTA_N).max() < 0)
         buy_drop        = pd.Series(True, index=df.index) if "DROP" in self.disabled else (df["Spread"] <= df["Spread"].rolling(4).max() * (1 - self.DROP))
-        buy_yield10_delta = pd.Series(True, index=df.index) if "YIELD10_DELTA" in self.disabled else (df["yield10_delta"].rolling(2).max() < 0)
+        buy_yield10_delta = pd.Series(True, index=df.index) if "YIELD10_DELTA" in self.disabled else (df["yield10_delta"].rolling(self.YIELD10_DELTA_N).max() < 0)
         buy_mask = (buy_ma & buy_delta & buy_drop & buy_yield10_delta).fillna(False).to_numpy()
 
         return sell_mask, buy_mask

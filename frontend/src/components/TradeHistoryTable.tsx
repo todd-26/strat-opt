@@ -113,21 +113,31 @@ function getPopup(t: TradeEvent, col: keyof TradeEvent, params: StrategyParams, 
       ],
     }
     if (col === 'spread_delta') {
-      const lines: string[] = [
-        `Δspread this week:   ${fmt(t.spread_delta, 4)}`,
-      ]
-      if (t.prev_spread_delta != null)
-        lines.push(`Δspread prior week:  ${fmt(t.prev_spread_delta, 4)}`)
-      lines.push('Both negative  →  spreads actively falling')
+      const n = params?.SPREAD_DELTA ?? 2
+      const lines: string[] = []
+      if (t.spread_delta_history?.length) {
+        t.spread_delta_history.forEach((v, i) => {
+          const label = i === t.spread_delta_history!.length - 1 ? 'This week' : `${t.spread_delta_history!.length - 1 - i} week(s) ago`
+          lines.push(`${label}:  ${fmt(v, 4)}`)
+        })
+      } else {
+        lines.push(`Δspread:  ${fmt(t.spread_delta, 4)}`)
+      }
+      lines.push(`All ${n} negative  →  spreads actively falling`)
       return { title: 'Buy Rule: Falling Spreads', lines }
     }
     if (col === 'yield10_delta') {
-      const lines: string[] = [
-        `Δyield10 this week:   ${fmt(t.yield10_delta, 4)}`,
-      ]
-      if (t.prev_yield10_delta != null)
-        lines.push(`Δyield10 prior week:  ${fmt(t.prev_yield10_delta, 4)}`)
-      lines.push('Both negative  →  10yr yield actively falling')
+      const n = params?.YIELD10_DELTA ?? 2
+      const lines: string[] = []
+      if (t.yield10_delta_history?.length) {
+        t.yield10_delta_history.forEach((v, i) => {
+          const label = i === t.yield10_delta_history!.length - 1 ? 'This week' : `${t.yield10_delta_history!.length - 1 - i} week(s) ago`
+          lines.push(`${label}:  ${fmt(v, 4)}`)
+        })
+      } else {
+        lines.push(`Δyield10:  ${fmt(t.yield10_delta, 4)}`)
+      }
+      lines.push(`All ${n} negative  →  10yr yield actively falling`)
       return { title: 'Buy Rule: Falling 10yr Yield', lines }
     }
   }
@@ -208,13 +218,13 @@ export function TradeHistoryTable({ trades, params, disabledFactors }: Props) {
               <Th tooltip="n-week moving average of close price. Bold on BUY: close must be above MA.">MA</Th>
               <Th tooltip="Credit spread at trade date. Sell rule: triggers if spread > SPREAD_LVL threshold.">Spread</Th>
               <Th tooltip="% drop from 4-week spread peak. Buy rule: must drop at least DROP threshold.">Drop</Th>
-              <Th tooltip="4-week % change in credit spread. Sell rule: triggers if chg4 > CHG4 threshold.">chg4</Th>
+              <Th tooltip={`4-week % change in credit spread (BAMLH0A0HYM2). Sell rule: triggers if chg4 > ${params?.CHG4 ?? 'CHG4'} threshold.`}>chg4</Th>
               <Th tooltip="3-week price return. Sell rule: triggers if ret3 < RET3 threshold.">ret3</Th>
-              <Th tooltip="Week-over-week change in credit spread. Buy rule: last 2 consecutive values must both be negative.">Δspread</Th>
-              <Th tooltip="4-week % change in 10yr Treasury yield. Sell rule: triggers if > YIELD10_CHG4 threshold.">Δ10yr%</Th>
-              <Th tooltip="4-week % change in 2yr Treasury yield. Sell rule: triggers if > YIELD2_CHG4 threshold.">Δ2yr%</Th>
+              <Th tooltip={`Week-over-week change in credit spread. Buy rule: last ${params?.SPREAD_DELTA ?? 2} consecutive values must all be negative.`}>Δspread</Th>
+              <Th tooltip={`4-week % change in 10yr Treasury yield (DGS10), not the credit spread. Sell rule: triggers if > ${params?.YIELD10_CHG4 ?? 'YIELD10_CHG4'} threshold.`}>Δ10yr%</Th>
+              <Th tooltip={`4-week % change in 2yr Treasury yield (DGS2), not the credit spread. Sell rule: triggers if > ${params?.YIELD2_CHG4 ?? 'YIELD2_CHG4'} threshold.`}>Δ2yr%</Th>
               <Th tooltip="4-week absolute change in yield curve (10y-2y). Sell rule: triggers if flattens more than CURVE_CHG4.">ΔCurve</Th>
-              <Th tooltip="Week-over-week change in 10yr yield. Buy rule: last 2 consecutive values must both be negative." tooltipAlign="right">Δyield10</Th>
+              <Th tooltip={`Week-over-week change in 10yr yield. Buy rule: last ${params?.YIELD10_DELTA ?? 2} consecutive values must all be negative.`} tooltipAlign="right">Δyield10</Th>
             </tr>
           </thead>
           <tbody>
