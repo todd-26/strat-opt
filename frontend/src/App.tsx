@@ -60,25 +60,29 @@ export default function App() {
   }
 
   const defaultStrategyParams: StrategyParams | null = config ? {
-    MA:           config.defaultParams.MA.value,
-    DROP:         config.defaultParams.DROP.value,
-    CHG4:         config.defaultParams.CHG4.value,
-    RET3:         config.defaultParams.RET3.value,
-    SPREAD_LVL:   config.defaultParams.SPREAD_LVL.value,
-    YIELD10_CHG4: config.defaultParams.YIELD10_CHG4.value,
-    YIELD2_CHG4:  config.defaultParams.YIELD2_CHG4.value,
-    CURVE_CHG4:   config.defaultParams.CURVE_CHG4.value,
+    MA:            config.defaultParams.MA.value,
+    DROP:          config.defaultParams.DROP.value,
+    CHG4:          config.defaultParams.CHG4.value,
+    RET3:          config.defaultParams.RET3.value,
+    SPREAD_LVL:    config.defaultParams.SPREAD_LVL.value,
+    YIELD10_CHG4:  config.defaultParams.YIELD10_CHG4.value,
+    YIELD2_CHG4:   config.defaultParams.YIELD2_CHG4.value,
+    CURVE_CHG4:    config.defaultParams.CURVE_CHG4.value,
+    SPREAD_DELTA:  config.defaultParams.SPREAD_DELTA.value,
+    YIELD10_DELTA: config.defaultParams.YIELD10_DELTA.value,
   } : null
 
   const paramDescriptions = config ? {
-    MA:           config.defaultParams.MA.desc,
-    DROP:         config.defaultParams.DROP.desc,
-    CHG4:         config.defaultParams.CHG4.desc,
-    RET3:         config.defaultParams.RET3.desc,
-    SPREAD_LVL:   config.defaultParams.SPREAD_LVL.desc,
-    YIELD10_CHG4: config.defaultParams.YIELD10_CHG4.desc,
-    YIELD2_CHG4:  config.defaultParams.YIELD2_CHG4.desc,
-    CURVE_CHG4:   config.defaultParams.CURVE_CHG4.desc,
+    MA:            config.defaultParams.MA.desc,
+    DROP:          config.defaultParams.DROP.desc,
+    CHG4:          config.defaultParams.CHG4.desc,
+    RET3:          config.defaultParams.RET3.desc,
+    SPREAD_LVL:    config.defaultParams.SPREAD_LVL.desc,
+    YIELD10_CHG4:  config.defaultParams.YIELD10_CHG4.desc,
+    YIELD2_CHG4:   config.defaultParams.YIELD2_CHG4.desc,
+    CURVE_CHG4:    config.defaultParams.CURVE_CHG4.desc,
+    SPREAD_DELTA:  config.defaultParams.SPREAD_DELTA.desc,
+    YIELD10_DELTA: config.defaultParams.YIELD10_DELTA.desc,
   } : undefined
 
   return (

@@ -7,6 +7,8 @@ export interface StrategyParams {
   YIELD10_CHG4: number
   YIELD2_CHG4: number
   CURVE_CHG4: number
+  SPREAD_DELTA: number
+  YIELD10_DELTA: number
 }
 
 export interface EquityPoint {
@@ -25,7 +27,7 @@ export interface TradeEvent {
   ma_value?: number | null
   spread_4wk_ago?: number | null
   close_3wk_ago?: number | null
-  prev_spread_delta?: number | null
+  spread_delta_history?: number[] | null
   spread_drop?: number | null
   spread_4wk_peak?: number | null
   yield10_chg4?: number | null
@@ -35,7 +37,7 @@ export interface TradeEvent {
   yield10_4wk_ago?: number | null
   yield2_4wk_ago?: number | null
   curve_4wk_ago?: number | null
-  prev_yield10_delta?: number | null
+  yield10_delta_history?: number[] | null
 }
 
 export interface BacktestResult {
@@ -56,6 +58,8 @@ export interface OptimizerResultRow {
   YIELD10_CHG4: number
   YIELD2_CHG4: number
   CURVE_CHG4: number
+  SPREAD_DELTA: number
+  YIELD10_DELTA: number
   APY: number
   final_value: number
   trade_count: number
@@ -98,6 +102,8 @@ export interface OptimizerGrids {
   YIELD10_CHG4: number[]
   YIELD2_CHG4: number[]
   CURVE_CHG4: number[]
+  SPREAD_DELTA: number[]
+  YIELD10_DELTA: number[]
 }
 
 export interface OptimizerRequest {
@@ -110,6 +116,8 @@ export interface OptimizerRequest {
   YIELD10_CHG4: number[]
   YIELD2_CHG4: number[]
   CURVE_CHG4: number[]
+  SPREAD_DELTA: number[]
+  YIELD10_DELTA: number[]
   start_invested: number
   cash_rate: number
   input_type: string
@@ -128,6 +136,8 @@ export interface ParamRanges {
   YIELD10_CHG4: ParamRange
   YIELD2_CHG4: ParamRange
   CURVE_CHG4: ParamRange
+  SPREAD_DELTA: ParamRange
+  YIELD10_DELTA: ParamRange
 }
 
 export interface ParamDef { name: string; value: number; desc: string }
@@ -140,6 +150,8 @@ export interface DefaultParams {
   YIELD10_CHG4: ParamDef
   YIELD2_CHG4: ParamDef
   CURVE_CHG4: ParamDef
+  SPREAD_DELTA: ParamDef
+  YIELD10_DELTA: ParamDef
 }
 export interface AppConfig {
   defaultParams: DefaultParams

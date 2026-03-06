@@ -20,11 +20,14 @@ class SPHYOptimizer(BaseOptimizer):
         self.YIELD10_CHG4_grid = [0]
         self.YIELD2_CHG4_grid = [0]
         self.CURVE_CHG4_grid = [0]
+        self.SPREAD_DELTA_grid = [2]
+        self.YIELD10_DELTA_grid = [2]
 
         super().__init__(input_type, input_dir, cash_rate, param_grids, start_date, end_date, disabled_factors)
 
     def _create_strategy(self, MA, DROP, CHG4, RET3, SPREAD_LVL,
-                         YIELD10_CHG4=0, YIELD2_CHG4=0, CURVE_CHG4=0, disabled=()):
+                         YIELD10_CHG4=0, YIELD2_CHG4=0, CURVE_CHG4=0,
+                         SPREAD_DELTA=2, YIELD10_DELTA=2, disabled=()):
         return SPHYStrategy(
             MA_LENGTH=MA,
             DROP=DROP,
@@ -34,5 +37,7 @@ class SPHYOptimizer(BaseOptimizer):
             YIELD10_CHG4_THR=YIELD10_CHG4,
             YIELD2_CHG4_THR=YIELD2_CHG4,
             CURVE_CHG4_THR=CURVE_CHG4,
+            SPREAD_DELTA_N=SPREAD_DELTA,
+            YIELD10_DELTA_N=YIELD10_DELTA,
             disabled=disabled,
         )

@@ -18,9 +18,10 @@
 | Parameter | What it measures | Role | Best value |
 |-----------|-----------------|------|------------|
 | **MA** | n-week moving average of close price | Price must be above its MA — confirms uptrend | 50 weeks |
-| **spread_delta** | Week-over-week change in credit spread (`Spread.diff()`) | Last 2 consecutive weekly spread deltas must both be negative — confirms spreads are actively falling | n/a (derived) |
+| **spread_delta** | Week-over-week change in credit spread (`Spread.diff()`) | Last `SPREAD_DELTA` consecutive weekly values must be negative — confirms spreads actively falling | n/a (derived) |
+| **SPREAD_DELTA** | Number of consecutive falling spread_delta weeks required for BUY | Configurable numeric param (default 2); replaces hardcoded "2 consecutive" | 2 |
 | **DROP** | Required % drop from the 4-week spread peak | Spread must have fallen this much from its recent high before re-entering | 1.6% |
-| **YIELD10_DELTA** | Week-over-week change in 10yr Treasury yield (`yield10_delta`) | Last 2 consecutive weekly deltas must both be negative — confirms yields falling | n/a (derived), disabled |
+| **YIELD10_DELTA** | Number of consecutive falling yield10_delta weeks required for BUY | Configurable numeric param (default 2); replaces hardcoded "2 consecutive"; starts disabled | 2, disabled |
 
 ### Data Sources
 
@@ -52,7 +53,7 @@ Any of the 10 factors can be disabled via a checkbox in the UI. This enables "wh
 
 - **Disabled sell factor** → never triggers (treated as `False`)
 - **Disabled buy factor** → always passes (treated as `True`)
-- `SPREAD_DELTA` and `YIELD10_DELTA` have no numeric threshold but are still disableable
+- `SPREAD_DELTA` and `YIELD10_DELTA` are now fully numeric parameters (integer, default 2) — they control the number of consecutive falling weeks required and appear as regular inputs in the UI
 
 In the optimizer, disabled factors collapse their grid to a single placeholder `[0]`, reducing total combinations. The 4 new treasury factors start disabled in `config.json` for all tickers.
 

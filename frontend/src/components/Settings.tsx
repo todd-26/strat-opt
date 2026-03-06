@@ -48,9 +48,9 @@ export function SettingsSheet({ open, onClose, settings, onUpdate, config, onSav
     }
   }
 
-  const PARAM_KEYS = ['MA', 'DROP', 'CHG4', 'RET3', 'SPREAD_LVL', 'YIELD10_CHG4', 'YIELD2_CHG4', 'CURVE_CHG4'] as const
+  const PARAM_KEYS = ['MA', 'DROP', 'CHG4', 'RET3', 'SPREAD_LVL', 'YIELD10_CHG4', 'YIELD2_CHG4', 'CURVE_CHG4', 'SPREAD_DELTA', 'YIELD10_DELTA'] as const
   type ParamKey = typeof PARAM_KEYS[number]
-  const PARAM_STEPS: Record<ParamKey, string> = { MA: '1', DROP: '0.001', CHG4: '0.005', RET3: '0.0005', SPREAD_LVL: '0.5', YIELD10_CHG4: '0.01', YIELD2_CHG4: '0.01', CURVE_CHG4: '0.05' }
+  const PARAM_STEPS: Record<ParamKey, string> = { MA: '1', DROP: '0.001', CHG4: '0.005', RET3: '0.0005', SPREAD_LVL: '0.5', YIELD10_CHG4: '0.01', YIELD2_CHG4: '0.01', CURVE_CHG4: '0.05', SPREAD_DELTA: '1', YIELD10_DELTA: '1' }
 
   return (
     <>

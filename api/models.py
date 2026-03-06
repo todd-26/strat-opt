@@ -11,6 +11,8 @@ class StrategyParams(BaseModel):
     YIELD10_CHG4: float = 0.0
     YIELD2_CHG4: float = 0.0
     CURVE_CHG4: float = 0.0
+    SPREAD_DELTA: int = 2
+    YIELD10_DELTA: int = 2
 
 
 class BuyHoldRequest(BaseModel):
@@ -43,6 +45,8 @@ class OptimizerRequest(BaseModel):
     YIELD10_CHG4: list[float] = [0.0]
     YIELD2_CHG4: list[float] = [0.0]
     CURVE_CHG4: list[float] = [0.0]
+    SPREAD_DELTA: list[int] = [2]
+    YIELD10_DELTA: list[int] = [2]
     start_invested: int = 1
     cash_rate: float = 0.04
     input_type: str = "csv"
@@ -68,7 +72,7 @@ class TradeEvent(BaseModel):
     # Source data for popup derivations
     spread_4wk_ago: Optional[float] = None   # for chg4 explanation
     close_3wk_ago: Optional[float] = None    # for ret3 explanation
-    prev_spread_delta: Optional[float] = None  # prior week's delta (buy rule needs 2 consecutive)
+    spread_delta_history: Optional[list[float]] = None  # last N weeks of spread_delta, oldest first
     spread_drop: Optional[float] = None      # 1 - (spread / 4wk_peak) — actual drop %
     spread_4wk_peak: Optional[float] = None  # the 4-week peak used in the calculation
     # Treasury yield indicators
@@ -80,7 +84,7 @@ class TradeEvent(BaseModel):
     yield10_4wk_ago: Optional[float] = None
     yield2_4wk_ago: Optional[float] = None
     curve_4wk_ago: Optional[float] = None
-    prev_yield10_delta: Optional[float] = None
+    yield10_delta_history: Optional[list[float]] = None  # last N weeks of yield10_delta, oldest first
 
 
 class BacktestResult(BaseModel):
@@ -101,6 +105,8 @@ class OptimizerResultRow(BaseModel):
     YIELD10_CHG4: float
     YIELD2_CHG4: float
     CURVE_CHG4: float
+    SPREAD_DELTA: int
+    YIELD10_DELTA: int
     APY: float
     final_value: float
     trade_count: int
@@ -149,6 +155,8 @@ class DefaultRanges(BaseModel):
     YIELD10_CHG4: ParamRange
     YIELD2_CHG4: ParamRange
     CURVE_CHG4: ParamRange
+    SPREAD_DELTA: ParamRange
+    YIELD10_DELTA: ParamRange
 
 
 class ParamDef(BaseModel):
@@ -166,6 +174,8 @@ class DefaultParams(BaseModel):
     YIELD10_CHG4: ParamDef
     YIELD2_CHG4: ParamDef
     CURVE_CHG4: ParamDef
+    SPREAD_DELTA: ParamDef
+    YIELD10_DELTA: ParamDef
 
 
 class AppConfig(BaseModel):

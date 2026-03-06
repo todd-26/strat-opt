@@ -81,6 +81,8 @@ const SINGLE_FIELDS: { key: keyof StrategyParams; factor: string; label: string;
   { key: 'CURVE_CHG4', factor: 'CURVE_CHG4', label: 'CURVE_CHG4', step: '0.05' },
   { key: 'MA', factor: 'MA', label: 'MA (weeks)', step: '1' },
   { key: 'DROP', factor: 'DROP', label: 'DROP', step: '0.001' },
+  { key: 'SPREAD_DELTA', factor: 'SPREAD_DELTA', label: 'Δspread (weeks)', step: '1' },
+  { key: 'YIELD10_DELTA', factor: 'YIELD10_DELTA', label: 'Δyield10 (weeks)', step: '1' },
 ]
 
 function SingleForm({
@@ -123,7 +125,7 @@ function SingleForm({
       {/* Buy factors header */}
       <div className="mb-1 text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>Buy Factors</div>
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-        {SINGLE_FIELDS.filter(f => ['MA', 'DROP'].includes(f.factor)).map(f => {
+        {SINGLE_FIELDS.filter(f => ['MA', 'DROP', 'SPREAD_DELTA', 'YIELD10_DELTA'].includes(f.factor)).map(f => {
           const off = disabledFactors?.has(f.factor)
           return (
             <div key={f.key} className="flex items-end gap-2" style={{ opacity: off ? 0.45 : 1 }}>
@@ -134,30 +136,6 @@ function SingleForm({
             </div>
           )
         })}
-        {/* SPREAD_DELTA — no numeric input */}
-        {showCheckboxes && (
-          <div className="flex items-end gap-2" style={{ opacity: disabledFactors?.has('SPREAD_DELTA') ? 0.45 : 1 }}>
-            <FactorCheckbox checked={!disabledFactors?.has('SPREAD_DELTA')} onChange={() => onToggleFactor!('SPREAD_DELTA')} />
-            <div className="flex-1">
-              <div className="mb-1 text-xs font-medium" style={{ color: 'var(--text-muted)' }}>Δspread</div>
-              <div className="rounded border px-2 py-1.5 text-sm" style={{ background: 'var(--bg-input)', borderColor: 'var(--border)', color: 'var(--text-muted)' }}>
-                2 consecutive falling
-              </div>
-            </div>
-          </div>
-        )}
-        {/* YIELD10_DELTA — no numeric input */}
-        {showCheckboxes && (
-          <div className="flex items-end gap-2" style={{ opacity: disabledFactors?.has('YIELD10_DELTA') ? 0.45 : 1 }}>
-            <FactorCheckbox checked={!disabledFactors?.has('YIELD10_DELTA')} onChange={() => onToggleFactor!('YIELD10_DELTA')} />
-            <div className="flex-1">
-              <div className="mb-1 text-xs font-medium" style={{ color: 'var(--text-muted)' }}>Δyield10</div>
-              <div className="rounded border px-2 py-1.5 text-sm" style={{ background: 'var(--bg-input)', borderColor: 'var(--border)', color: 'var(--text-muted)' }}>
-                2 consecutive falling
-              </div>
-            </div>
-          </div>
-        )}
       </div>
     </div>
   )
@@ -174,10 +152,12 @@ const PARAM_LABELS: Record<keyof ParamRanges, string> = {
   YIELD10_CHG4: 'YIELD10_CHG4',
   YIELD2_CHG4: 'YIELD2_CHG4',
   CURVE_CHG4: 'CURVE_CHG4',
+  SPREAD_DELTA: 'Δspread (weeks)',
+  YIELD10_DELTA: 'Δyield10 (weeks)',
 }
 
 const RANGE_SELL_KEYS: (keyof ParamRanges)[] = ['SPREAD_LVL', 'CHG4', 'RET3', 'YIELD10_CHG4', 'YIELD2_CHG4', 'CURVE_CHG4']
-const RANGE_BUY_KEYS: (keyof ParamRanges)[] = ['MA', 'DROP']
+const RANGE_BUY_KEYS: (keyof ParamRanges)[] = ['MA', 'DROP', 'SPREAD_DELTA', 'YIELD10_DELTA']
 
 function RangeForm({
   ranges,
@@ -236,26 +216,6 @@ function RangeForm({
       <div className="text-xs font-semibold uppercase tracking-wide pt-1" style={{ color: 'var(--text-muted)' }}>Buy Factors</div>
       {RANGE_BUY_KEYS.map(renderRow)}
 
-      {/* SPREAD_DELTA row — no numeric range */}
-      {showCheckboxes && (
-        <div className="grid grid-cols-[auto_1fr_1fr_1fr_1fr] gap-2 items-center" style={{ opacity: disabledFactors?.has('SPREAD_DELTA') ? 0.45 : 1 }}>
-          <div className="flex items-center gap-1" style={{ minWidth: 130 }}>
-            <FactorCheckbox checked={!disabledFactors?.has('SPREAD_DELTA')} onChange={() => onToggleFactor!('SPREAD_DELTA')} />
-            <span className="text-sm font-medium" style={{ color: 'var(--text)' }}>Δspread</span>
-          </div>
-          <div className="col-span-3 text-sm" style={{ color: 'var(--text-muted)' }}>2 consecutive falling (no range)</div>
-        </div>
-      )}
-      {/* YIELD10_DELTA row — no numeric range */}
-      {showCheckboxes && (
-        <div className="grid grid-cols-[auto_1fr_1fr_1fr_1fr] gap-2 items-center" style={{ opacity: disabledFactors?.has('YIELD10_DELTA') ? 0.45 : 1 }}>
-          <div className="flex items-center gap-1" style={{ minWidth: 130 }}>
-            <FactorCheckbox checked={!disabledFactors?.has('YIELD10_DELTA')} onChange={() => onToggleFactor!('YIELD10_DELTA')} />
-            <span className="text-sm font-medium" style={{ color: 'var(--text)' }}>Δyield10</span>
-          </div>
-          <div className="col-span-3 text-sm" style={{ color: 'var(--text-muted)' }}>2 consecutive falling (no range)</div>
-        </div>
-      )}
     </div>
   )
 }

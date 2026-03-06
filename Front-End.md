@@ -41,7 +41,7 @@ Each tab has its own independent state (parameters, results).
 ### Parameter Panel (per tab)
 Each tab has a collapsible parameter panel. It starts expanded. After a run completes successfully, it collapses automatically so results get full focus. The user can re-expand it at any time.
 
-**Factor Checkboxes**: Each factor has a checkbox to enable/disable it. Factors are grouped under "Sell Factors" (SPREAD_LVL, CHG4, RET3, YIELD10_CHG4, YIELD2_CHG4, CURVE_CHG4) and "Buy Factors" (MA, DROP, Δspread, Δyield10) headers. Disabled factors grey out their inputs (opacity 0.45). `SPREAD_DELTA` (Δspread) and `YIELD10_DELTA` (Δyield10) have a checkbox but no numeric input — they show "2 consecutive falling" as a label. In the optimizer, disabled factors collapse their grid to a single placeholder value, reducing total combinations.
+**Factor Checkboxes**: Each factor has a checkbox to enable/disable it. Factors are grouped under "Sell Factors" (SPREAD_LVL, CHG4, RET3, YIELD10_CHG4, YIELD2_CHG4, CURVE_CHG4) and "Buy Factors" (MA, DROP, SPREAD_DELTA, YIELD10_DELTA) headers. Disabled factors grey out their inputs (opacity 0.45). `SPREAD_DELTA` and `YIELD10_DELTA` are fully numeric inputs (integer, default 2) controlling how many consecutive falling weeks are required — they behave identically to all other parameters. In the optimizer, disabled factors collapse their grid to a single placeholder value, reducing total combinations.
 
 ### Results Area
 Results are displayed **side by side**: the chart on the left, key summary metrics on the right. Both are given equal visual prominence.
