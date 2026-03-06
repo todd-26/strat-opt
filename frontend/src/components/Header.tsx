@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Settings as SettingsIcon, X } from 'lucide-react'
 
 interface Props {
@@ -12,18 +13,35 @@ interface Props {
   dateRange?: { min: string; max: string } | null
 }
 
-const inputStyle = {
+const inputStyle: React.CSSProperties = {
   background: 'var(--bg-input)',
   color: 'var(--text)',
   border: '1px solid var(--border)',
 }
 
 export function Header({ ticker, securities, onTickerChange, onOpenSettings, startDate, endDate, onStartDateChange, onEndDateChange, dateRange }: Props) {
+  const [error, setError] = useState('')
   const hasCustomDates = startDate !== '' || endDate !== ''
 
-  function clearDates() {
-    onStartDateChange('')
-    onEndDateChange('')
+  function validate(newStart: string, newEnd: string): boolean {
+    const effStart = newStart || dateRange?.min || ''
+    const effEnd = newEnd || dateRange?.max || ''
+    if (newStart && dateRange?.min && newStart < dateRange.min) {
+      setError(`Start date ${newStart} is before the earliest available data (${dateRange.min}). Date cleared.`)
+      onStartDateChange('')
+      return false
+    }
+    if (newEnd && dateRange?.max && newEnd > dateRange.max) {
+      setError(`End date ${newEnd} is after the latest available data (${dateRange.max}). Date cleared.`)
+      onEndDateChange('')
+      return false
+    }
+    if (effStart && effEnd && effEnd < effStart) {
+      setError(`End date (${effEnd}) cannot be before start date (${effStart}). End date cleared.`)
+      onEndDateChange('')
+      return false
+    }
+    return true
   }
 
   return (
@@ -43,33 +61,40 @@ export function Header({ ticker, securities, onTickerChange, onOpenSettings, sta
             <option key={s} value={s}>{s}</option>
           ))}
         </select>
-        <label className="flex items-center gap-1 text-xs" style={{ color: 'var(--text-muted)' }}>
-          From
-          <DateInput
-            value={startDate}
-            placeholder={dateRange?.min}
-            onChange={onStartDateChange}
-          />
-        </label>
-        <label className="flex items-center gap-1 text-xs" style={{ color: 'var(--text-muted)' }}>
-          To
-          <DateInput
-            value={endDate}
-            placeholder={dateRange?.max}
-            onChange={onEndDateChange}
-          />
-        </label>
+
+        <DateField
+          label="From"
+          value={startDate}
+          defaultValue={dateRange?.min}
+          min={dateRange?.min}
+          max={dateRange?.max}
+          onChange={onStartDateChange}
+          onClear={() => onStartDateChange('')}
+          onBlur={() => validate(startDate, endDate)}
+        />
+        <DateField
+          label="To"
+          value={endDate}
+          defaultValue={dateRange?.max}
+          min={dateRange?.min}
+          max={dateRange?.max}
+          onChange={onEndDateChange}
+          onClear={() => onEndDateChange('')}
+          onBlur={() => validate(startDate, endDate)}
+        />
+
         {hasCustomDates && (
           <button
-            onClick={clearDates}
+            onClick={() => { onStartDateChange(''); onEndDateChange('') }}
             className="rounded p-1 transition-opacity hover:opacity-70"
-            title="Clear date filter"
+            title="Reset to full date range"
             style={{ color: 'var(--text-muted)' }}
           >
             <X size={14} />
           </button>
         )}
       </div>
+
       <button
         onClick={onOpenSettings}
         className="rounded p-1.5 transition-opacity hover:opacity-70"
@@ -77,34 +102,67 @@ export function Header({ ticker, securities, onTickerChange, onOpenSettings, sta
       >
         <SettingsIcon size={20} />
       </button>
+
+      {error && (
+        <div
+          className="flex items-center gap-3 rounded border px-4 py-3 shadow-lg"
+          style={{
+            position: 'fixed',
+            top: '4.5rem',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            zIndex: 1000,
+            background: 'var(--bg-card)',
+            borderColor: 'var(--sell)',
+            maxWidth: '440px',
+          }}
+        >
+          <span className="text-sm" style={{ color: 'var(--text)' }}>{error}</span>
+          <button onClick={() => setError('')} className="flex-shrink-0 hover:opacity-70" style={{ color: 'var(--text-muted)' }}>
+            <X size={14} />
+          </button>
+        </div>
+      )}
     </header>
   )
 }
 
-function DateInput({ value, placeholder, onChange }: { value: string; placeholder?: string; onChange: (v: string) => void }) {
-  // When empty, show the data-range placeholder as a text overlay
-  // The native date input sits behind it; clicking focuses the real input
-  const empty = value === ''
+interface DateFieldProps {
+  label: string
+  value: string
+  defaultValue?: string
+  min?: string
+  max?: string
+  onChange: (v: string) => void
+  onClear: () => void
+  onBlur: () => void
+}
+
+function DateField({ label, value, defaultValue, min, max, onChange, onClear, onBlur }: DateFieldProps) {
+  const displayValue = value || defaultValue || ''
+
   return (
-    <span className="relative inline-block">
+    <label className="flex items-center gap-1 text-xs" style={{ color: 'var(--text-muted)' }}>
+      {label}
       <input
         type="date"
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
+        value={displayValue}
+        onChange={(e) => { if (e.target.value) onChange(e.target.value) }}
+        onBlur={onBlur}
         className="rounded px-2 py-1 text-sm"
-        style={{
-          ...inputStyle,
-          ...(empty && placeholder ? { color: 'transparent' } : {}),
-        }}
+        style={inputStyle}
       />
-      {empty && placeholder && (
-        <span
-          className="pointer-events-none absolute inset-0 flex items-center px-2 text-sm"
+      {value && (
+        <button
+          type="button"
+          onClick={onClear}
+          className="rounded p-0.5 hover:opacity-70"
+          title="Clear date"
           style={{ color: 'var(--text-muted)' }}
         >
-          {placeholder}
-        </span>
+          <X size={12} />
+        </button>
       )}
-    </span>
+    </label>
   )
 }

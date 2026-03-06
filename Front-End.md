@@ -27,7 +27,7 @@ Themes are applied globally and persisted in localStorage.
 A persistent top header containing:
 - App name on the left (e.g., **strat-opt**)
 - Security **dropdown** next to the name (populated from `GET /api/securities`; currently SPHY and SHYM)
-- **From / To date inputs** for a global date range filter (blank = full data; not persisted; applies to all three tabs). When empty, shows the actual data range (min/max dates) as placeholder text, fetched from `GET /api/date-range`. An **X** button appears when either date is customized to clear both back to empty.
+- **From / To date inputs** for a global date range filter (not persisted; applies to all three tabs). By default they display the actual data range (min/max) for the selected security, fetched from `GET /api/date-range`; internally stored as `''` (no filter) until the user changes them. Uses `<input type="date">` — browser native calendar, enforces valid dates. A small popover appears below each field on focus with **Today** (clamped to data range) and **Clear** (resets field to default range) buttons. On blur, validates: end < start or date out of data range shows an error popup and clears the bad field. An **X** button appears when either date is customized to reset both to default.
 - Gear icon on the right to open Settings
 
 ### Tab Navigation
