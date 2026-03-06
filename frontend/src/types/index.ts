@@ -4,6 +4,9 @@ export interface StrategyParams {
   CHG4: number
   RET3: number
   SPREAD_LVL: number
+  YIELD10_CHG4: number
+  YIELD2_CHG4: number
+  CURVE_CHG4: number
 }
 
 export interface EquityPoint {
@@ -25,6 +28,14 @@ export interface TradeEvent {
   prev_spread_delta?: number | null
   spread_drop?: number | null
   spread_4wk_peak?: number | null
+  yield10_chg4?: number | null
+  yield2_chg4?: number | null
+  curve_chg4?: number | null
+  yield10_delta?: number | null
+  yield10_4wk_ago?: number | null
+  yield2_4wk_ago?: number | null
+  curve_4wk_ago?: number | null
+  prev_yield10_delta?: number | null
 }
 
 export interface BacktestResult {
@@ -42,6 +53,9 @@ export interface OptimizerResultRow {
   CHG4: number
   RET3: number
   SPREAD_LVL: number
+  YIELD10_CHG4: number
+  YIELD2_CHG4: number
+  CURVE_CHG4: number
   APY: number
   final_value: number
   trade_count: number
@@ -59,6 +73,10 @@ export interface SignalMetrics {
   ret3?: number | null
   chg4?: number | null
   spread_delta?: number | null
+  yield10_chg4?: number | null
+  yield2_chg4?: number | null
+  curve_chg4?: number | null
+  yield10_delta?: number | null
   last_date: string
   close: number
 }
@@ -77,6 +95,9 @@ export interface OptimizerGrids {
   CHG4: number[]
   RET3: number[]
   SPREAD_LVL: number[]
+  YIELD10_CHG4: number[]
+  YIELD2_CHG4: number[]
+  CURVE_CHG4: number[]
 }
 
 export interface OptimizerRequest {
@@ -86,6 +107,9 @@ export interface OptimizerRequest {
   CHG4: number[]
   RET3: number[]
   SPREAD_LVL: number[]
+  YIELD10_CHG4: number[]
+  YIELD2_CHG4: number[]
+  CURVE_CHG4: number[]
   start_invested: number
   cash_rate: number
   input_type: string
@@ -101,6 +125,9 @@ export interface ParamRanges {
   CHG4: ParamRange
   RET3: ParamRange
   SPREAD_LVL: ParamRange
+  YIELD10_CHG4: ParamRange
+  YIELD2_CHG4: ParamRange
+  CURVE_CHG4: ParamRange
 }
 
 export interface ParamDef { name: string; value: number; desc: string }
@@ -110,6 +137,9 @@ export interface DefaultParams {
   CHG4: ParamDef
   RET3: ParamDef
   SPREAD_LVL: ParamDef
+  YIELD10_CHG4: ParamDef
+  YIELD2_CHG4: ParamDef
+  CURVE_CHG4: ParamDef
 }
 export interface AppConfig {
   defaultParams: DefaultParams

@@ -17,15 +17,22 @@ class SPHYOptimizer(BaseOptimizer):
         self.CHG4_grid = [0.16]
         self.RET3_grid = [-0.021, -0.0215, -0.022, -0.0225, -0.023]
         self.SPREAD_grid = [7.0]
+        self.YIELD10_CHG4_grid = [0]
+        self.YIELD2_CHG4_grid = [0]
+        self.CURVE_CHG4_grid = [0]
 
         super().__init__(input_type, input_dir, cash_rate, param_grids, start_date, end_date, disabled_factors)
 
-    def _create_strategy(self, MA, DROP, CHG4, RET3, SPREAD_LVL, disabled=()):
+    def _create_strategy(self, MA, DROP, CHG4, RET3, SPREAD_LVL,
+                         YIELD10_CHG4=0, YIELD2_CHG4=0, CURVE_CHG4=0, disabled=()):
         return SPHYStrategy(
             MA_LENGTH=MA,
             DROP=DROP,
             CHG4_THR=CHG4,
             RET3_THR=RET3,
             SPREAD_LVL=SPREAD_LVL,
+            YIELD10_CHG4_THR=YIELD10_CHG4,
+            YIELD2_CHG4_THR=YIELD2_CHG4,
+            CURVE_CHG4_THR=CURVE_CHG4,
             disabled=disabled,
         )

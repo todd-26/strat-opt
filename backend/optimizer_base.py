@@ -48,9 +48,16 @@ class BaseOptimizer(ABC):
                 self.RET3_grid = param_grids["RET3"]
             if "SPREAD_LVL" in param_grids:
                 self.SPREAD_grid = param_grids["SPREAD_LVL"]
+            if "YIELD10_CHG4" in param_grids:
+                self.YIELD10_CHG4_grid = param_grids["YIELD10_CHG4"]
+            if "YIELD2_CHG4" in param_grids:
+                self.YIELD2_CHG4_grid = param_grids["YIELD2_CHG4"]
+            if "CURVE_CHG4" in param_grids:
+                self.CURVE_CHG4_grid = param_grids["CURVE_CHG4"]
 
     @abstractmethod
-    def _create_strategy(self, MA, DROP, CHG4, RET3, SPREAD_LVL, disabled=()):
+    def _create_strategy(self, MA, DROP, CHG4, RET3, SPREAD_LVL,
+                         YIELD10_CHG4=0, YIELD2_CHG4=0, CURVE_CHG4=0, disabled=()):
         """Return a strategy instance for this security."""
         pass
 
@@ -65,11 +72,14 @@ class BaseOptimizer(ABC):
         best_result : dict
         """
         # Collapse disabled factor grids to a single placeholder value
-        MA_grid = [0] if "MA" in self.disabled else self.MA_grid
-        DROP_grid = [0] if "DROP" in self.disabled else self.DROP_grid
-        CHG4_grid = [0] if "CHG4" in self.disabled else self.CHG4_grid
-        RET3_grid = [0] if "RET3" in self.disabled else self.RET3_grid
-        SPREAD_grid = [0] if "SPREAD_LVL" in self.disabled else self.SPREAD_grid
+        MA_grid          = [0] if "MA" in self.disabled else self.MA_grid
+        DROP_grid        = [0] if "DROP" in self.disabled else self.DROP_grid
+        CHG4_grid        = [0] if "CHG4" in self.disabled else self.CHG4_grid
+        RET3_grid        = [0] if "RET3" in self.disabled else self.RET3_grid
+        SPREAD_grid      = [0] if "SPREAD_LVL" in self.disabled else self.SPREAD_grid
+        YIELD10_CHG4_grid = [0] if "YIELD10_CHG4" in self.disabled else self.YIELD10_CHG4_grid
+        YIELD2_CHG4_grid  = [0] if "YIELD2_CHG4" in self.disabled else self.YIELD2_CHG4_grid
+        CURVE_CHG4_grid   = [0] if "CURVE_CHG4" in self.disabled else self.CURVE_CHG4_grid
 
         # Validate all enabled grids are non-empty before starting
         empty = [name for name, grid, disabled in [
@@ -78,6 +88,9 @@ class BaseOptimizer(ABC):
             ("CHG4", CHG4_grid, "CHG4" in self.disabled),
             ("RET3", RET3_grid, "RET3" in self.disabled),
             ("SPREAD_LVL", SPREAD_grid, "SPREAD_LVL" in self.disabled),
+            ("YIELD10_CHG4", YIELD10_CHG4_grid, "YIELD10_CHG4" in self.disabled),
+            ("YIELD2_CHG4", YIELD2_CHG4_grid, "YIELD2_CHG4" in self.disabled),
+            ("CURVE_CHG4", CURVE_CHG4_grid, "CURVE_CHG4" in self.disabled),
         ] if not grid and not disabled]
         if empty:
             raise ValueError(f"Empty parameter grid(s): {', '.join(empty)} — check min/max/step values.")
@@ -87,18 +100,24 @@ class BaseOptimizer(ABC):
 
         results = []
         total = (len(MA_grid) * len(DROP_grid) * len(CHG4_grid) *
-                 len(RET3_grid) * len(SPREAD_grid))
+                 len(RET3_grid) * len(SPREAD_grid) *
+                 len(YIELD10_CHG4_grid) * len(YIELD2_CHG4_grid) * len(CURVE_CHG4_grid))
         current = 0
 
-        for MA, DROP, CHG4, RET3, SPREAD_LVL in itertools.product(
+        for MA, DROP, CHG4, RET3, SPREAD_LVL, YIELD10_CHG4, YIELD2_CHG4, CURVE_CHG4 in itertools.product(
             MA_grid,
             DROP_grid,
             CHG4_grid,
             RET3_grid,
             SPREAD_grid,
+            YIELD10_CHG4_grid,
+            YIELD2_CHG4_grid,
+            CURVE_CHG4_grid,
         ):
             df_ind = IndicatorEngine.apply_all(df.copy(), MA)
-            strat = self._create_strategy(MA, DROP, CHG4, RET3, SPREAD_LVL, disabled=self.disabled)
+            strat = self._create_strategy(MA, DROP, CHG4, RET3, SPREAD_LVL,
+                                          YIELD10_CHG4, YIELD2_CHG4, CURVE_CHG4,
+                                          disabled=self.disabled)
             positions, buys, sells = strat.run(df_ind, start_invested=start_invested)
 
             bt = Backtester(self.cash_rate)
@@ -110,6 +129,9 @@ class BaseOptimizer(ABC):
                 "CHG4": CHG4,
                 "RET3": RET3,
                 "SPREAD_LVL": SPREAD_LVL,
+                "YIELD10_CHG4": YIELD10_CHG4,
+                "YIELD2_CHG4": YIELD2_CHG4,
+                "CURVE_CHG4": CURVE_CHG4,
                 "APY": bt_result["apy"],
                 "final_value": bt_result["final_value"],
                 "trade_count": len(sells),
@@ -129,6 +151,9 @@ class BaseOptimizer(ABC):
             "CHG4": best_row["CHG4"],
             "RET3": best_row["RET3"],
             "SPREAD_LVL": best_row["SPREAD_LVL"],
+            "YIELD10_CHG4": best_row["YIELD10_CHG4"],
+            "YIELD2_CHG4": best_row["YIELD2_CHG4"],
+            "CURVE_CHG4": best_row["CURVE_CHG4"],
         }
 
         df_best = IndicatorEngine.apply_all(df.copy(), best_params["MA"])
@@ -138,6 +163,9 @@ class BaseOptimizer(ABC):
             best_params["CHG4"],
             best_params["RET3"],
             best_params["SPREAD_LVL"],
+            best_params["YIELD10_CHG4"],
+            best_params["YIELD2_CHG4"],
+            best_params["CURVE_CHG4"],
             disabled=self.disabled,
         )
         positions, buys, sells = best_strat.run(df_best, start_invested=start_invested)

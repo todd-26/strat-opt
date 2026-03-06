@@ -1,6 +1,6 @@
 ###################################################################################
-#  FRED API Module 
-# 
+#  FRED API Module
+#
 # The spread data comes from FRED (Federal Reserve Bank of St. Louis).
 ###################################################################################
 import os
@@ -11,14 +11,18 @@ from data_source import ApiSource, ApiData, CsvSource
 
 class Fred:
     '''
-    FRED data source for yield spread data.
+    FRED data source for any FRED series.
 
     :param input_type: Type of input data source to use (api or csv).
     :param input_dir: Directory for input CSV files.
+    :param series_id: FRED series ID (default: 'BAMLH0A0HYM2').
+    :param col_name: Column name for the data values (default: 'Spread').
     '''
-    def __init__(self, input_type: str, input_dir: Path) -> None:
+    def __init__(self, input_type: str, input_dir: Path, series_id: str = 'BAMLH0A0HYM2', col_name: str = 'Spread') -> None:
         self.input_type = input_type
         self.input_dir = input_dir
+        self.series_id = series_id
+        self.col_name = col_name
         if input_type == "api":
             apikey = os.environ.get("FRED_API_KEY")
             url = os.environ.get("FRED_URL")
@@ -29,7 +33,7 @@ class Fred:
             self.url = url
             self.params = {
                 'api_key': apikey,
-                'series_id': 'BAMLH0A0HYM2',
+                'series_id': self.series_id,
                 'file_type': 'json',
                 'observation_start': '2012-06-29',
                 'frequency': 'wef',  # weekly frequency taken on Fridays
@@ -38,22 +42,22 @@ class Fred:
 
     def get_data(self) -> pd.DataFrame:
         '''
-        Gets yield spread data from FRED and returns it as a DataFrame.
-        
-        :return: DataFrame with 'date' and 'Spread' columns.
+        Gets data from FRED and returns it as a DataFrame.
+
+        :return: DataFrame with 'date' and col_name columns.
         '''
         if self.input_type == "api":
             data_source = ApiSource(self.url, ApiData.JSON, "observations", self.params)
         else:
-            data_source = CsvSource(f"{self.input_dir}/fred.csv")
+            data_source = CsvSource(f"{self.input_dir}/{self.series_id}.csv")
         df = data_source.data
         df = df[['date', 'value']].copy()
         df['date'] = pd.to_datetime(df['date'], errors='coerce')
-        df.rename(columns={'value': 'Spread'}, inplace=True)
+        df.rename(columns={'value': self.col_name}, inplace=True)
         df = df.dropna(subset=['date']).sort_values('date').reset_index(drop=True)
-        # Normalize Spread: strip whitespace and coerce non-numeric entries to NaN (blank)
+        # Normalize col_name: strip whitespace and coerce non-numeric entries to NaN (blank)
         # For some reason the FRED API will return a period '.' for missing values
-        df['Spread'] = df['Spread'].astype(str).str.strip()
-        df.loc[df['Spread'] == '', 'Spread'] = np.nan
-        df['Spread'] = pd.to_numeric(df['Spread'], errors='coerce')
+        df[self.col_name] = df[self.col_name].astype(str).str.strip()
+        df.loc[df[self.col_name] == '', self.col_name] = np.nan
+        df[self.col_name] = pd.to_numeric(df[self.col_name], errors='coerce')
         return df

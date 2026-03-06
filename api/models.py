@@ -8,6 +8,9 @@ class StrategyParams(BaseModel):
     CHG4: float = 0.165
     RET3: float = -0.021
     SPREAD_LVL: float = 7.0
+    YIELD10_CHG4: float = 0.0
+    YIELD2_CHG4: float = 0.0
+    CURVE_CHG4: float = 0.0
 
 
 class BuyHoldRequest(BaseModel):
@@ -37,6 +40,9 @@ class OptimizerRequest(BaseModel):
     CHG4: list[float] = [0.165]
     RET3: list[float] = [-0.02, -0.0205, -0.021, -0.0215, -0.022]
     SPREAD_LVL: list[float] = [7.0]
+    YIELD10_CHG4: list[float] = [0.0]
+    YIELD2_CHG4: list[float] = [0.0]
+    CURVE_CHG4: list[float] = [0.0]
     start_invested: int = 1
     cash_rate: float = 0.04
     input_type: str = "csv"
@@ -65,6 +71,16 @@ class TradeEvent(BaseModel):
     prev_spread_delta: Optional[float] = None  # prior week's delta (buy rule needs 2 consecutive)
     spread_drop: Optional[float] = None      # 1 - (spread / 4wk_peak) — actual drop %
     spread_4wk_peak: Optional[float] = None  # the 4-week peak used in the calculation
+    # Treasury yield indicators
+    yield10_chg4: Optional[float] = None
+    yield2_chg4: Optional[float] = None
+    curve_chg4: Optional[float] = None
+    yield10_delta: Optional[float] = None
+    # Source data for treasury popup derivations
+    yield10_4wk_ago: Optional[float] = None
+    yield2_4wk_ago: Optional[float] = None
+    curve_4wk_ago: Optional[float] = None
+    prev_yield10_delta: Optional[float] = None
 
 
 class BacktestResult(BaseModel):
@@ -82,6 +98,9 @@ class OptimizerResultRow(BaseModel):
     CHG4: float
     RET3: float
     SPREAD_LVL: float
+    YIELD10_CHG4: float
+    YIELD2_CHG4: float
+    CURVE_CHG4: float
     APY: float
     final_value: float
     trade_count: int
@@ -99,6 +118,10 @@ class SignalMetrics(BaseModel):
     ret3: Optional[float] = None
     chg4: Optional[float] = None
     spread_delta: Optional[float] = None
+    yield10_chg4: Optional[float] = None
+    yield2_chg4: Optional[float] = None
+    curve_chg4: Optional[float] = None
+    yield10_delta: Optional[float] = None
     last_date: str
     close: float
 
@@ -123,6 +146,9 @@ class DefaultRanges(BaseModel):
     CHG4: ParamRange
     RET3: ParamRange
     SPREAD_LVL: ParamRange
+    YIELD10_CHG4: ParamRange
+    YIELD2_CHG4: ParamRange
+    CURVE_CHG4: ParamRange
 
 
 class ParamDef(BaseModel):
@@ -137,6 +163,9 @@ class DefaultParams(BaseModel):
     CHG4: ParamDef
     RET3: ParamDef
     SPREAD_LVL: ParamDef
+    YIELD10_CHG4: ParamDef
+    YIELD2_CHG4: ParamDef
+    CURVE_CHG4: ParamDef
 
 
 class AppConfig(BaseModel):

@@ -33,6 +33,10 @@ const COL_FACTOR_MAP: Partial<Record<keyof TradeEvent, string>> = {
   ma_value: 'MA',
   spread_drop: 'DROP',
   spread_delta: 'SPREAD_DELTA',
+  yield10_chg4: 'YIELD10_CHG4',
+  yield2_chg4: 'YIELD2_CHG4',
+  curve_chg4: 'CURVE_CHG4',
+  yield10_delta: 'YIELD10_DELTA',
 }
 
 function isBoldCell(t: TradeEvent, col: keyof TradeEvent, params?: StrategyParams, disabledFactors?: Set<string>): boolean {
@@ -40,14 +44,18 @@ function isBoldCell(t: TradeEvent, col: keyof TradeEvent, params?: StrategyParam
   const factor = COL_FACTOR_MAP[col]
   if (factor && disabledFactors?.has(factor)) return false
   if (t.action === 'SELL') {
-    if (col === 'spread')      return t.spread != null && t.spread > params.SPREAD_LVL
-    if (col === 'chg4')        return t.chg4 != null && t.chg4 > params.CHG4
-    if (col === 'ret3')        return t.ret3 != null && t.ret3 < params.RET3
+    if (col === 'spread')       return t.spread != null && t.spread > params.SPREAD_LVL
+    if (col === 'chg4')         return t.chg4 != null && t.chg4 > params.CHG4
+    if (col === 'ret3')         return t.ret3 != null && t.ret3 < params.RET3
+    if (col === 'yield10_chg4') return t.yield10_chg4 != null && t.yield10_chg4 > params.YIELD10_CHG4
+    if (col === 'yield2_chg4')  return t.yield2_chg4 != null && t.yield2_chg4 > params.YIELD2_CHG4
+    if (col === 'curve_chg4')   return t.curve_chg4 != null && t.curve_chg4 < -params.CURVE_CHG4
   }
   if (t.action === 'BUY') {
     if (col === 'price' || col === 'ma_value') return true
-    if (col === 'spread_delta') return t.spread_delta != null && t.spread_delta < 0
-    if (col === 'spread_drop') return t.spread_drop != null && t.spread_drop >= params.DROP
+    if (col === 'spread_delta')  return t.spread_delta != null && t.spread_delta < 0
+    if (col === 'spread_drop')   return t.spread_drop != null && t.spread_drop >= params.DROP
+    if (col === 'yield10_delta') return t.yield10_delta != null && t.yield10_delta < 0
   }
   return false
 }
@@ -113,6 +121,47 @@ function getPopup(t: TradeEvent, col: keyof TradeEvent, params: StrategyParams, 
       lines.push('Both negative  →  spreads actively falling')
       return { title: 'Buy Rule: Falling Spreads', lines }
     }
+    if (col === 'yield10_delta') {
+      const lines: string[] = [
+        `Δyield10 this week:   ${fmt(t.yield10_delta, 4)}`,
+      ]
+      if (t.prev_yield10_delta != null)
+        lines.push(`Δyield10 prior week:  ${fmt(t.prev_yield10_delta, 4)}`)
+      lines.push('Both negative  →  10yr yield actively falling')
+      return { title: 'Buy Rule: Falling 10yr Yield', lines }
+    }
+  }
+  if (t.action === 'SELL') {
+    if (col === 'yield10_chg4') {
+      const lines = [
+        `4-wk change:  ${fmtPct(t.yield10_chg4)}`,
+        `Threshold:    ${fmtPct(params.YIELD10_CHG4)}`,
+        `${fmtPct(t.yield10_chg4)} > ${fmtPct(params.YIELD10_CHG4)}  →  sell triggered`,
+      ]
+      if (t.yield10_4wk_ago != null && t.yield10_delta != null)
+        lines.push(`10yr yield: ${fmt(t.yield10_4wk_ago, 2)}% (4 wks ago)  →  current`)
+      return { title: 'Sell Rule: 10yr Yield 4-Week Change', lines }
+    }
+    if (col === 'yield2_chg4') {
+      const lines = [
+        `4-wk change:  ${fmtPct(t.yield2_chg4)}`,
+        `Threshold:    ${fmtPct(params.YIELD2_CHG4)}`,
+        `${fmtPct(t.yield2_chg4)} > ${fmtPct(params.YIELD2_CHG4)}  →  sell triggered`,
+      ]
+      if (t.yield2_4wk_ago != null)
+        lines.push(`2yr yield: ${fmt(t.yield2_4wk_ago, 2)}% (4 wks ago)  →  current`)
+      return { title: 'Sell Rule: 2yr Yield 4-Week Change', lines }
+    }
+    if (col === 'curve_chg4') {
+      const lines = [
+        `4-wk change:  ${fmt(t.curve_chg4, 4)}`,
+        `Threshold:    −${fmt(params.CURVE_CHG4, 2)}`,
+        `${fmt(t.curve_chg4, 4)} < −${fmt(params.CURVE_CHG4, 2)}  →  sell triggered`,
+      ]
+      if (t.curve_4wk_ago != null)
+        lines.push(`Yield curve: ${fmt(t.curve_4wk_ago, 2)} (4 wks ago)  →  current`)
+      return { title: 'Sell Rule: Yield Curve Flattening', lines }
+    }
   }
   return null
 }
@@ -161,7 +210,11 @@ export function TradeHistoryTable({ trades, params, disabledFactors }: Props) {
               <Th tooltip="% drop from 4-week spread peak. Buy rule: must drop at least DROP threshold.">Drop</Th>
               <Th tooltip="4-week % change in credit spread. Sell rule: triggers if chg4 > CHG4 threshold.">chg4</Th>
               <Th tooltip="3-week price return. Sell rule: triggers if ret3 < RET3 threshold.">ret3</Th>
-              <Th tooltip="Week-over-week change in credit spread. Buy rule: last 2 consecutive values must both be negative." tooltipAlign="right">Δspread</Th>
+              <Th tooltip="Week-over-week change in credit spread. Buy rule: last 2 consecutive values must both be negative.">Δspread</Th>
+              <Th tooltip="4-week % change in 10yr Treasury yield. Sell rule: triggers if > YIELD10_CHG4 threshold.">Δ10yr%</Th>
+              <Th tooltip="4-week % change in 2yr Treasury yield. Sell rule: triggers if > YIELD2_CHG4 threshold.">Δ2yr%</Th>
+              <Th tooltip="4-week absolute change in yield curve (10y-2y). Sell rule: triggers if flattens more than CURVE_CHG4.">ΔCurve</Th>
+              <Th tooltip="Week-over-week change in 10yr yield. Buy rule: last 2 consecutive values must both be negative." tooltipAlign="right">Δyield10</Th>
             </tr>
           </thead>
           <tbody>
@@ -189,6 +242,10 @@ export function TradeHistoryTable({ trades, params, disabledFactors }: Props) {
                 <Td bold={isBoldCell(t, 'chg4', params)} onClick={boldClick(t, 'chg4')}>{fmt(t.chg4, 4)}</Td>
                 <Td bold={isBoldCell(t, 'ret3', params)} onClick={boldClick(t, 'ret3')}>{fmt(t.ret3, 4)}</Td>
                 <Td bold={isBoldCell(t, 'spread_delta', params)} onClick={boldClick(t, 'spread_delta')}>{fmt(t.spread_delta, 4)}</Td>
+                <Td bold={isBoldCell(t, 'yield10_chg4', params)} onClick={boldClick(t, 'yield10_chg4')}>{fmt(t.yield10_chg4, 4)}</Td>
+                <Td bold={isBoldCell(t, 'yield2_chg4', params)} onClick={boldClick(t, 'yield2_chg4')}>{fmt(t.yield2_chg4, 4)}</Td>
+                <Td bold={isBoldCell(t, 'curve_chg4', params)} onClick={boldClick(t, 'curve_chg4')}>{fmt(t.curve_chg4, 4)}</Td>
+                <Td bold={isBoldCell(t, 'yield10_delta', params)} onClick={boldClick(t, 'yield10_delta')}>{fmt(t.yield10_delta, 4)}</Td>
               </tr>
             ))}
           </tbody>

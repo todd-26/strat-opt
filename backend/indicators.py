@@ -55,19 +55,51 @@ class IndicatorEngine:
         return df
 
     # ------------------------------------------------------------
+    # Treasury yield indicators
+    # ------------------------------------------------------------
+    @staticmethod
+    def add_yield10_chg4(df: pd.DataFrame) -> pd.DataFrame:
+        """Adds 4-week % change in 10yr yield → 'yield10_chg4'."""
+        df["yield10_chg4"] = df["DGS10"].pct_change(4)
+        return df
+
+    @staticmethod
+    def add_yield2_chg4(df: pd.DataFrame) -> pd.DataFrame:
+        """Adds 4-week % change in 2yr yield → 'yield2_chg4'."""
+        df["yield2_chg4"] = df["DGS2"].pct_change(4)
+        return df
+
+    @staticmethod
+    def add_curve_chg4(df: pd.DataFrame) -> pd.DataFrame:
+        """Adds 4-week absolute change in yield curve (10y-2y) → 'curve_chg4'."""
+        df["curve_chg4"] = df["YieldCurve"].diff(4)
+        return df
+
+    @staticmethod
+    def add_yield10_delta(df: pd.DataFrame) -> pd.DataFrame:
+        """Adds 1-week change in 10yr yield → 'yield10_delta'."""
+        df["yield10_delta"] = df["DGS10"].diff()
+        return df
+
+    # ------------------------------------------------------------
     # Convenience: apply full indicator suite
     # ------------------------------------------------------------
     @staticmethod
     def apply_all(df: pd.DataFrame, ma_length) -> pd.DataFrame:
         """
-        Applies the full required indicator set for SPHY:
+        Applies the full required indicator set:
         - MA length (parameterized)
         - chg4 (4-week change in spread)
         - ret3 (3-week price return)
         - delta in spread
+        - treasury yield indicators
         """
         df = IndicatorEngine.add_ma(df, ma_length)
         df = IndicatorEngine.add_chg4(df)
         df = IndicatorEngine.add_ret3(df)
         df = IndicatorEngine.add_spread_delta(df)
+        df = IndicatorEngine.add_yield10_chg4(df)
+        df = IndicatorEngine.add_yield2_chg4(df)
+        df = IndicatorEngine.add_curve_chg4(df)
+        df = IndicatorEngine.add_yield10_delta(df)
         return df

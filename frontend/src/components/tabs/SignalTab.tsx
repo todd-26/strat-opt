@@ -163,6 +163,10 @@ export function SignalTab({ settings, ticker, defaultParams, paramDescriptions, 
                   <MetricRow label="chg4" value={fmt(result.metrics.chg4, 4)} />
                   <MetricRow label="ret3" value={fmt(result.metrics.ret3, 4)} />
                   <MetricRow label="Δspread" value={fmt(result.metrics.spread_delta, 4)} />
+                  <MetricRow label="10yr chg4" value={fmt(result.metrics.yield10_chg4, 4)} />
+                  <MetricRow label="2yr chg4" value={fmt(result.metrics.yield2_chg4, 4)} />
+                  <MetricRow label="Curve chg4" value={fmt(result.metrics.curve_chg4, 4)} />
+                  <MetricRow label="Δyield10" value={fmt(result.metrics.yield10_delta, 4)} />
                 </dl>
               </div>
               <MetricsCard apy={result.apy} finalValue={result.final_value} />

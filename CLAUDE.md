@@ -42,7 +42,9 @@ strat-opt/
 ├── inputs/                 # CSV data files
 │   ├── sphy-weekly-adjusted.csv  # Alpha Vantage data for SPHY
 │   ├── shym-weekly-adjusted.csv  # Alpha Vantage data for SHYM
-│   └── fred.csv                  # FRED credit spread data
+│   ├── BAMLH0A0HYM2.csv          # FRED credit spread data
+│   ├── DGS10.csv                 # FRED 10yr Treasury yield
+│   └── DGS2.csv                  # FRED 2yr Treasury yield
 ├── .env                    # Environment variables (API keys)
 ├── serve.bat               # Normal use: serves pre-built frontend + API on :8000
 └── start-prod.bat          # Rebuilds frontend then serves on :8000
@@ -108,12 +110,13 @@ Backend Pipeline:
 ### Backend Pipeline (backend/)
 
 **Data layer** (`data_loader.py`, `data_source.py`, `alpha_vantage.py`, `fred.py`):
-- `WeeklyDataLoader` loads weekly prices/dividends and FRED daily spreads, resamples FRED to weekly (W-FRI), merges them, computes total return factor (`TR_factor`, `TR`)
+- `WeeklyDataLoader` loads weekly prices/dividends, FRED daily spreads, and FRED daily treasury yields (DGS10, DGS2); resamples all FRED series to weekly (W-FRI); merges via two `merge_asof` calls; computes total return factor (`TR_factor`, `TR`) and `YieldCurve = DGS10 - DGS2`
+- `Fred` class accepts `series_id` and `col_name` params — reusable for any FRED series (defaults: `BAMLH0A0HYM2` / `Spread`)
 - `DataSource` / `CsvSource` / `ApiSource` abstract CSV vs live API data sources
 - `ApiSource` caches responses in a module-level dict keyed by `(url, params, date)`; cache is valid for the calendar day and cleared on process restart
 
 **Indicators** (`indicators.py`):
-- `IndicatorEngine.apply_all()` adds: `MA` (n-week moving average), `chg4` (4-week spread change), `ret3` (3-week price return), `spread_delta` (week-over-week spread change)
+- `IndicatorEngine.apply_all()` adds: `MA` (n-week moving average), `chg4` (4-week spread change), `ret3` (3-week price return), `spread_delta` (week-over-week spread change), `yield10_chg4` (4-week % change in 10yr yield), `yield2_chg4` (4-week % change in 2yr yield), `curve_chg4` (4-week absolute change in yield curve), `yield10_delta` (week-over-week change in 10yr yield)
 
 **Strategy** (`strategy_base.py`, `strategy_spread.py`, `strategy_sphy.py`, `strategy_shym.py`, `strategy_buyhold.py`):
 - `BaseStrategy` defines abstract interface: `evaluate_sell()`, `evaluate_buy()`, `run()`
@@ -121,7 +124,8 @@ Backend Pipeline:
 - `SPHYStrategy` / `SHYMStrategy` are siblings implementing security-specific rules
 - `BuyAndHoldStrategy` always invested, used as baseline
 - `SpreadStrategy` accepts `disabled` set of factor names; disabled sell factors → never trigger, disabled buy factors → always pass
-- Valid factor names: `SPREAD_LVL`, `CHG4`, `RET3` (sell), `MA`, `DROP`, `SPREAD_DELTA` (buy)
+- Valid sell factor names: `SPREAD_LVL`, `CHG4`, `RET3`, `YIELD10_CHG4`, `YIELD2_CHG4`, `CURVE_CHG4`
+- Valid buy factor names: `MA`, `DROP`, `SPREAD_DELTA`, `YIELD10_DELTA`
 
 **Backtester** (`backtester.py`):
 - Converts positions array to cumulative equity curve
@@ -164,8 +168,7 @@ Key features:
 - Recharts for visualization
 - Global date range picker in `Header.tsx` (From/To); filters data for all three tabs; not persisted; shows actual data range as placeholder when empty
 - Factor disable checkboxes in ParameterPanel (both single and range modes); disabled factors are skipped in strategy evaluation and optimizer grid iteration
-- Trade history table includes MA and Drop columns; triggered values are bolded per trade action
-- Drop column shows % drop from 4-week spread peak (BUY rule: spread must drop at least DROP threshold); clickable popup shows peak, current, drop %, and threshold
+- Trade history table has 13 columns (Date, Action, Price, MA, Spread, Drop, chg4, ret3, Δspread, Δ10yr%, Δ2yr%, ΔCurve, Δyield10); triggered values are bolded per trade action with clickable popups showing derivations
 
 ## SPHY Trading Logic
 
@@ -173,12 +176,16 @@ Key features:
 - `spread > SPREAD_LVL` (absolute spread too high)
 - `chg4 > CHG4_THR` (4-week spread change too high)
 - `ret3 < RET3_THR` (3-week price return too negative)
+- `yield10_chg4 > YIELD10_CHG4_THR` (10yr yield rose too much over 4 weeks)
+- `yield2_chg4 > YIELD2_CHG4_THR` (2yr yield rose too much over 4 weeks)
+- `curve_chg4 < -CURVE_CHG4_THR` (yield curve flattened too much over 4 weeks)
 
 **BUY if ALL of** (only when not currently invested; starting in cash counts as already sold; also requires no sell condition active):
 - `close > MA` (price above moving average)
 - Last 2 weekly `spread_delta` values are negative (spreads falling)
 - `spread ≤ recent_4wk_peak × (1 − DROP)` (spread dropped from peak)
-- No sell condition is true (spread ≤ SPREAD_LVL, chg4 ≤ CHG4_THR, ret3 ≥ RET3_THR)
+- Last 2 weekly `yield10_delta` values are negative (10yr yield falling)
+- No sell condition is true
 
 ## Externalized Configuration
 
@@ -197,7 +204,7 @@ Parameter defaults and optimizer ranges are stored in `api/config.json`, not har
     },
     "cashRate": 0.04,
     "startInvested": 1,
-    "disabledFactors": []
+    "disabledFactors": ["YIELD10_CHG4", "YIELD2_CHG4", "CURVE_CHG4", "YIELD10_DELTA"]
   },
   "SHYM": { ... }
 }

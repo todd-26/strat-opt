@@ -57,6 +57,25 @@ class WeeklyDataLoader:
         return df
 
     # ------------------------------------------------------------
+    # Load FRED treasury yields (daily → weekly)
+    # ------------------------------------------------------------
+    def load_treasury(self) -> pd.DataFrame:
+        dgs10 = Fred(self.input_type, self.input_dir, series_id='DGS10', col_name='DGS10').get_data().copy()
+        dgs2 = Fred(self.input_type, self.input_dir, series_id='DGS2', col_name='DGS2').get_data().copy()
+
+        dgs10 = dgs10.set_index("date").resample("W-FRI").last().reset_index()
+        dgs2 = dgs2.set_index("date").resample("W-FRI").last().reset_index()
+
+        treasury = pd.merge_asof(
+            dgs10.sort_values("date"),
+            dgs2.sort_values("date"),
+            on="date",
+            direction="backward"
+        )
+        treasury["YieldCurve"] = treasury["DGS10"] - treasury["DGS2"]
+        return treasury
+
+    # ------------------------------------------------------------
     # Merge SPHY weekly + FRED weekly spreads
     # ------------------------------------------------------------
     def merge_price_spread(self, price_df: pd.DataFrame, spread_df: pd.DataFrame) -> pd.DataFrame:
@@ -82,13 +101,24 @@ class WeeklyDataLoader:
     # ------------------------------------------------------------
     def load(self, start_date: str = None, end_date: str = None) -> pd.DataFrame:
         """
-        Returns weekly DataFrame with: close, dividend, TR, Spread.
+        Returns weekly DataFrame with: close, dividend, TR, Spread, DGS10, DGS2, YieldCurve.
         Optionally sliced to [start_date, end_date] (inclusive, YYYY-MM-DD).
         """
         price_df = self.load_price_dividend()
         spread_df = self.load_spread()
+        treasury_df = self.load_treasury()
 
         weekly = self.merge_price_spread(price_df, spread_df)
+
+        # Merge treasury columns
+        treasury_df["date"] = pd.to_datetime(treasury_df["date"])
+        weekly = pd.merge_asof(
+            weekly.reset_index().sort_values("date"),
+            treasury_df.sort_values("date"),
+            on="date",
+            direction="backward"
+        ).set_index("date")
+
         print("Data range:", weekly.index.min().date(), "to", weekly.index.max().date())
 
         if start_date:
