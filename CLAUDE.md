@@ -176,7 +176,7 @@ Signal and optimizer endpoints accept `disabled_factors` (list of factor names t
 React/Vite SPA with three tabs:
 - **Optimizer** — Grid search with parameter range inputs, streaming progress, sortable results table, drill-down charts
 - **Buy & Hold** — Baseline comparison run
-- **Current Signal** — Shows BUY/SELL/HOLD signal with current metrics and trade history
+- **Current Signal** — Shows BUY/SELL/HOLD signal with current metrics, a Factor Values panel (showing current metric readings per sell/buy factor including spread_drop computed from 4-week peak, disabled factors dimmed), and full trade history
 
 Key features:
 - Theming system (4 themes: Slate, Navy & Gold, Charcoal & Green, High Contrast)

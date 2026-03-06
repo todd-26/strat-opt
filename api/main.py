@@ -261,6 +261,16 @@ def run_signal(req: SignalRequest):
     last_row = df_ind.iloc[-1]
     ma_col = f"MA{p.MA}"
 
+    last_pos = len(df_ind) - 1
+    spread_window = df_ind.iloc[max(0, last_pos - 3):last_pos + 1]["Spread"]
+    spread_peak = spread_window.max()
+    spread_val = last_row.get("Spread")
+    spread_drop_val = (
+        1 - (spread_val / spread_peak)
+        if (spread_peak and not math.isnan(spread_peak) and spread_val is not None and not math.isnan(float(spread_val)))
+        else None
+    )
+
     metrics = SignalMetrics(
         spread=_safe_float(last_row.get("Spread")),
         ma=_safe_float(last_row.get(ma_col)),
@@ -271,6 +281,8 @@ def run_signal(req: SignalRequest):
         yield2_chg4=_safe_float(last_row.get("yield2_chg4")),
         curve_chg4=_safe_float(last_row.get("curve_chg4")),
         yield10_delta=_safe_float(last_row.get("yield10_delta")),
+        spread_drop=_safe_float(spread_drop_val),
+        spread_4wk_peak=_safe_float(spread_peak),
         last_date=last_idx.strftime("%Y-%m-%d"),
         close=float(last_row["close"]),
     )
@@ -283,6 +295,8 @@ def run_signal(req: SignalRequest):
         trade_history=trade_history,
         apy=bt_result["apy"],
         final_value=bt_result["final_value"],
+        data_start=df_ind.index[0].strftime("%Y-%m-%d"),
+        data_end=df_ind.index[-1].strftime("%Y-%m-%d"),
     )
 
 

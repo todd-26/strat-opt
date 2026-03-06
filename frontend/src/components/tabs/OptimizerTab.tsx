@@ -247,6 +247,17 @@ export function OptimizerTab({ settings, ticker, defaultRanges, paramDescription
             </select>
           </div>
 
+          {result && (
+            <div>
+              <label className="mb-1 block text-xs font-medium" style={{ color: 'var(--text-muted)' }}>
+                Date Range Used
+              </label>
+              <span className="text-sm font-semibold" style={{ color: 'var(--text)' }}>
+                {result.best_result.equity_curve[0]?.date} – {result.best_result.equity_curve[result.best_result.equity_curve.length - 1]?.date}
+              </span>
+            </div>
+          )}
+
           {loading ? (
             <button
               onClick={cancel}

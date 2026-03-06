@@ -93,6 +93,10 @@ Each strategy parameter gets a single value input (not a range). Pre-filled with
 - A large, prominent signal badge: **BUY**, **HOLD**, or **SELL**, color-coded (green / neutral / red).
 - The current values of the key metrics that drove the decision (spread, MA, ret3, chg4, spread_delta, etc.).
 - The date the current signal was first triggered.
+- Below the metrics: a **MetricsCard** showing APY and final value.
+
+**Right — Factor Values**:
+A panel showing the current metric reading for each factor, grouped into **Sell** (trigger if ANY true) and **Buy** (ALL must be true) sections. Disabled factors are shown at reduced opacity with an "(off)" label. Each row: factor label on the left, current metric value on the right (percentage factors shown as %). Implemented via `ThresholdRow` component in `SignalTab.tsx`. Sell factors: Spread, chg4, ret3, 10yr chg4, 2yr chg4, ΔCurve. Buy factors: Close, MA, Drop (spread_drop, computed same as trade history: 1 − spread/4wk-peak), Δspread, Δyield10.
 
 **Trade History** (full width, below the signal/metrics):
 A table of all historical buy/sell events with columns: Date, Action, Price, MA, Spread, Drop, chg4, ret3, Δspread, Δ10yr%, Δ2yr%, ΔCurve, Δyield10 (13 columns total).
