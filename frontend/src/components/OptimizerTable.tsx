@@ -19,11 +19,11 @@ interface Props {
 }
 
 function toParams(row: OptimizerResultRow): StrategyParams {
-  return { MA: row.MA, DROP: row.DROP, CHG4: row.CHG4, RET3: row.RET3, SPREAD_LVL: row.SPREAD_LVL }
+  return { MA: row.MA, DROP: row.DROP, CHG4: row.CHG4, RET3: row.RET3, SPREAD_LVL: row.SPREAD_LVL, YIELD10_CHG4: row.YIELD10_CHG4, YIELD2_CHG4: row.YIELD2_CHG4, CURVE_CHG4: row.CURVE_CHG4 }
 }
 
 function paramsMatch(a: StrategyParams, b: StrategyParams): boolean {
-  return a.MA === b.MA && a.DROP === b.DROP && a.CHG4 === b.CHG4 && a.RET3 === b.RET3 && a.SPREAD_LVL === b.SPREAD_LVL
+  return a.MA === b.MA && a.DROP === b.DROP && a.CHG4 === b.CHG4 && a.RET3 === b.RET3 && a.SPREAD_LVL === b.SPREAD_LVL && a.YIELD10_CHG4 === b.YIELD10_CHG4 && a.YIELD2_CHG4 === b.YIELD2_CHG4 && a.CURVE_CHG4 === b.CURVE_CHG4
 }
 
 function InfoTooltip({ text }: { text: string }) {
@@ -55,14 +55,17 @@ function InfoTooltip({ text }: { text: string }) {
 }
 
 const cols: { key: SortKey; label: string; fmt: (v: number) => string; tooltip?: string }[] = [
-  { key: 'MA',          label: 'MA',          fmt: (v) => String(v) },
-  { key: 'DROP',        label: 'DROP',        fmt: (v) => v.toFixed(3) },
-  { key: 'CHG4',        label: 'CHG4',        fmt: (v) => v.toFixed(3) },
-  { key: 'RET3',        label: 'RET3',        fmt: (v) => v.toFixed(4) },
-  { key: 'SPREAD_LVL',  label: 'SPREAD_LVL',  fmt: (v) => v.toFixed(1) },
-  { key: 'APY',         label: 'APY %',       fmt: (v) => `${(v * 100).toFixed(2)}%` },
-  { key: 'final_value', label: 'Final Value', fmt: (v) => v.toFixed(6) },
-  { key: 'trade_count', label: 'Trades',      fmt: (v) => String(v), tooltip: 'Number of sell events over the backtest period. Each sell is a potential taxable event.' },
+  { key: 'MA',           label: 'MA',           fmt: (v) => String(v) },
+  { key: 'DROP',         label: 'DROP',         fmt: (v) => v.toFixed(3) },
+  { key: 'CHG4',         label: 'CHG4',         fmt: (v) => v.toFixed(3) },
+  { key: 'RET3',         label: 'RET3',         fmt: (v) => v.toFixed(4) },
+  { key: 'SPREAD_LVL',   label: 'SPREAD_LVL',   fmt: (v) => v.toFixed(1) },
+  { key: 'YIELD10_CHG4', label: 'YLD10_CHG4',   fmt: (v) => v.toFixed(3) },
+  { key: 'YIELD2_CHG4',  label: 'YLD2_CHG4',    fmt: (v) => v.toFixed(3) },
+  { key: 'CURVE_CHG4',   label: 'CURVE_CHG4',   fmt: (v) => v.toFixed(3) },
+  { key: 'APY',          label: 'APY %',        fmt: (v) => `${(v * 100).toFixed(2)}%` },
+  { key: 'final_value',  label: 'Final Value',  fmt: (v) => v.toFixed(6) },
+  { key: 'trade_count',  label: 'Trades',       fmt: (v) => String(v), tooltip: 'Number of sell events over the backtest period. Each sell is a potential taxable event.' },
 ]
 
 const TOTAL_COLS = cols.length + 1 // data cols + chart icon col

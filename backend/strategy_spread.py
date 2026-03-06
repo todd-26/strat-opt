@@ -20,12 +20,16 @@ class SpreadStrategy(BaseStrategy):
     may override _compute_signals() if their rules diverge.
     """
 
-    def __init__(self, MA_LENGTH, DROP, CHG4_THR, RET3_THR, SPREAD_LVL, disabled=()):
+    def __init__(self, MA_LENGTH, DROP, CHG4_THR, RET3_THR, SPREAD_LVL,
+                 YIELD10_CHG4_THR=0, YIELD2_CHG4_THR=0, CURVE_CHG4_THR=0, disabled=()):
         self.MA_LENGTH = MA_LENGTH
         self.DROP = DROP
         self.CHG4_THR = CHG4_THR
         self.RET3_THR = RET3_THR
         self.SPREAD_LVL = SPREAD_LVL
+        self.YIELD10_CHG4_THR = YIELD10_CHG4_THR
+        self.YIELD2_CHG4_THR = YIELD2_CHG4_THR
+        self.CURVE_CHG4_THR = CURVE_CHG4_THR
         self.disabled = set(disabled)
 
     # ------------------------------------------------------------------
@@ -36,7 +40,10 @@ class SpreadStrategy(BaseStrategy):
         c1 = False if "SPREAD_LVL" in self.disabled else ((not pd.isna(row["Spread"])) and (row["Spread"] > self.SPREAD_LVL))
         c2 = False if "CHG4" in self.disabled else ((not pd.isna(row["chg4"])) and (row["chg4"] > self.CHG4_THR))
         c3 = False if "RET3" in self.disabled else ((not pd.isna(row["ret3"])) and (row["ret3"] < self.RET3_THR))
-        return c1 or c2 or c3
+        c4 = False if "YIELD10_CHG4" in self.disabled else ((not pd.isna(row["yield10_chg4"])) and (row["yield10_chg4"] > self.YIELD10_CHG4_THR))
+        c5 = False if "YIELD2_CHG4" in self.disabled else ((not pd.isna(row["yield2_chg4"])) and (row["yield2_chg4"] > self.YIELD2_CHG4_THR))
+        c6 = False if "CURVE_CHG4" in self.disabled else ((not pd.isna(row["curve_chg4"])) and (row["curve_chg4"] < -self.CURVE_CHG4_THR))
+        return c1 or c2 or c3 or c4 or c5 or c6
 
     def evaluate_buy(self, row: pd.Series, df: pd.DataFrame, idx, last_action_was_sell: bool) -> bool:
         if not last_action_was_sell:
@@ -54,7 +61,8 @@ class SpreadStrategy(BaseStrategy):
         if "DROP" not in self.disabled and (pd.isna(recent_peak) or pd.isna(row["Spread"])):
             return False
         cond3 = True if "DROP" in self.disabled else (row["Spread"] <= recent_peak * (1 - self.DROP))
-        return bool(cond1 and cond2 and cond3)
+        cond4 = True if "YIELD10_DELTA" in self.disabled else (past["yield10_delta"].tail(2) < 0).all()
+        return bool(cond1 and cond2 and cond3 and cond4)
 
     # ------------------------------------------------------------------
     # Vectorized signal computation — override in subclasses if rules differ
@@ -73,16 +81,20 @@ class SpreadStrategy(BaseStrategy):
         ma_col = f"MA{self.MA_LENGTH}"
 
         # Sell: any condition true. Disabled factors → False (never trigger).
-        sell_spread = pd.Series(False, index=df.index) if "SPREAD_LVL" in self.disabled else (df["Spread"] > self.SPREAD_LVL)
-        sell_chg4   = pd.Series(False, index=df.index) if "CHG4" in self.disabled else (df["chg4"] > self.CHG4_THR)
-        sell_ret3   = pd.Series(False, index=df.index) if "RET3" in self.disabled else (df["ret3"] < self.RET3_THR)
-        sell_mask = (sell_spread | sell_chg4 | sell_ret3).fillna(False).to_numpy()
+        sell_spread      = pd.Series(False, index=df.index) if "SPREAD_LVL" in self.disabled else (df["Spread"] > self.SPREAD_LVL)
+        sell_chg4        = pd.Series(False, index=df.index) if "CHG4" in self.disabled else (df["chg4"] > self.CHG4_THR)
+        sell_ret3        = pd.Series(False, index=df.index) if "RET3" in self.disabled else (df["ret3"] < self.RET3_THR)
+        sell_yield10_chg4 = pd.Series(False, index=df.index) if "YIELD10_CHG4" in self.disabled else (df["yield10_chg4"] > self.YIELD10_CHG4_THR)
+        sell_yield2_chg4  = pd.Series(False, index=df.index) if "YIELD2_CHG4" in self.disabled else (df["yield2_chg4"] > self.YIELD2_CHG4_THR)
+        sell_curve_chg4   = pd.Series(False, index=df.index) if "CURVE_CHG4" in self.disabled else (df["curve_chg4"] < -self.CURVE_CHG4_THR)
+        sell_mask = (sell_spread | sell_chg4 | sell_ret3 | sell_yield10_chg4 | sell_yield2_chg4 | sell_curve_chg4).fillna(False).to_numpy()
 
         # Buy: all conditions true. Disabled factors → True (always pass).
-        buy_ma    = pd.Series(True, index=df.index) if "MA" in self.disabled else (df["close"] > df[ma_col])
-        buy_delta = pd.Series(True, index=df.index) if "SPREAD_DELTA" in self.disabled else (df["spread_delta"].rolling(2).max() < 0)
-        buy_drop  = pd.Series(True, index=df.index) if "DROP" in self.disabled else (df["Spread"] <= df["Spread"].rolling(4).max() * (1 - self.DROP))
-        buy_mask = (buy_ma & buy_delta & buy_drop).fillna(False).to_numpy()
+        buy_ma          = pd.Series(True, index=df.index) if "MA" in self.disabled else (df["close"] > df[ma_col])
+        buy_delta       = pd.Series(True, index=df.index) if "SPREAD_DELTA" in self.disabled else (df["spread_delta"].rolling(2).max() < 0)
+        buy_drop        = pd.Series(True, index=df.index) if "DROP" in self.disabled else (df["Spread"] <= df["Spread"].rolling(4).max() * (1 - self.DROP))
+        buy_yield10_delta = pd.Series(True, index=df.index) if "YIELD10_DELTA" in self.disabled else (df["yield10_delta"].rolling(2).max() < 0)
+        buy_mask = (buy_ma & buy_delta & buy_drop & buy_yield10_delta).fillna(False).to_numpy()
 
         return sell_mask, buy_mask
 

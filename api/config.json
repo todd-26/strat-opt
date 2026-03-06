@@ -25,6 +25,21 @@
         "name": "SPREAD_LVL",
         "value": 7.0,
         "desc": "Sell rule: sell if absolute credit spread level exceeds this threshold"
+      },
+      "YIELD10_CHG4": {
+        "name": "YIELD10_CHG4",
+        "value": 0.12,
+        "desc": "Sell rule: sell if 4-week % change in 10yr Treasury yield exceeds this threshold"
+      },
+      "YIELD2_CHG4": {
+        "name": "YIELD2_CHG4",
+        "value": 0.1,
+        "desc": "Sell rule: sell if 4-week % change in 2yr Treasury yield exceeds this threshold"
+      },
+      "CURVE_CHG4": {
+        "name": "CURVE_CHG4",
+        "value": 0.3,
+        "desc": "Sell rule: sell if yield curve (10y-2y) flattens by more than this amount over 4 weeks"
       }
     },
     "defaultRanges": {
@@ -52,6 +67,21 @@
         "min": 7.0,
         "max": 7.0,
         "step": 0.1
+      },
+      "YIELD10_CHG4": {
+        "min": 0.12,
+        "max": 0.12,
+        "step": 0.01
+      },
+      "YIELD2_CHG4": {
+        "min": 0.1,
+        "max": 0.1,
+        "step": 0.01
+      },
+      "CURVE_CHG4": {
+        "min": 0.3,
+        "max": 0.3,
+        "step": 0.05
       }
     },
     "cashRate": 0.04,
@@ -60,7 +90,10 @@
       "SPREAD_LVL",
       "CHG4",
       "MA",
-      "DROP"
+      "DROP",
+      "YIELD2_CHG4",
+      "CURVE_CHG4",
+      "YIELD10_DELTA"
     ]
   },
   "SHYM": {
@@ -82,13 +115,28 @@
       },
       "RET3": {
         "name": "RET3",
-        "value": -0.0185,
+        "value": -0.018,
         "desc": "Sell rule: sell if 3-week price return falls below this % threshold"
       },
       "SPREAD_LVL": {
         "name": "SPREAD_LVL",
         "value": 4.2,
         "desc": "Sell rule: sell if absolute credit spread level exceeds this threshold"
+      },
+      "YIELD10_CHG4": {
+        "name": "YIELD10_CHG4",
+        "value": 0.11,
+        "desc": "Sell rule: sell if 4-week % change in 10yr Treasury yield exceeds this threshold"
+      },
+      "YIELD2_CHG4": {
+        "name": "YIELD2_CHG4",
+        "value": 0.1,
+        "desc": "Sell rule: sell if 4-week % change in 2yr Treasury yield exceeds this threshold"
+      },
+      "CURVE_CHG4": {
+        "name": "CURVE_CHG4",
+        "value": 0.36,
+        "desc": "Sell rule: sell if yield curve (10y-2y) flattens by more than this amount over 4 weeks"
       }
     },
     "defaultRanges": {
@@ -103,25 +151,42 @@
         "step": 0.001
       },
       "CHG4": {
-        "min": 0.06,
-        "max": 0.12,
+        "min": 0.07,
+        "max": 0.07,
         "step": 0.005
       },
       "RET3": {
-        "min": -0.019,
-        "max": -0.017,
+        "min": -0.018,
+        "max": -0.018,
         "step": 0.0005
       },
       "SPREAD_LVL": {
         "min": 4.2,
         "max": 4.2,
         "step": 0.1
+      },
+      "YIELD10_CHG4": {
+        "min": 0.11,
+        "max": 0.11,
+        "step": 0.01
+      },
+      "YIELD2_CHG4": {
+        "min": 0.1,
+        "max": 0.1,
+        "step": 0.01
+      },
+      "CURVE_CHG4": {
+        "min": 0.36,
+        "max": 0.36,
+        "step": 0.05
       }
     },
     "cashRate": 0.023,
     "startInvested": 0,
     "disabledFactors": [
-      "SPREAD_LVL"
+      "SPREAD_LVL",
+      "YIELD2_CHG4",
+      "YIELD10_DELTA"
     ]
   },
   "NEA": {
@@ -150,11 +215,26 @@
         "name": "SPREAD_LVL",
         "value": 7.0,
         "desc": "Sell rule: sell if absolute credit spread level exceeds this threshold"
+      },
+      "YIELD10_CHG4": {
+        "name": "YIELD10_CHG4",
+        "value": 0.1,
+        "desc": "Sell rule: sell if 4-week % change in 10yr Treasury yield exceeds this threshold"
+      },
+      "YIELD2_CHG4": {
+        "name": "YIELD2_CHG4",
+        "value": 0.1,
+        "desc": "Sell rule: sell if 4-week % change in 2yr Treasury yield exceeds this threshold"
+      },
+      "CURVE_CHG4": {
+        "name": "CURVE_CHG4",
+        "value": 0.3,
+        "desc": "Sell rule: sell if yield curve (10y-2y) flattens by more than this amount over 4 weeks"
       }
     },
     "defaultRanges": {
       "MA": {
-        "min": 28.0,
+        "min": 32.0,
         "max": 32.0,
         "step": 1.0
       },
@@ -164,7 +244,7 @@
         "step": 0.001
       },
       "CHG4": {
-        "min": 0.16,
+        "min": 0.175,
         "max": 0.175,
         "step": 0.005
       },
@@ -177,13 +257,33 @@
         "min": 7.0,
         "max": 7.0,
         "step": 0.1
+      },
+      "YIELD10_CHG4": {
+        "min": 0.1,
+        "max": 0.1,
+        "step": 0.01
+      },
+      "YIELD2_CHG4": {
+        "min": 0.1,
+        "max": 0.1,
+        "step": 0.01
+      },
+      "CURVE_CHG4": {
+        "min": 0.3,
+        "max": 0.3,
+        "step": 0.05
       }
     },
     "cashRate": 0.023,
     "startInvested": 1,
     "disabledFactors": [
       "SPREAD_LVL",
-      "RET3"
+      "RET3",
+      "YIELD10_CHG4",
+      "YIELD2_CHG4",
+      "YIELD10_DELTA",
+      "CHG4",
+      "DROP"
     ]
   }
 }

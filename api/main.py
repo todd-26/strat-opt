@@ -94,6 +94,13 @@ def _build_trade_history(bt_df, buy_dates, sell_dates) -> list[TradeEvent]:
             ma_value=_safe_float(row.get(ma_col)) if ma_col else None,
             spread_4wk_ago=_safe_float(bt_df.iloc[pos - 4]["Spread"]) if pos >= 4 else None,
             close_3wk_ago=_safe_float(bt_df.iloc[pos - 3]["close"]) if pos >= 3 else None,
+            yield10_chg4=_safe_float(row.get("yield10_chg4")),
+            yield2_chg4=_safe_float(row.get("yield2_chg4")),
+            curve_chg4=_safe_float(row.get("curve_chg4")),
+            yield10_delta=_safe_float(row.get("yield10_delta")),
+            yield10_4wk_ago=_safe_float(bt_df.iloc[pos - 4]["DGS10"]) if pos >= 4 else None,
+            yield2_4wk_ago=_safe_float(bt_df.iloc[pos - 4]["DGS2"]) if pos >= 4 else None,
+            curve_4wk_ago=_safe_float(bt_df.iloc[pos - 4]["YieldCurve"]) if pos >= 4 else None,
         ))
 
     for d in buy_dates:
@@ -117,6 +124,11 @@ def _build_trade_history(bt_df, buy_dates, sell_dates) -> list[TradeEvent]:
             prev_spread_delta=_safe_float(bt_df.iloc[pos - 1].get("spread_delta")) if pos >= 1 else None,
             spread_drop=_safe_float(drop),
             spread_4wk_peak=_safe_float(peak),
+            yield10_chg4=_safe_float(row.get("yield10_chg4")),
+            yield2_chg4=_safe_float(row.get("yield2_chg4")),
+            curve_chg4=_safe_float(row.get("curve_chg4")),
+            yield10_delta=_safe_float(row.get("yield10_delta")),
+            prev_yield10_delta=_safe_float(bt_df.iloc[pos - 1].get("yield10_delta")) if pos >= 1 else None,
         ))
 
     events.sort(key=lambda e: e.date, reverse=True)
@@ -210,6 +222,9 @@ def run_signal(req: SignalRequest):
         CHG4_THR=p.CHG4,
         RET3_THR=p.RET3,
         SPREAD_LVL=p.SPREAD_LVL,
+        YIELD10_CHG4_THR=p.YIELD10_CHG4,
+        YIELD2_CHG4_THR=p.YIELD2_CHG4,
+        CURVE_CHG4_THR=p.CURVE_CHG4,
         disabled=set(req.disabled_factors),
     )
 
@@ -244,6 +259,10 @@ def run_signal(req: SignalRequest):
         ret3=_safe_float(last_row.get("ret3")),
         chg4=_safe_float(last_row.get("chg4")),
         spread_delta=_safe_float(last_row.get("spread_delta")),
+        yield10_chg4=_safe_float(last_row.get("yield10_chg4")),
+        yield2_chg4=_safe_float(last_row.get("yield2_chg4")),
+        curve_chg4=_safe_float(last_row.get("curve_chg4")),
+        yield10_delta=_safe_float(last_row.get("yield10_delta")),
         last_date=last_idx.strftime("%Y-%m-%d"),
         close=float(last_row["close"]),
     )
@@ -277,6 +296,9 @@ async def run_optimizer(req: OptimizerRequest):
                     "CHG4": req.CHG4,
                     "RET3": req.RET3,
                     "SPREAD_LVL": req.SPREAD_LVL,
+                    "YIELD10_CHG4": req.YIELD10_CHG4,
+                    "YIELD2_CHG4": req.YIELD2_CHG4,
+                    "CURVE_CHG4": req.CURVE_CHG4,
                 }
                 optimizer_cls = OPTIMIZER_CLASSES.get(req.ticker.upper(), SPHYOptimizer)
                 opt = optimizer_cls(
@@ -327,6 +349,9 @@ async def run_optimizer(req: OptimizerRequest):
                         CHG4=float(best_params["CHG4"]),
                         RET3=float(best_params["RET3"]),
                         SPREAD_LVL=float(best_params["SPREAD_LVL"]),
+                        YIELD10_CHG4=float(best_params["YIELD10_CHG4"]),
+                        YIELD2_CHG4=float(best_params["YIELD2_CHG4"]),
+                        CURVE_CHG4=float(best_params["CURVE_CHG4"]),
                     )
 
                     all_results = [
@@ -336,6 +361,9 @@ async def run_optimizer(req: OptimizerRequest):
                             CHG4=float(row["CHG4"]),
                             RET3=float(row["RET3"]),
                             SPREAD_LVL=float(row["SPREAD_LVL"]),
+                            YIELD10_CHG4=float(row["YIELD10_CHG4"]),
+                            YIELD2_CHG4=float(row["YIELD2_CHG4"]),
+                            CURVE_CHG4=float(row["CURVE_CHG4"]),
                             APY=float(row["APY"]),
                             final_value=float(row["final_value"]),
                             trade_count=int(row["trade_count"]),

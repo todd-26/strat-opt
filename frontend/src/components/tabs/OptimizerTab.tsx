@@ -73,6 +73,9 @@ export function OptimizerTab({ settings, ticker, defaultRanges, paramDescription
       CHG4: disabledFactors.has('CHG4') ? [0] : rangeToArray(ranges.CHG4),
       RET3: disabledFactors.has('RET3') ? [0] : rangeToArray(ranges.RET3),
       SPREAD_LVL: disabledFactors.has('SPREAD_LVL') ? [0] : rangeToArray(ranges.SPREAD_LVL),
+      YIELD10_CHG4: disabledFactors.has('YIELD10_CHG4') ? [0] : rangeToArray(ranges.YIELD10_CHG4),
+      YIELD2_CHG4: disabledFactors.has('YIELD2_CHG4') ? [0] : rangeToArray(ranges.YIELD2_CHG4),
+      CURVE_CHG4: disabledFactors.has('CURVE_CHG4') ? [0] : rangeToArray(ranges.CURVE_CHG4),
     }
     run(ticker, grids, startInvested, cashRate, inputType, startDate, endDate, disabledArr)
     setCollapsed(true)
@@ -94,7 +97,10 @@ export function OptimizerTab({ settings, ticker, defaultRanges, paramDescription
       chartParams.DROP === params.DROP &&
       chartParams.CHG4 === params.CHG4 &&
       chartParams.RET3 === params.RET3 &&
-      chartParams.SPREAD_LVL === params.SPREAD_LVL
+      chartParams.SPREAD_LVL === params.SPREAD_LVL &&
+      chartParams.YIELD10_CHG4 === params.YIELD10_CHG4 &&
+      chartParams.YIELD2_CHG4 === params.YIELD2_CHG4 &&
+      chartParams.CURVE_CHG4 === params.CURVE_CHG4
     ) {
       setChartParams(null)
       setDrillResult(null)
@@ -111,7 +117,10 @@ export function OptimizerTab({ settings, ticker, defaultRanges, paramDescription
       result.best_params.DROP === params.DROP &&
       result.best_params.CHG4 === params.CHG4 &&
       result.best_params.RET3 === params.RET3 &&
-      result.best_params.SPREAD_LVL === params.SPREAD_LVL
+      result.best_params.SPREAD_LVL === params.SPREAD_LVL &&
+      result.best_params.YIELD10_CHG4 === params.YIELD10_CHG4 &&
+      result.best_params.YIELD2_CHG4 === params.YIELD2_CHG4 &&
+      result.best_params.CURVE_CHG4 === params.CURVE_CHG4
     ) {
       setDrillResult(result.best_result)
       return
@@ -130,6 +139,9 @@ export function OptimizerTab({ settings, ticker, defaultRanges, paramDescription
             CHG4: [params.CHG4],
             RET3: [params.RET3],
             SPREAD_LVL: [params.SPREAD_LVL],
+            YIELD10_CHG4: [params.YIELD10_CHG4],
+            YIELD2_CHG4: [params.YIELD2_CHG4],
+            CURVE_CHG4: [params.CURVE_CHG4],
             start_invested: startInvested,
             cash_rate: cashRate,
             input_type: inputType,

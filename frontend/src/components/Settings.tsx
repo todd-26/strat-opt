@@ -48,9 +48,9 @@ export function SettingsSheet({ open, onClose, settings, onUpdate, config, onSav
     }
   }
 
-  const PARAM_KEYS = ['MA', 'DROP', 'CHG4', 'RET3', 'SPREAD_LVL'] as const
+  const PARAM_KEYS = ['MA', 'DROP', 'CHG4', 'RET3', 'SPREAD_LVL', 'YIELD10_CHG4', 'YIELD2_CHG4', 'CURVE_CHG4'] as const
   type ParamKey = typeof PARAM_KEYS[number]
-  const PARAM_STEPS: Record<ParamKey, string> = { MA: '1', DROP: '0.001', CHG4: '0.005', RET3: '0.0005', SPREAD_LVL: '0.5' }
+  const PARAM_STEPS: Record<ParamKey, string> = { MA: '1', DROP: '0.001', CHG4: '0.005', RET3: '0.0005', SPREAD_LVL: '0.5', YIELD10_CHG4: '0.01', YIELD2_CHG4: '0.01', CURVE_CHG4: '0.05' }
 
   return (
     <>
@@ -165,17 +165,17 @@ export function SettingsSheet({ open, onClose, settings, onUpdate, config, onSav
             </div>
           </Section>
 
-          {/* Disabled Factors */}
-          <Section title={`Disabled Factors — ${ticker}`}>
+          {/* Enabled Factors */}
+          <Section title={`Enabled Factors — ${ticker}`}>
             <div className="space-y-2">
               <div>
                 <span className="text-xs font-medium" style={{ color: 'var(--text-muted)' }}>Sell Factors</span>
                 <div className="mt-1 space-y-1">
-                  {(['SPREAD_LVL', 'CHG4', 'RET3'] as const).map((f) => (
+                  {(['SPREAD_LVL', 'CHG4', 'RET3', 'YIELD10_CHG4', 'YIELD2_CHG4', 'CURVE_CHG4'] as const).map((f) => (
                     <label key={f} className="flex items-center gap-2 text-sm">
                       <input
                         type="checkbox"
-                        checked={localConfig.disabledFactors.includes(f)}
+                        checked={!localConfig.disabledFactors.includes(f)}
                         onChange={() =>
                           setLocalConfig((prev) => ({
                             ...prev,
@@ -193,11 +193,11 @@ export function SettingsSheet({ open, onClose, settings, onUpdate, config, onSav
               <div>
                 <span className="text-xs font-medium" style={{ color: 'var(--text-muted)' }}>Buy Factors</span>
                 <div className="mt-1 space-y-1">
-                  {(['MA', 'DROP', 'SPREAD_DELTA'] as const).map((f) => (
+                  {(['MA', 'DROP', 'SPREAD_DELTA', 'YIELD10_DELTA'] as const).map((f) => (
                     <label key={f} className="flex items-center gap-2 text-sm">
                       <input
                         type="checkbox"
-                        checked={localConfig.disabledFactors.includes(f)}
+                        checked={!localConfig.disabledFactors.includes(f)}
                         onChange={() =>
                           setLocalConfig((prev) => ({
                             ...prev,

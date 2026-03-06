@@ -41,7 +41,7 @@ Each tab has its own independent state (parameters, results).
 ### Parameter Panel (per tab)
 Each tab has a collapsible parameter panel. It starts expanded. After a run completes successfully, it collapses automatically so results get full focus. The user can re-expand it at any time.
 
-**Factor Checkboxes**: Each factor has a checkbox to enable/disable it. Factors are grouped under "Sell Factors" (SPREAD_LVL, CHG4, RET3) and "Buy Factors" (MA, DROP, Δspread) headers. Disabled factors grey out their inputs (opacity 0.45). `SPREAD_DELTA` (Δspread) has a checkbox but no numeric input — it shows "2 consecutive falling" as a label. In the optimizer, disabled factors collapse their grid to a single placeholder value, reducing total combinations.
+**Factor Checkboxes**: Each factor has a checkbox to enable/disable it. Factors are grouped under "Sell Factors" (SPREAD_LVL, CHG4, RET3, YIELD10_CHG4, YIELD2_CHG4, CURVE_CHG4) and "Buy Factors" (MA, DROP, Δspread, Δyield10) headers. Disabled factors grey out their inputs (opacity 0.45). `SPREAD_DELTA` (Δspread) and `YIELD10_DELTA` (Δyield10) have a checkbox but no numeric input — they show "2 consecutive falling" as a label. In the optimizer, disabled factors collapse their grid to a single placeholder value, reducing total combinations.
 
 ### Results Area
 Results are displayed **side by side**: the chart on the left, key summary metrics on the right. Both are given equal visual prominence.
@@ -95,13 +95,13 @@ Each strategy parameter gets a single value input (not a range). Pre-filled with
 - The date the current signal was first triggered.
 
 **Trade History** (full width, below the signal/metrics):
-A table of all historical buy/sell events with columns: Date, Action, Price, MA, Spread, Drop, chg4, ret3, Δspread.
+A table of all historical buy/sell events with columns: Date, Action, Price, MA, Spread, Drop, chg4, ret3, Δspread, Δ10yr%, Δ2yr%, ΔCurve, Δyield10 (13 columns total).
 
-Column headers have ⓘ hover tooltips explaining each metric (drop downward to avoid clipping; Δspread tooltip is right-aligned to avoid right-edge overflow).
+Column headers have ⓘ hover tooltips explaining each metric (drop downward to avoid clipping; last column tooltip is right-aligned to avoid right-edge overflow).
 
 Values that contributed to the decision are **bolded** (dotted underline, pointer cursor). **Disabled factors** are never bolded and their popups are suppressed:
-- SELL: bold any of spread / chg4 / ret3 that exceeded its threshold (unless that factor is disabled)
-- BUY: bold Price and MA (close > MA), Drop (spread drop from 4-week peak ≥ DROP threshold), and Δspread (falling spreads) (unless that factor is disabled)
+- SELL: bold any of spread / chg4 / ret3 / yield10_chg4 / yield2_chg4 / curve_chg4 that exceeded its threshold (unless that factor is disabled)
+- BUY: bold Price and MA (close > MA), Drop (spread drop from 4-week peak ≥ DROP threshold), Δspread (falling spreads), and Δyield10 (falling 10yr yield) (unless that factor is disabled)
 
 Clicking a bolded value opens a popup showing the derivation:
 - spread: value vs SPREAD_LVL threshold
@@ -110,6 +110,10 @@ Clicking a bolded value opens a popup showing the derivation:
 - Price / MA: close vs MA value (shown to 4 decimal places to avoid rounding ambiguity)
 - Drop: 4-week peak spread, current spread, actual drop %, and DROP threshold
 - Δspread: this week's delta + prior week's delta (confirms both negative)
+- Δ10yr%: 4-week % change vs YIELD10_CHG4 threshold + yield 4 wks ago
+- Δ2yr%: 4-week % change vs YIELD2_CHG4 threshold + yield 4 wks ago
+- ΔCurve: 4-week absolute change vs −CURVE_CHG4 threshold + curve 4 wks ago
+- Δyield10: this week's delta + prior week's delta (confirms both negative)
 
 **Export**: CSV download of the trade history table.
 
@@ -149,9 +153,9 @@ Accessible via the gear icon in the header. Contains:
 2. **Input Source** — toggle between CSV (local files) and API (live Alpha Vantage / FRED).
 3. **Default Cash Rate** — annual cash yield rate (decimal, e.g., 0.04).
 4. **Default Starting Position** — radio: Invested or Cash.
-5. **Disabled Factors** — checkboxes for all 6 factors, grouped under "Sell Factors" (SPREAD_LVL, CHG4, RET3) and "Buy Factors" (MA, DROP, SPREAD_DELTA). Checked = disabled. Persisted in `config.json` alongside other per-security defaults; tabs initialize from these on page load.
-6. **Default Parameter Values** — inputs to set the default parameter values that pre-fill the Current Signal tab on page load. Edits are local until "Save Permanently" is clicked.
-7. **Default Optimizer Ranges** — min/max/step inputs for each of the 5 strategy parameters, pre-filling the Optimizer tab's range grid on page load. Edits are local until "Save Permanently" is clicked.
+5. **Enabled Factors** — checkboxes for all 10 factors, grouped under "Sell Factors" (SPREAD_LVL, CHG4, RET3, YIELD10_CHG4, YIELD2_CHG4, CURVE_CHG4) and "Buy Factors" (MA, DROP, SPREAD_DELTA, YIELD10_DELTA). Checked = enabled (unchecked = disabled). Persisted in `config.json` alongside other per-security defaults; tabs initialize from these on page load.
+6. **Default Parameter Values** — inputs to set the default parameter values that pre-fill the Current Signal tab on page load. Includes all 8 numeric params (MA, DROP, CHG4, RET3, SPREAD_LVL, YIELD10_CHG4, YIELD2_CHG4, CURVE_CHG4). Edits are local until "Save Permanently" is clicked.
+7. **Default Optimizer Ranges** — min/max/step inputs for each of the 8 strategy parameters, pre-filling the Optimizer tab's range grid on page load. Edits are local until "Save Permanently" is clicked.
 7. **Save Permanently** — button at the bottom. POSTs `defaultParams` and `defaultRanges` to `POST /api/config`, which writes `api/config.json` to disk. Button shows: "Save Permanently" (idle), "Saving…" (in-flight), "Saved!" (success, reverts after 2 s), "Error — try again" (failure).
 
 **Persistence split**:
@@ -169,18 +173,22 @@ Server-side JSON file storing the two sets of editable defaults. Created on firs
 {
   "SPHY": {
     "defaultParams": {
-      "MA": 50, "DROP": 0.017, "CHG4": 0.165, "RET3": -0.021, "SPREAD_LVL": 7.0
+      "MA": 50, "DROP": 0.016, "CHG4": 0.16, "RET3": -0.0225, "SPREAD_LVL": 7.0,
+      "YIELD10_CHG4": 0.10, "YIELD2_CHG4": 0.10, "CURVE_CHG4": 0.30
     },
     "defaultRanges": {
-      "MA":         { "min": 50,      "max": 50,      "step": 5      },
-      "DROP":       { "min": 0.016,   "max": 0.016,   "step": 0.001  },
-      "CHG4":       { "min": 0.16,    "max": 0.16,    "step": 0.005  },
-      "RET3":       { "min": -0.0225, "max": -0.0225, "step": 0.0005 },
-      "SPREAD_LVL": { "min": 7.0,     "max": 7.0,     "step": 0.1    }
+      "MA":           { "min": 50,      "max": 50,      "step": 5      },
+      "DROP":         { "min": 0.016,   "max": 0.016,   "step": 0.001  },
+      "CHG4":         { "min": 0.16,    "max": 0.16,    "step": 0.005  },
+      "RET3":         { "min": -0.0225, "max": -0.0225, "step": 0.0005 },
+      "SPREAD_LVL":   { "min": 7.0,     "max": 7.0,     "step": 0.1    },
+      "YIELD10_CHG4": { "min": 0.10,    "max": 0.10,    "step": 0.01   },
+      "YIELD2_CHG4":  { "min": 0.10,    "max": 0.10,    "step": 0.01   },
+      "CURVE_CHG4":   { "min": 0.30,    "max": 0.30,    "step": 0.05   }
     },
     "cashRate": 0.04,
     "startInvested": 1,
-    "disabledFactors": []
+    "disabledFactors": ["YIELD10_CHG4", "YIELD2_CHG4", "CURVE_CHG4", "YIELD10_DELTA"]
   },
   "SHYM": { ... }
 }
@@ -196,8 +204,8 @@ Accepts an `AppConfig` body and writes it to `api/config.json`. Returns `{"ok": 
 `ParamRange`, `ParamRanges`, and `AppConfig` are defined in `frontend/src/types/index.ts`:
 ```typescript
 interface ParamRange { min: number; max: number; step: number }
-interface ParamRanges { MA: ParamRange; DROP: ParamRange; CHG4: ParamRange; RET3: ParamRange; SPREAD_LVL: ParamRange }
-interface AppConfig { defaultParams: DefaultParams; defaultRanges: ParamRanges; cashRate: number; startInvested: 0 | 1 }
+interface ParamRanges { MA: ParamRange; DROP: ParamRange; CHG4: ParamRange; RET3: ParamRange; SPREAD_LVL: ParamRange; YIELD10_CHG4: ParamRange; YIELD2_CHG4: ParamRange; CURVE_CHG4: ParamRange }
+interface AppConfig { defaultParams: DefaultParams; defaultRanges: ParamRanges; cashRate: number; startInvested: 0 | 1; disabledFactors: string[] }
 ```
 `ParameterPanel.tsx` re-exports `ParamRange` and `ParamRanges` for backwards compatibility.
 
