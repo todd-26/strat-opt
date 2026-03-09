@@ -3,20 +3,20 @@ from typing import Optional
 
 
 class StrategyParams(BaseModel):
-    MA: int = 50
-    DROP: float = 0.017
-    CHG4: float = 0.165
-    RET3: float = -0.021
-    SPREAD_LVL: float = 7.0
-    YIELD10_CHG4: float = 0.0
-    YIELD2_CHG4: float = 0.0
-    CURVE_CHG4: float = 0.0
-    SPREAD_DELTA: int = 2
-    YIELD10_DELTA: int = 2
+    MA: int
+    DROP: float
+    CHG4: float
+    RET3: float
+    SPREAD_LVL: float
+    YIELD10_CHG4: float
+    YIELD2_CHG4: float
+    CURVE_CHG4: float
+    SPREAD_DELTA: int
+    YIELD10_DELTA: int
 
 
 class BuyHoldRequest(BaseModel):
-    ticker: str = "SPHY"
+    ticker: str
     cash_rate: float = 0.04
     input_type: str = "csv"
     start_date: Optional[str] = None
@@ -24,8 +24,8 @@ class BuyHoldRequest(BaseModel):
 
 
 class SignalRequest(BaseModel):
-    ticker: str = "SPHY"
-    params: StrategyParams = StrategyParams()
+    ticker: str
+    params: StrategyParams
     start_invested: int = 1
     cash_rate: float = 0.04
     input_type: str = "csv"
@@ -35,20 +35,19 @@ class SignalRequest(BaseModel):
 
 
 class OptimizerRequest(BaseModel):
-    ticker: str = "SPHY"
-    # Each field is a list of values to test in the grid search
-    MA: list[int] = [50]
-    DROP: list[float] = [0.017]
-    CHG4: list[float] = [0.165]
-    RET3: list[float] = [-0.02, -0.0205, -0.021, -0.0215, -0.022]
-    SPREAD_LVL: list[float] = [7.0]
-    YIELD10_CHG4: list[float] = [0.0]
-    YIELD2_CHG4: list[float] = [0.0]
-    CURVE_CHG4: list[float] = [0.0]
-    SPREAD_DELTA: list[int] = [2]
-    YIELD10_DELTA: list[int] = [2]
-    start_invested: int = 1
-    cash_rate: float = 0.04
+    ticker: str
+    MA: list[int]
+    DROP: list[float]
+    CHG4: list[float]
+    RET3: list[float]
+    SPREAD_LVL: list[float]
+    YIELD10_CHG4: list[float]
+    YIELD2_CHG4: list[float]
+    CURVE_CHG4: list[float]
+    SPREAD_DELTA: list[int]
+    YIELD10_DELTA: list[int]
+    start_invested: int
+    cash_rate: float
     input_type: str = "csv"
     start_date: Optional[str] = None
     end_date: Optional[str] = None
@@ -70,11 +69,11 @@ class TradeEvent(BaseModel):
     spread_delta: Optional[float] = None
     ma_value: Optional[float] = None
     # Source data for popup derivations
-    spread_4wk_ago: Optional[float] = None   # for chg4 explanation
-    close_3wk_ago: Optional[float] = None    # for ret3 explanation
-    spread_delta_history: Optional[list[float]] = None  # last N weeks of spread_delta, oldest first
-    spread_drop: Optional[float] = None      # 1 - (spread / 4wk_peak) — actual drop %
-    spread_4wk_peak: Optional[float] = None  # the 4-week peak used in the calculation
+    spread_4wk_ago: Optional[float] = None
+    close_3wk_ago: Optional[float] = None
+    spread_delta_history: Optional[list[float]] = None
+    spread_drop: Optional[float] = None
+    spread_4wk_peak: Optional[float] = None
     # Treasury yield indicators
     yield10_chg4: Optional[float] = None
     yield2_chg4: Optional[float] = None
@@ -84,7 +83,7 @@ class TradeEvent(BaseModel):
     yield10_4wk_ago: Optional[float] = None
     yield2_4wk_ago: Optional[float] = None
     curve_4wk_ago: Optional[float] = None
-    yield10_delta_history: Optional[list[float]] = None  # last N weeks of yield10_delta, oldest first
+    yield10_delta_history: Optional[list[float]] = None
 
 
 class BacktestResult(BaseModel):
@@ -148,47 +147,34 @@ class SignalResponse(BaseModel):
     data_end: str
 
 
+# ---------------------------------------------------------------------------
+# Config models — mirrors securities_config.json structure
+# ---------------------------------------------------------------------------
+
 class ParamRange(BaseModel):
     min: float
     max: float
     step: float
 
 
-class DefaultRanges(BaseModel):
-    MA: ParamRange
-    DROP: ParamRange
-    CHG4: ParamRange
-    RET3: ParamRange
-    SPREAD_LVL: ParamRange
-    YIELD10_CHG4: ParamRange
-    YIELD2_CHG4: ParamRange
-    CURVE_CHG4: ParamRange
-    SPREAD_DELTA: ParamRange
-    YIELD10_DELTA: ParamRange
-
-
-class ParamDef(BaseModel):
-    name: str
-    value: float
-    desc: str = ""
-
-
-class DefaultParams(BaseModel):
-    MA: ParamDef
-    DROP: ParamDef
-    CHG4: ParamDef
-    RET3: ParamDef
-    SPREAD_LVL: ParamDef
-    YIELD10_CHG4: ParamDef
-    YIELD2_CHG4: ParamDef
-    CURVE_CHG4: ParamDef
-    SPREAD_DELTA: ParamDef
-    YIELD10_DELTA: ParamDef
+class ParamConfig(BaseModel):
+    description: str
+    ignore: bool
+    default: float
+    range: ParamRange
 
 
 class AppConfig(BaseModel):
-    defaultParams: DefaultParams
-    defaultRanges: DefaultRanges
-    cashRate: float = 0.04
-    startInvested: int = 1
-    disabledFactors: list[str] = []
+    """Per-security config returned by GET /api/config and accepted by POST /api/config."""
+    name: str
+    cash_rate: float
+    cash_vehicle: str
+    start_invested: int = 1
+    sell_triggers: dict[str, ParamConfig]
+    buy_conditions: dict[str, ParamConfig]
+
+
+class AddSecurityRequest(BaseModel):
+    ticker: str
+    name: str
+    template: str  # ticker to copy parameters from

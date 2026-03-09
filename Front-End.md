@@ -159,68 +159,67 @@ Clicking a bolded value opens a popup showing the derivation:
 
 Accessible via the gear icon in the header. Contains:
 
+0. **Manage Securities** — at the top of the settings sheet. Lists all current securities; each has a trash icon to delete (disabled when only one remains; requires inline confirmation before deleting) and an "Update" button to re-fetch historical data from Alpha Vantage. Below the list, an "Add Security" form: Ticker (text), Name (text), Model after (dropdown of existing tickers), and an Add button. Adding auto-fetches the CSV from Alpha Vantage if not already present. After add/remove, the securities list in the header refreshes; if the active ticker was removed, the app switches to the first remaining one.
 1. **Color Theme** — radio or card selector for the four available themes; applied immediately on selection.
 2. **Input Source** — toggle between CSV (local files) and API (live Alpha Vantage / FRED).
 3. **Default Cash Rate** — annual cash yield rate (decimal, e.g., 0.04).
 4. **Default Starting Position** — radio: Invested or Cash.
-5. **Enabled Factors** — checkboxes for all 10 factors, grouped under "Sell Factors" (SPREAD_LVL, CHG4, RET3, YIELD10_CHG4, YIELD2_CHG4, CURVE_CHG4) and "Buy Factors" (MA, DROP, SPREAD_DELTA, YIELD10_DELTA). Checked = enabled (unchecked = disabled). Persisted in `config.json` alongside other per-security defaults; tabs initialize from these on page load.
-6. **Default Parameter Values** — inputs to set the default parameter values that pre-fill the Current Signal tab on page load. Includes all 8 numeric params (MA, DROP, CHG4, RET3, SPREAD_LVL, YIELD10_CHG4, YIELD2_CHG4, CURVE_CHG4). Edits are local until "Save Permanently" is clicked.
-7. **Default Optimizer Ranges** — min/max/step inputs for each of the 8 strategy parameters, pre-filling the Optimizer tab's range grid on page load. Edits are local until "Save Permanently" is clicked.
-7. **Save Permanently** — button at the bottom. POSTs `defaultParams` and `defaultRanges` to `POST /api/config`, which writes `api/config.json` to disk. Button shows: "Save Permanently" (idle), "Saving…" (in-flight), "Saved!" (success, reverts after 2 s), "Error — try again" (failure).
+5. **Enabled Factors** — checkboxes for all 10 factors, grouped under "Sell Factors" (SPREAD_LVL, CHG4, RET3, YIELD10_CHG4, YIELD2_CHG4, CURVE_CHG4) and "Buy Factors" (MA, DROP, SPREAD_DELTA, YIELD10_DELTA). Checked = enabled (unchecked = disabled). Persisted in `securities_config.json` via `ignore` flag per parameter; tabs initialize from these on page load.
+6. **Default Parameter Values** — inputs to set the default parameter values that pre-fill the Current Signal tab on page load. Includes all 10 params. Edits are local until "Save Permanently" is clicked.
+7. **Default Optimizer Ranges** — min/max/step inputs for each of the 10 strategy parameters, pre-filling the Optimizer tab's range grid on page load. Edits are local until "Save Permanently" is clicked.
+8. **Save Permanently** — button at the bottom. POSTs `defaultParams` and `defaultRanges` to `POST /api/config`, which writes `api/config.json` to disk. Button shows: "Save Permanently" (idle), "Saving…" (in-flight), "Saved!" (success, reverts after 2 s), "Error — try again" (failure).
 
 **Persistence split**:
 - Theme and Input Source are persisted in `localStorage`.
-- Cash Rate, Starting Position, Disabled Factors, Default Parameters, and Default Optimizer Ranges are persisted in `api/config.json` via the API (per-security). They are **not** stored in `localStorage`.
+- Cash Rate, Starting Position, Disabled Factors, Default Parameters, and Default Optimizer Ranges are persisted in `api/securities_config.json` via the API (per-security). They are **not** stored in `localStorage`.
 
 ---
 
 ## Config File and API
 
-### `api/config.json`
-Server-side JSON file storing the two sets of editable defaults. Created on first save; a hardcoded fallback is used if the file is absent.
+### `api/securities_config.json`
+Server-side JSON file storing all per-security defaults. Each parameter has `description`, `ignore`, `default`, and `range` fields. `ignore: true` means the factor is disabled.
 
 ```json
 {
-  "SPHY": {
-    "defaultParams": {
-      "MA": 50, "DROP": 0.016, "CHG4": 0.16, "RET3": -0.0225, "SPREAD_LVL": 7.0,
-      "YIELD10_CHG4": 0.10, "YIELD2_CHG4": 0.10, "CURVE_CHG4": 0.30
-    },
-    "defaultRanges": {
-      "MA":           { "min": 50,      "max": 50,      "step": 5      },
-      "DROP":         { "min": 0.016,   "max": 0.016,   "step": 0.001  },
-      "CHG4":         { "min": 0.16,    "max": 0.16,    "step": 0.005  },
-      "RET3":         { "min": -0.0225, "max": -0.0225, "step": 0.0005 },
-      "SPREAD_LVL":   { "min": 7.0,     "max": 7.0,     "step": 0.1    },
-      "YIELD10_CHG4": { "min": 0.10,    "max": 0.10,    "step": 0.01   },
-      "YIELD2_CHG4":  { "min": 0.10,    "max": 0.10,    "step": 0.01   },
-      "CURVE_CHG4":   { "min": 0.30,    "max": 0.30,    "step": 0.05   }
-    },
-    "cashRate": 0.04,
-    "startInvested": 1,
-    "disabledFactors": ["YIELD10_CHG4", "YIELD2_CHG4", "CURVE_CHG4", "YIELD10_DELTA"]
-  },
-  "SHYM": { ... }
+  "securities": {
+    "SPHY": {
+      "cash_rate": 0.04,
+      "start_invested": 1,
+      "sell_triggers": {
+        "CHG4":       { "description": "...", "ignore": false, "default": 0.165, "range": { "min": 0.1, "max": 0.2, "step": 0.005 } },
+        "YIELD10_CHG4": { "ignore": true, "default": 0.10, "range": { ... } },
+        ...
+      },
+      "buy_conditions": {
+        "MA":         { "ignore": false, "default": 50, "range": { ... } },
+        "YIELD10_DELTA":{ "ignore": true,  "default": 2,  "range": { ... } },
+        ...
+      }
+    }
+  }
 }
 ```
 
-### `GET /api/config`
-Returns the contents of `api/config.json`. Falls back to hardcoded defaults if the file does not exist.
+### `GET /api/config?ticker=SPHY`
+Returns `AppConfig` derived from `securities_config.json` for the given ticker.
 
-### `POST /api/config`
-Accepts an `AppConfig` body and writes it to `api/config.json`. Returns `{"ok": true}`.
+### `POST /api/config?ticker=SPHY`
+Accepts an `AppConfig` body and merges changes back into `securities_config.json`. Returns `{"ok": true}`.
 
 ### TypeScript types
-`ParamRange`, `ParamRanges`, and `AppConfig` are defined in `frontend/src/types/index.ts`:
+`ParamConfig` and `AppConfig` are defined in `frontend/src/types/index.ts`:
 ```typescript
-interface ParamRange { min: number; max: number; step: number }
-interface ParamRanges { MA: ParamRange; DROP: ParamRange; CHG4: ParamRange; RET3: ParamRange; SPREAD_LVL: ParamRange; YIELD10_CHG4: ParamRange; YIELD2_CHG4: ParamRange; CURVE_CHG4: ParamRange }
-interface AppConfig { defaultParams: DefaultParams; defaultRanges: ParamRanges; cashRate: number; startInvested: 0 | 1; disabledFactors: string[] }
+interface ParamConfig { description: string; ignore: boolean; default: number; range: { min: number; max: number; step: number } }
+interface AppConfig {
+  name: string; cash_rate: number; cash_vehicle: string; start_invested: 0 | 1
+  sell_triggers: { CHG4: ParamConfig; RET3: ParamConfig; SPREAD_LVL: ParamConfig; YIELD10_CHG4: ParamConfig; YIELD2_CHG4: ParamConfig; CURVE_CHG4: ParamConfig }
+  buy_conditions: { MA: ParamConfig; DROP: ParamConfig; SPREAD_DELTA: ParamConfig; YIELD10_DELTA: ParamConfig }
+}
 ```
-`ParameterPanel.tsx` re-exports `ParamRange` and `ParamRanges` for backwards compatibility.
 
 ### Data flow
-`App.tsx` holds `config` state (initialized to fallback, updated from `GET /api/config` on mount). It passes `config.defaultParams` to `SignalTab` and `config.defaultRanges` to `OptimizerTab` as props. `SettingsSheet` receives `config` and `onSaveConfig` to support editing and saving.
+`App.tsx` holds `config: AppConfig | null` state, loaded from `GET /api/config` on ticker change. It derives `defaultStrategyParams`, `defaultRanges`, `defaultDisabledFactors`, and `paramDescriptions` from the config and passes them as props to each tab. `SettingsSheet` receives `config`, `onSaveConfig`, `securities`, `onAddSecurity`, `onRemoveSecurity`, and `onFetchData` props. `handleFetchData` in App.tsx calls `updateSecurityData`, then resets startDate/endDate and reloads dateRange when the updated ticker matches the current one. `lastConfigRef` (useRef) holds the last non-null config so SettingsSheet is rendered outside the `config &&` gate and never unmounts during ticker reload. `dateRangeError` state captures failures from `getDateRange`; passed to Header as optional `dateRangeError?: string | null` prop and displayed inline below the date pickers.
 
 ---
 

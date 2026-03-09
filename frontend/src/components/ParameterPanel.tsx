@@ -73,17 +73,20 @@ export function ParameterPanel(props: Props) {
 // ── Single form ─────────────────────────────────────────────────────────────
 
 const SINGLE_FIELDS: { key: keyof StrategyParams; factor: string; label: string; step: string }[] = [
-  { key: 'SPREAD_LVL', factor: 'SPREAD_LVL', label: 'SPREAD_LVL', step: '0.5' },
-  { key: 'CHG4', factor: 'CHG4', label: 'CHG4', step: '0.001' },
-  { key: 'RET3', factor: 'RET3', label: 'RET3', step: '0.0005' },
-  { key: 'YIELD10_CHG4', factor: 'YIELD10_CHG4', label: 'YIELD10_CHG4', step: '0.01' },
-  { key: 'YIELD2_CHG4', factor: 'YIELD2_CHG4', label: 'YIELD2_CHG4', step: '0.01' },
-  { key: 'CURVE_CHG4', factor: 'CURVE_CHG4', label: 'CURVE_CHG4', step: '0.05' },
-  { key: 'MA', factor: 'MA', label: 'MA (weeks)', step: '1' },
-  { key: 'DROP', factor: 'DROP', label: 'DROP', step: '0.001' },
-  { key: 'SPREAD_DELTA', factor: 'SPREAD_DELTA', label: 'Δspread (weeks)', step: '1' },
-  { key: 'YIELD10_DELTA', factor: 'YIELD10_DELTA', label: 'Δyield10 (weeks)', step: '1' },
+  { key: 'SPREAD_LVL', factor: 'SPREAD_LVL', label: 'SPREAD_LVL',       step: '0.5'    },
+  { key: 'CHG4',       factor: 'CHG4',       label: 'CHG4',             step: '0.001'  },
+  { key: 'RET3',       factor: 'RET3',       label: 'RET3',             step: '0.0005' },
+  { key: 'YIELD10_CHG4', factor: 'YIELD10_CHG4', label: 'YIELD10_CHG4',      step: '0.01'   },
+  { key: 'YIELD2_CHG4',  factor: 'YIELD2_CHG4',  label: 'YIELD2_CHG4',       step: '0.01'   },
+  { key: 'CURVE_CHG4', factor: 'CURVE_CHG4', label: 'CURVE_CHG4',      step: '0.05'   },
+  { key: 'MA',         factor: 'MA',         label: 'MA (weeks)',       step: '1'      },
+  { key: 'DROP',       factor: 'DROP',       label: 'DROP',             step: '0.001'  },
+  { key: 'SPREAD_DELTA',factor: 'SPREAD_DELTA',label: 'Δspread (weeks)',step: '1'      },
+  { key: 'YIELD10_DELTA', factor: 'YIELD10_DELTA', label: 'Δyield10 (weeks)',step: '1'     },
 ]
+
+const SELL_FACTORS  = ['SPREAD_LVL', 'CHG4', 'RET3', 'YIELD10_CHG4', 'YIELD2_CHG4', 'CURVE_CHG4']
+const BUY_FACTORS   = ['MA', 'DROP', 'SPREAD_DELTA', 'YIELD10_DELTA']
 
 function SingleForm({
   params,
@@ -106,10 +109,9 @@ function SingleForm({
 
   return (
     <div>
-      {/* Sell factors header */}
       <div className="mb-1 text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>Sell Factors</div>
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 mb-3">
-        {SINGLE_FIELDS.filter(f => ['SPREAD_LVL', 'CHG4', 'RET3', 'YIELD10_CHG4', 'YIELD2_CHG4', 'CURVE_CHG4'].includes(f.factor)).map(f => {
+        {SINGLE_FIELDS.filter(f => SELL_FACTORS.includes(f.factor)).map(f => {
           const off = disabledFactors?.has(f.factor)
           return (
             <div key={f.key} className="flex items-end gap-2" style={{ opacity: off ? 0.45 : 1 }}>
@@ -122,10 +124,9 @@ function SingleForm({
         })}
       </div>
 
-      {/* Buy factors header */}
       <div className="mb-1 text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>Buy Factors</div>
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-        {SINGLE_FIELDS.filter(f => ['MA', 'DROP', 'SPREAD_DELTA', 'YIELD10_DELTA'].includes(f.factor)).map(f => {
+        {SINGLE_FIELDS.filter(f => BUY_FACTORS.includes(f.factor)).map(f => {
           const off = disabledFactors?.has(f.factor)
           return (
             <div key={f.key} className="flex items-end gap-2" style={{ opacity: off ? 0.45 : 1 }}>
@@ -144,20 +145,20 @@ function SingleForm({
 // ── Range form ──────────────────────────────────────────────────────────────
 
 const PARAM_LABELS: Record<keyof ParamRanges, string> = {
-  MA: 'MA (weeks)',
-  DROP: 'DROP',
-  CHG4: 'CHG4',
-  RET3: 'RET3',
-  SPREAD_LVL: 'SPREAD_LVL',
-  YIELD10_CHG4: 'YIELD10_CHG4',
-  YIELD2_CHG4: 'YIELD2_CHG4',
-  CURVE_CHG4: 'CURVE_CHG4',
-  SPREAD_DELTA: 'Δspread (weeks)',
+  MA:          'MA (weeks)',
+  DROP:        'DROP',
+  CHG4:        'CHG4',
+  RET3:        'RET3',
+  SPREAD_LVL:  'SPREAD_LVL',
+  YIELD10_CHG4:  'YIELD10_CHG4',
+  YIELD2_CHG4:   'YIELD2_CHG4',
+  CURVE_CHG4:  'CURVE_CHG4',
+  SPREAD_DELTA:'Δspread (weeks)',
   YIELD10_DELTA: 'Δyield10 (weeks)',
 }
 
 const RANGE_SELL_KEYS: (keyof ParamRanges)[] = ['SPREAD_LVL', 'CHG4', 'RET3', 'YIELD10_CHG4', 'YIELD2_CHG4', 'CURVE_CHG4']
-const RANGE_BUY_KEYS: (keyof ParamRanges)[] = ['MA', 'DROP', 'SPREAD_DELTA', 'YIELD10_DELTA']
+const RANGE_BUY_KEYS:  (keyof ParamRanges)[] = ['MA', 'DROP', 'SPREAD_DELTA', 'YIELD10_DELTA']
 
 function RangeForm({
   ranges,
@@ -192,8 +193,8 @@ function RangeForm({
           </span>
           {descriptions?.[param] && <InfoTooltip text={descriptions[param]!} />}
         </div>
-        <Field value={String(ranges[param].min)} onChange={(v) => setField(param, 'min', v)} step={String(ranges[param].step)} disabled={off} />
-        <Field value={String(ranges[param].max)} onChange={(v) => setField(param, 'max', v)} step={String(ranges[param].step)} disabled={off} />
+        <Field value={String(ranges[param].min)}  onChange={(v) => setField(param, 'min',  v)} step={String(ranges[param].step)} disabled={off} />
+        <Field value={String(ranges[param].max)}  onChange={(v) => setField(param, 'max',  v)} step={String(ranges[param].step)} disabled={off} />
         <Field value={String(ranges[param].step)} onChange={(v) => setField(param, 'step', v)} step={param === 'MA' ? '1' : '0.0001'} disabled={off} />
       </div>
     )
@@ -208,14 +209,11 @@ function RangeForm({
         <span>Step</span>
       </div>
 
-      {/* Sell factors */}
       <div className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>Sell Factors</div>
       {RANGE_SELL_KEYS.map(renderRow)}
 
-      {/* Buy factors */}
       <div className="text-xs font-semibold uppercase tracking-wide pt-1" style={{ color: 'var(--text-muted)' }}>Buy Factors</div>
       {RANGE_BUY_KEYS.map(renderRow)}
-
     </div>
   )
 }
@@ -240,7 +238,6 @@ function Field({
   const [local, setLocal] = useState(value)
   const [editing, setEditing] = useState(false)
 
-  // Sync from parent when not actively editing
   if (!editing && local !== value) setLocal(value)
 
   function commit() {
@@ -249,7 +246,7 @@ function Field({
     if (!isNaN(n)) {
       onChange(String(n))
     } else {
-      setLocal(value) // revert invalid input
+      setLocal(value)
     }
   }
 

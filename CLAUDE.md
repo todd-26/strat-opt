@@ -13,7 +13,7 @@ strat-opt/
 ├── api/                    # FastAPI backend server
 │   ├── main.py             # API routes and SSE streaming
 │   ├── models.py           # Pydantic models
-│   ├── config.json         # Externalized parameter defaults and ranges
+│   ├── securities_config.json  # Externalized parameter defaults and ranges (per-security)
 │   └── requirements.txt
 ├── backend/                # Core Python pipeline (strategy logic)
 │   ├── data_loader.py      # Loads and merges price + spread data
@@ -22,14 +22,10 @@ strat-opt/
 │   ├── fred.py             # Credit spread data source
 │   ├── indicators.py       # Technical indicator calculations
 │   ├── strategy_base.py    # Abstract strategy interface
-│   ├── strategy_spread.py  # Shared spread-strategy logic (SpreadStrategy)
-│   ├── strategy_sphy.py    # SPHY-specific trading rules
-│   ├── strategy_shym.py    # SHYM-specific trading rules
+│   ├── strategy_generic.py # GenericStrategy — config-driven, replaces all per-security classes
 │   ├── strategy_buyhold.py # Buy-and-hold baseline
 │   ├── backtester.py       # Converts positions to equity curves
-│   ├── optimizer_base.py   # Abstract BaseOptimizer with grid-search loop
-│   ├── optimizer_sphy.py   # SPHY grid-search optimizer
-│   └── optimizer_shym.py   # SHYM grid-search optimizer
+│   └── optimizer_generic.py # GenericOptimizer — config-driven, replaces all per-security optimizers
 ├── frontend/               # React/Vite UI
 │   ├── src/
 │   │   ├── App.tsx         # Main app with tab navigation
@@ -140,12 +136,11 @@ Backend Pipeline:
 **Indicators** (`indicators.py`):
 - `IndicatorEngine.apply_all()` adds: `MA` (n-week moving average), `chg4` (4-week spread change), `ret3` (3-week price return), `spread_delta` (week-over-week spread change), `yield10_chg4` (4-week % change in 10yr yield), `yield2_chg4` (4-week % change in 2yr yield), `curve_chg4` (4-week absolute change in yield curve), `yield10_delta` (week-over-week change in 10yr yield)
 
-**Strategy** (`strategy_base.py`, `strategy_spread.py`, `strategy_sphy.py`, `strategy_shym.py`, `strategy_buyhold.py`):
+**Strategy** (`strategy_base.py`, `strategy_generic.py`, `strategy_buyhold.py`):
 - `BaseStrategy` defines abstract interface: `evaluate_sell()`, `evaluate_buy()`, `run()`
-- `SpreadStrategy(BaseStrategy)` holds shared credit-spread logic; SPHY and SHYM inherit from it
-- `SPHYStrategy` / `SHYMStrategy` are siblings implementing security-specific rules
+- `GenericStrategy(BaseStrategy)` — single config-driven strategy for all securities; replaces all per-security subclasses
 - `BuyAndHoldStrategy` always invested, used as baseline
-- `SpreadStrategy` accepts `disabled` set of factor names; disabled sell factors → never trigger, disabled buy factors → always pass
+- `GenericStrategy` accepts `params: dict` and `ignore: set` of factor names; disabled sell factors → never trigger, disabled buy factors → always pass
 - Valid sell factor names: `SPREAD_LVL`, `CHG4`, `RET3`, `YIELD10_CHG4`, `YIELD2_CHG4`, `CURVE_CHG4`
 - Valid buy factor names: `MA`, `DROP`, `SPREAD_DELTA`, `YIELD10_DELTA`
 
@@ -154,20 +149,23 @@ Backend Pipeline:
 - Applies weekly TR when invested, cash yield when not
 - Computes final value and APY
 
-**Optimizer** (`optimizer_base.py`, `optimizer_sphy.py`, `optimizer_shym.py`, `optimizer_nea.py`):
-- `BaseOptimizer` (abstract) contains the grid-search loop; subclasses set default grids and implement `_create_strategy()`
-- `SPHYOptimizer` / `SHYMOptimizer` / `NEAOptimizer` are siblings
-- All accept `start_date`/`end_date` kwargs passed through to `loader.load()`
-- All accept `disabled_factors` set; disabled grids collapse to `[0]` (single placeholder) to reduce combinations
+**Optimizer** (`optimizer_generic.py`):
+- `GenericOptimizer` — single config-driven optimizer for all securities; replaces all per-security subclasses
+- Accepts `param_grids: dict`, `start_date`/`end_date`, `disabled_factors` set
+- Disabled grids collapse to `[0]` (single placeholder) to reduce combinations
 - Supports `progress_callback` for streaming progress to frontend
 
 ### API Server (api/)
 
 FastAPI server with endpoints:
-- `GET /api/securities` — Returns available tickers (`["SPHY", "SHYM", "NEA"]`)
+- `GET /api/securities` — Returns available tickers; raises HTTP 500 if config missing/invalid or no securities defined (startup validation)
+- `GET /api/date-range` — errors include response body text; `dateRangeError` state in App.tsx captures failures; passed to Header as prop for inline display
+- `POST /api/securities` — Adds a new security (body: `AddSecurityRequest{ticker, name, template}`); validates ticker format (1–10 uppercase letters), auto-fetches CSV from Alpha Vantage if not already present, no duplicate, clones parameters from template ticker
+- `POST /api/securities/{ticker}/fetch-data` — Fetches/overwrites CSV data for an existing security from Alpha Vantage; frontend: `updateSecurityData(ticker)` in lib/api.ts; `handleFetchData` in App.tsx resets startDate/endDate and reloads dateRange when ticker matches current
+- `DELETE /api/securities/{ticker}` — Removes a security; blocks if it is the last one
 - `GET /api/date-range` — Returns `{ min, max }` date strings for a ticker's data
-- `GET /api/config` — Returns externalized parameter defaults from `config.json`
-- `POST /api/config` — Saves parameter defaults to `config.json`
+- `GET /api/config` — Returns `AppConfig` for a ticker (derived from `securities_config.json`)
+- `POST /api/config` — Saves `AppConfig` changes back to `securities_config.json`
 - `POST /api/run/buyhold` — Runs buy-and-hold backtest
 - `POST /api/run/signal` — Runs strategy and returns current signal + trade history
 - `POST /api/run/optimizer` — Runs grid search with SSE streaming progress
@@ -184,8 +182,8 @@ React/Vite SPA with three tabs:
 
 Key features:
 - Theming system (4 themes: Slate, Navy & Gold, Charcoal & Green, High Contrast)
-- Theme and input type persisted to localStorage; cash rate and start position persisted to `api/config.json` (per-security)
-- Parameter defaults, cash rate, and start position persisted to `api/config.json` via API
+- Theme and input type persisted to localStorage; cash rate and start position persisted to `api/securities_config.json` (per-security)
+- Parameter defaults, cash rate, and start position persisted to `api/securities_config.json` via API
 - Equity curve charts with buy/sell markers, CSV/PNG export
 - Recharts for visualization
 - Global date range picker in `Header.tsx` (From/To); filters data for all three tabs; not persisted; shows actual data range as placeholder when empty
@@ -198,9 +196,9 @@ Key features:
 - `spread > SPREAD_LVL` (absolute spread too high)
 - `chg4 > CHG4_THR` (4-week spread change too high)
 - `ret3 < RET3_THR` (3-week price return too negative)
-- `yield10_chg4 > YIELD10_CHG4_THR` (10yr yield rose too much over 4 weeks)
-- `yield2_chg4 > YIELD2_CHG4_THR` (2yr yield rose too much over 4 weeks)
-- `curve_chg4 < -CURVE_CHG4_THR` (yield curve flattened too much over 4 weeks)
+- `yield10_chg4 > YIELD10_CHG4` (10yr yield rose too much over 4 weeks)
+- `yield2_chg4 > YIELD2_CHG4` (2yr yield rose too much over 4 weeks)
+- `curve_chg4 < -CURVE_CHG4` (yield curve flattened too much over 4 weeks)
 
 **BUY if ALL of** (only when not currently invested; starting in cash counts as already sold; also requires no sell condition active):
 - `close > MA` (price above moving average)
@@ -211,38 +209,41 @@ Key features:
 
 ## Externalized Configuration
 
-Parameter defaults and optimizer ranges are stored in `api/config.json`, not hardcoded:
+Parameter defaults and optimizer ranges are stored in `api/securities_config.json`, not hardcoded. Each security has `sell_triggers` and `buy_conditions` dicts where every parameter has `{description, ignore, default, range: {min, max, step}}`:
 
 ```json
 {
-  "SPHY": {
-    "defaultParams": {
-      "MA": { "name": "MA", "value": 50.0, "desc": "..." },
-      ...
-    },
-    "defaultRanges": {
-      "MA": { "min": 50.0, "max": 50.0, "step": 5.0 },
-      ...
-    },
-    "cashRate": 0.04,
-    "startInvested": 1,
-    "disabledFactors": ["YIELD10_CHG4", "YIELD2_CHG4", "CURVE_CHG4", "YIELD10_DELTA"]
-  },
-  "SHYM": { ... }
+  "securities": {
+    "SPHY": {
+      "name": "SPDR Portfolio High Yield Bond ETF",
+      "cash_rate": 0.04,
+      "start_invested": 1,
+      "sell_triggers": {
+        "CHG4":     { "description": "...", "ignore": false, "default": 0.165, "range": { "min": 0.1, "max": 0.2, "step": 0.005 } },
+        "YIELD10_CHG4": { "ignore": true, ... },
+        ...
+      },
+      "buy_conditions": {
+        "MA":       { "ignore": false, "default": 50, ... },
+        "YIELD10_DELTA": { "ignore": true, ... },
+        ...
+      }
+    }
+  }
 }
 ```
 
-The frontend loads this on startup and uses it to populate parameter inputs, initialize disabled factor checkboxes, and set run defaults. Users can edit and save permanently via the Settings panel.
+The `ignore` flag replaces the old `disabledFactors` array. The frontend loads `AppConfig` (derived from this file) on startup and uses it to populate parameter inputs, initialize disabled factor checkboxes, and set run defaults. Users can edit and save permanently via the Settings panel.
 
 ## Key Design Decisions
 
 - **CSV is default** — API mode is available but rate-limited; CSV provides consistent, fast local testing
 - **Streaming optimizer** — SSE pushes progress updates to frontend for responsive UI during long grid searches
-- **Strategy abstraction** — `BaseStrategy` supports additional securities; new strategies inherit and implement `evaluate_sell()` / `evaluate_buy()`
-- **Externalized parameters** — Defaults and ranges in `config.json`, not source code, enabling UI-driven tuning
+- **Generic strategy/optimizer** — `GenericStrategy` and `GenericOptimizer` are fully config-driven; adding a new security only requires a new entry in `securities_config.json`
+- **Externalized parameters** — Defaults, ranges, and `ignore` flags in `securities_config.json`, not source code, enabling UI-driven tuning
 - **Decoupled backtester** — Reusable for any asset/strategy combination
 
 ## Future Direction
 
-- Add more securities/strategies (each with own strategy class + parameter definitions)
+- Add more securities (each needs only a new entry in `securities_config.json` — no new strategy/optimizer code)
 - Potentially move config to database for multi-user scenarios
