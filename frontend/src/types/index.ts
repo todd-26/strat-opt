@@ -81,6 +81,8 @@ export interface SignalMetrics {
   yield10_chg4?: number | null
   yield2_chg4?: number | null
   curve_chg4?: number | null
+  yield_curve?: number | null
+  curve_4wk_ago?: number | null
   yield10_delta?: number | null
   yield10_delta_history?: number[] | null
   spread_drop?: number | null
