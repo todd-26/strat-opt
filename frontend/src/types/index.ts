@@ -101,19 +101,6 @@ export interface SignalResponse {
   data_end: string
 }
 
-export interface OptimizerGrids {
-  MA: number[]
-  DROP: number[]
-  CHG4: number[]
-  RET3: number[]
-  SPREAD_LVL: number[]
-  YIELD10_CHG4: number[]
-  YIELD2_CHG4: number[]
-  CURVE_CHG4: number[]
-  SPREAD_DELTA: number[]
-  YIELD10_DELTA: number[]
-}
-
 export interface OptimizerRequest {
   ticker: string
   MA: number[]
@@ -134,7 +121,11 @@ export interface OptimizerRequest {
   disabled_factors?: string[]
 }
 
+export type OptimizerGrids = Pick<OptimizerRequest, 'MA' | 'DROP' | 'CHG4' | 'RET3' | 'SPREAD_LVL' | 'YIELD10_CHG4' | 'YIELD2_CHG4' | 'CURVE_CHG4' | 'SPREAD_DELTA' | 'YIELD10_DELTA'>
+
 export interface ParamRange { min: number; max: number; step: number }
+
+// ParamRanges: one entry per strategy parameter
 export interface ParamRanges {
   MA: ParamRange
   DROP: ParamRange
@@ -148,25 +139,33 @@ export interface ParamRanges {
   YIELD10_DELTA: ParamRange
 }
 
-export interface ParamDef { name: string; value: number; desc: string }
-export interface DefaultParams {
-  MA: ParamDef
-  DROP: ParamDef
-  CHG4: ParamDef
-  RET3: ParamDef
-  SPREAD_LVL: ParamDef
-  YIELD10_CHG4: ParamDef
-  YIELD2_CHG4: ParamDef
-  CURVE_CHG4: ParamDef
-  SPREAD_DELTA: ParamDef
-  YIELD10_DELTA: ParamDef
+// New config structure — mirrors securities_config.json
+export interface ParamConfig {
+  description: string
+  ignore: boolean
+  default: number
+  range: ParamRange
 }
+
 export interface AppConfig {
-  defaultParams: DefaultParams
-  defaultRanges: ParamRanges
-  cashRate: number
-  startInvested: 0 | 1
-  disabledFactors: string[]
+  name: string
+  cash_rate: number
+  cash_vehicle: string
+  start_invested: 0 | 1
+  sell_triggers: {
+    CHG4: ParamConfig
+    RET3: ParamConfig
+    SPREAD_LVL: ParamConfig
+    YIELD10_CHG4: ParamConfig
+    YIELD2_CHG4: ParamConfig
+    CURVE_CHG4: ParamConfig
+  }
+  buy_conditions: {
+    MA: ParamConfig
+    DROP: ParamConfig
+    SPREAD_DELTA: ParamConfig
+    YIELD10_DELTA: ParamConfig
+  }
 }
 
 export interface Settings {

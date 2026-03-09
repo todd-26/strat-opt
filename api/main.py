@@ -16,21 +16,16 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from fastapi.staticfiles import StaticFiles
 
-# Add the code/ directory to sys.path so we can import the pipeline modules
-CODE_DIR = Path(__file__).resolve().parent.parent / "backend"
+CODE_DIR  = Path(__file__).resolve().parent.parent / "backend"
 INPUT_DIR = Path(__file__).resolve().parent.parent / "inputs"
 sys.path.insert(0, str(CODE_DIR))
 
 from data_loader import WeeklyDataLoader          # noqa: E402
 from indicators import IndicatorEngine             # noqa: E402
-from strategy_sphy import SPHYStrategy             # noqa: E402
-from strategy_shym import SHYMStrategy             # noqa: E402
-from strategy_nea import NEAStrategy               # noqa: E402
+from strategy_generic import GenericStrategy       # noqa: E402
 from strategy_buyhold import BuyAndHoldStrategy    # noqa: E402
 from backtester import Backtester                  # noqa: E402
-from optimizer_sphy import SPHYOptimizer           # noqa: E402
-from optimizer_shym import SHYMOptimizer           # noqa: E402
-from optimizer_nea import NEAOptimizer             # noqa: E402
+from optimizer_generic import GenericOptimizer     # noqa: E402
 
 from models import (                               # noqa: E402
     BuyHoldRequest,
@@ -49,7 +44,7 @@ from models import (                               # noqa: E402
 
 app = FastAPI(title="strat-opt API")
 
-CONFIG_PATH = Path(__file__).parent / "config.json"
+CONFIG_PATH = Path(__file__).parent / "securities_config.json"
 
 app.add_middleware(
     CORSMiddleware,
@@ -63,8 +58,11 @@ app.add_middleware(
 # Helpers
 # ---------------------------------------------------------------------------
 
+def _load_config() -> dict:
+    return json.loads(CONFIG_PATH.read_text())
+
+
 def _safe_float(val) -> float | None:
-    """Return None for NaN/None, otherwise float."""
     try:
         if val is None or math.isnan(float(val)):
             return None
@@ -74,9 +72,8 @@ def _safe_float(val) -> float | None:
 
 
 def _build_trade_history(bt_df, buy_dates, sell_dates, spread_delta_n=2, yield10_delta_n=2) -> list[TradeEvent]:
-    # Auto-detect the MA column (e.g. "MA50")
     ma_cols = [c for c in bt_df.columns if re.match(r'^MA\d+$', c)]
-    ma_col = ma_cols[0] if ma_cols else None
+    ma_col  = ma_cols[0] if ma_cols else None
 
     events: list[TradeEvent] = []
 
@@ -106,12 +103,11 @@ def _build_trade_history(bt_df, buy_dates, sell_dates, spread_delta_n=2, yield10
     for d in buy_dates:
         pos = bt_df.index.get_loc(d)
         row = bt_df.iloc[pos]
-        # Compute drop from 4-week spread peak (buy rule: spread <= peak * (1 - DROP))
         start = max(0, pos - 3)
         spreads_window = bt_df.iloc[start:pos + 1]["Spread"]
         peak = spreads_window.max()
         spread_val = row.get("Spread")
-        drop = 1 - (spread_val / peak) if (peak and not math.isnan(peak) and spread_val is not None and not math.isnan(spread_val)) else None
+        drop = 1 - (spread_val / peak) if (peak and not math.isnan(peak) and spread_val is not None and not math.isnan(float(spread_val))) else None
         events.append(TradeEvent(
             date=d.strftime("%Y-%m-%d"),
             action="BUY",
@@ -142,8 +138,8 @@ def _build_trade_history(bt_df, buy_dates, sell_dates, spread_delta_n=2, yield10
 
 
 def _build_backtest_result(bt_result: dict, spread_delta_n=2, yield10_delta_n=2) -> BacktestResult:
-    df = bt_result["df"]
-    buy_dates = bt_result["buy_dates"]
+    df         = bt_result["df"]
+    buy_dates  = bt_result["buy_dates"]
     sell_dates = bt_result["sell_dates"]
 
     equity_curve = [
@@ -161,37 +157,34 @@ def _build_backtest_result(bt_result: dict, spread_delta_n=2, yield10_delta_n=2)
     )
 
 
+def _security_to_appconfig(sec: dict) -> AppConfig:
+    """Convert a securities_config.json security block to an AppConfig model."""
+    p = sec["parameters"]
+    return AppConfig(
+        name=sec["name"],
+        cash_rate=sec["cash_rate"],
+        cash_vehicle=sec.get("cash_vehicle", ""),
+        start_invested=sec.get("start_invested", 1),
+        sell_triggers={k: v for k, v in p["sell_triggers"].items()},
+        buy_conditions={k: v for k, v in p["buy_conditions"].items()},
+    )
+
+
 # ---------------------------------------------------------------------------
 # Routes
 # ---------------------------------------------------------------------------
 
-STRATEGY_CLASSES = {
-    "SPHY": SPHYStrategy,
-    "SHYM": SHYMStrategy,
-    "NEA":  NEAStrategy,
-}
-
-OPTIMIZER_CLASSES = {
-    "SPHY": SPHYOptimizer,
-    "SHYM": SHYMOptimizer,
-    "NEA":  NEAOptimizer,
-}
-
-SECURITIES = list(STRATEGY_CLASSES.keys())
-
-
 @app.get("/api/securities")
 def get_securities():
-    return SECURITIES
+    return list(_load_config()["securities"].keys())
 
 
 @app.get("/api/date-range")
-def get_date_range(ticker: str = Query(default="SPHY"), input_type: str = Query(default="csv")):
-    """Return the min/max dates available for a ticker's data."""
-    loader = WeeklyDataLoader(input_type, INPUT_DIR, ticker)
-    price_df = loader.load_price_dividend()
+def get_date_range(ticker: str = Query(), input_type: str = Query(default="csv")):
+    loader    = WeeklyDataLoader(input_type, INPUT_DIR, ticker)
+    price_df  = loader.load_price_dividend()
     spread_df = loader.load_spread()
-    weekly = loader.merge_price_spread(price_df, spread_df)
+    weekly    = loader.merge_price_spread(price_df, spread_df)
     return {
         "min": weekly.index.min().strftime("%Y-%m-%d"),
         "max": weekly.index.max().strftime("%Y-%m-%d"),
@@ -201,7 +194,7 @@ def get_date_range(ticker: str = Query(default="SPHY"), input_type: str = Query(
 @app.post("/api/run/buyhold", response_model=BacktestResult)
 def run_buyhold(req: BuyHoldRequest):
     loader = WeeklyDataLoader(req.input_type, INPUT_DIR, req.ticker)
-    df = loader.load(start_date=req.start_date, end_date=req.end_date)
+    df     = loader.load(start_date=req.start_date, end_date=req.end_date)
 
     strat = BuyAndHoldStrategy()
     positions, buys, sells = strat.run(df)
@@ -217,54 +210,46 @@ def run_signal(req: SignalRequest):
     p = req.params
 
     loader = WeeklyDataLoader(req.input_type, INPUT_DIR, req.ticker)
-    df = loader.load(start_date=req.start_date, end_date=req.end_date)
-
+    df     = loader.load(start_date=req.start_date, end_date=req.end_date)
     df_ind = IndicatorEngine.apply_all(df.copy(), p.MA)
 
-    strategy_cls = STRATEGY_CLASSES.get(req.ticker.upper(), SPHYStrategy)
-    strat = strategy_cls(
-        MA_LENGTH=p.MA,
-        DROP=p.DROP,
-        CHG4_THR=p.CHG4,
-        RET3_THR=p.RET3,
-        SPREAD_LVL=p.SPREAD_LVL,
-        YIELD10_CHG4_THR=p.YIELD10_CHG4,
-        YIELD2_CHG4_THR=p.YIELD2_CHG4,
-        CURVE_CHG4_THR=p.CURVE_CHG4,
-        SPREAD_DELTA_N=p.SPREAD_DELTA,
-        YIELD10_DELTA_N=p.YIELD10_DELTA,
-        disabled=set(req.disabled_factors),
+    strat = GenericStrategy(
+        params={
+            'MA': p.MA, 'DROP': p.DROP, 'CHG4': p.CHG4, 'RET3': p.RET3,
+            'SPREAD_LVL': p.SPREAD_LVL, 'YIELD10_CHG4': p.YIELD10_CHG4,
+            'YIELD2_CHG4': p.YIELD2_CHG4, 'CURVE_CHG4': p.CURVE_CHG4,
+            'SPREAD_DELTA': p.SPREAD_DELTA, 'YIELD10_DELTA': p.YIELD10_DELTA,
+        },
+        ignore=set(req.disabled_factors),
     )
 
     positions, buy_dates, sell_dates = strat.run(df_ind, start_invested=req.start_invested)
 
-    bt = Backtester(req.cash_rate)
+    bt        = Backtester(req.cash_rate)
     bt_result = bt.run(df_ind, positions, buy_dates, sell_dates)
 
-    # Determine current signal from last two positions
     if len(positions) >= 2:
         prev_pos = positions[-2]
-        last_pos = positions[-1]
+        last_pos_val = positions[-1]
     else:
         prev_pos = positions[-1] if positions else 0
-        last_pos = prev_pos
+        last_pos_val = prev_pos
 
-    if last_pos == 1 and prev_pos == 0:
+    if last_pos_val == 1 and prev_pos == 0:
         signal = "BUY"
-    elif last_pos == 0 and prev_pos == 1:
+    elif last_pos_val == 0 and prev_pos == 1:
         signal = "SELL"
     else:
         signal = "HOLD"
 
-    # Current metrics from last row
-    last_idx = df_ind.index[-1]
-    last_row = df_ind.iloc[-1]
-    ma_col = f"MA{p.MA}"
+    last_idx  = df_ind.index[-1]
+    last_row  = df_ind.iloc[-1]
+    ma_col    = f"MA{p.MA}"
+    last_pos  = len(df_ind) - 1
 
-    last_pos = len(df_ind) - 1
-    spread_window = df_ind.iloc[max(0, last_pos - 3):last_pos + 1]["Spread"]
-    spread_peak = spread_window.max()
-    spread_val = last_row.get("Spread")
+    spread_window  = df_ind.iloc[max(0, last_pos - 3):last_pos + 1]["Spread"]
+    spread_peak    = spread_window.max()
+    spread_val     = last_row.get("Spread")
     spread_drop_val = (
         1 - (spread_val / spread_peak)
         if (spread_peak and not math.isnan(spread_peak) and spread_val is not None and not math.isnan(float(spread_val)))
@@ -313,29 +298,22 @@ def run_signal(req: SignalRequest):
 @app.post("/api/run/optimizer")
 async def run_optimizer(req: OptimizerRequest):
     async def event_stream() -> AsyncGenerator[str, None]:
-        loop = asyncio.get_running_loop()
+        loop  = asyncio.get_running_loop()
         queue: asyncio.Queue = asyncio.Queue()
 
         def progress_callback(current: int, total: int):
-            # Thread-safe enqueue from blocking thread
             loop.call_soon_threadsafe(queue.put_nowait, ("progress", current, total))
 
         def run_sync():
             try:
                 param_grids = {
-                    "MA": req.MA,
-                    "DROP": req.DROP,
-                    "CHG4": req.CHG4,
-                    "RET3": req.RET3,
-                    "SPREAD_LVL": req.SPREAD_LVL,
-                    "YIELD10_CHG4": req.YIELD10_CHG4,
-                    "YIELD2_CHG4": req.YIELD2_CHG4,
-                    "CURVE_CHG4": req.CURVE_CHG4,
-                    "SPREAD_DELTA": req.SPREAD_DELTA,
-                    "YIELD10_DELTA": req.YIELD10_DELTA,
+                    'MA': req.MA, 'DROP': req.DROP, 'CHG4': req.CHG4,
+                    'RET3': req.RET3, 'SPREAD_LVL': req.SPREAD_LVL,
+                    'YIELD10_CHG4': req.YIELD10_CHG4, 'YIELD2_CHG4': req.YIELD2_CHG4,
+                    'CURVE_CHG4': req.CURVE_CHG4, 'SPREAD_DELTA': req.SPREAD_DELTA,
+                    'YIELD10_DELTA': req.YIELD10_DELTA,
                 }
-                optimizer_cls = OPTIMIZER_CLASSES.get(req.ticker.upper(), SPHYOptimizer)
-                opt = optimizer_cls(
+                opt = GenericOptimizer(
                     input_type=req.input_type,
                     input_dir=INPUT_DIR,
                     cash_rate=req.cash_rate,
@@ -353,7 +331,6 @@ async def run_optimizer(req: OptimizerRequest):
             except Exception as exc:
                 loop.call_soon_threadsafe(queue.put_nowait, ("error", str(exc)))
 
-        # Run optimizer in a thread pool so it doesn't block the event loop
         executor = concurrent.futures.ThreadPoolExecutor(max_workers=1)
         loop.run_in_executor(executor, run_sync)
 
@@ -369,13 +346,16 @@ async def run_optimizer(req: OptimizerRequest):
 
                 if kind == "progress":
                     _, current, total = item
-                    data = json.dumps({"current": current, "total": total})
-                    yield f"event: progress\ndata: {data}\n\n"
+                    yield f"event: progress\ndata: {json.dumps({'current': current, 'total': total})}\n\n"
 
                 elif kind == "result":
                     _, best_params, results_df, best_result = item
 
-                    best_bt = _build_backtest_result(best_result, int(best_params["SPREAD_DELTA"]), int(best_params["YIELD10_DELTA"]))
+                    best_bt = _build_backtest_result(
+                        best_result,
+                        int(best_params["SPREAD_DELTA"]),
+                        int(best_params["YIELD10_DELTA"]),
+                    )
 
                     best_params_model = StrategyParams(
                         MA=int(best_params["MA"]),
@@ -414,14 +394,12 @@ async def run_optimizer(req: OptimizerRequest):
                         best_result=best_bt,
                         all_results=all_results,
                     )
-                    data = response.model_dump_json()
-                    yield f"event: result\ndata: {data}\n\n"
+                    yield f"event: result\ndata: {response.model_dump_json()}\n\n"
                     break
 
                 elif kind == "error":
                     _, msg = item
-                    data = json.dumps({"message": msg})
-                    yield f"event: error\ndata: {data}\n\n"
+                    yield f"event: error\ndata: {json.dumps({'message': msg})}\n\n"
                     break
         finally:
             executor.shutdown(wait=False)
@@ -429,27 +407,38 @@ async def run_optimizer(req: OptimizerRequest):
     return StreamingResponse(
         event_stream(),
         media_type="text/event-stream",
-        headers={
-            "Cache-Control": "no-cache",
-            "X-Accel-Buffering": "no",
-        },
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
     )
 
 
 @app.get("/api/config")
-def get_config(ticker: str = Query(default="SPHY")):
-    full = json.loads(CONFIG_PATH.read_text())
+def get_config(ticker: str = Query()):
+    full   = _load_config()
     ticker = ticker.upper()
-    if ticker not in full:
+    if ticker not in full["securities"]:
         raise HTTPException(status_code=404, detail=f"No config found for ticker {ticker}")
-    return AppConfig(**full[ticker]).model_dump()
+    return _security_to_appconfig(full["securities"][ticker]).model_dump()
 
 
 @app.post("/api/config")
-def save_config(config: AppConfig, ticker: str = Query(default="SPHY")):
+def save_config(config: AppConfig, ticker: str = Query()):
     ticker = ticker.upper()
-    full = json.loads(CONFIG_PATH.read_text())
-    full[ticker] = json.loads(config.model_dump_json())
+    full   = _load_config()
+    if ticker not in full["securities"]:
+        raise HTTPException(status_code=404, detail=f"No config found for ticker {ticker}")
+
+    sec = full["securities"][ticker]
+    sec["cash_rate"]     = config.cash_rate
+    sec["start_invested"] = config.start_invested
+
+    for k, v in config.sell_triggers.items():
+        if k in sec["parameters"]["sell_triggers"]:
+            sec["parameters"]["sell_triggers"][k].update(v.model_dump())
+
+    for k, v in config.buy_conditions.items():
+        if k in sec["parameters"]["buy_conditions"]:
+            sec["parameters"]["buy_conditions"][k].update(v.model_dump())
+
     CONFIG_PATH.write_text(json.dumps(full, indent=2))
     return {"ok": True}
 

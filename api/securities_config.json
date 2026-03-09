@@ -1,0 +1,454 @@
+{
+  "securities": {
+    "SPHY": {
+      "name": "SPDR Portfolio High Yield Bond ETF",
+      "type": "etf",
+      "asset_class": "high_yield_corporate",
+      "tax_status": "taxable",
+      "data_sources": {
+        "price": {
+          "provider": "alpha_vantage",
+          "function": "TIME_SERIES_WEEKLY_ADJUSTED",
+          "symbol": "SPHY"
+        },
+        "indicators": {
+          "credit_spread": {
+            "provider": "fred",
+            "series_id": "BAMLH0A0HYM2",
+            "description": "ICE BofA US High Yield Index OAS"
+          },
+          "yield_10y": {
+            "provider": "fred",
+            "series_id": "DGS10",
+            "description": "10-Year Treasury Constant Maturity Rate"
+          },
+          "yield_2y": {
+            "provider": "fred",
+            "series_id": "DGS2",
+            "description": "2-Year Treasury Constant Maturity Rate"
+          }
+        }
+      },
+      "cash_rate": 0.04,
+      "cash_vehicle": "money_market",
+      "cash_vehicle_notes": "Taxable money market or treasuries",
+      "start_invested": 1,
+      "parameters": {
+        "sell_triggers": {
+          "CHG4": {
+            "description": "Sell if 4-week credit spread change exceeds threshold",
+            "type": "percent",
+            "ignore": true,
+            "default": 0.16,
+            "range": {
+              "min": 0.16,
+              "max": 0.16,
+              "step": 0.01
+            }
+          },
+          "RET3": {
+            "description": "Sell if 3-week price return falls below threshold",
+            "type": "percent",
+            "ignore": false,
+            "default": -0.0225,
+            "range": {
+              "min": -0.0225,
+              "max": -0.0225,
+              "step": 0.0025
+            }
+          },
+          "SPREAD_LVL": {
+            "description": "Sell if credit spread exceeds absolute level",
+            "type": "absolute",
+            "ignore": true,
+            "default": 7.0,
+            "range": {
+              "min": 7.0,
+              "max": 7.0,
+              "step": 0.5
+            }
+          },
+          "YIELD10_CHG4": {
+            "description": "Sell if 10-year yield 4-week change exceeds threshold",
+            "type": "percent",
+            "ignore": false,
+            "default": 0.12,
+            "range": {
+              "min": 0.12,
+              "max": 0.12,
+              "step": 0.01
+            }
+          },
+          "YIELD2_CHG4": {
+            "description": "Sell if 2-year yield 4-week change exceeds threshold",
+            "type": "percent",
+            "ignore": true,
+            "default": 0.1,
+            "range": {
+              "min": 0.1,
+              "max": 0.1,
+              "step": 0.01
+            }
+          },
+          "CURVE_CHG4": {
+            "description": "Sell if yield curve (10y-2y) 4-week change falls more than threshold",
+            "type": "basis_points",
+            "ignore": true,
+            "default": 0.3,
+            "range": {
+              "min": 0.3,
+              "max": 0.3,
+              "step": 0.02
+            }
+          }
+        },
+        "buy_conditions": {
+          "MA": {
+            "description": "Price must be above n-week moving average",
+            "type": "weeks",
+            "ignore": true,
+            "default": 50.0,
+            "range": {
+              "min": 50.0,
+              "max": 50.0,
+              "step": 1.0
+            }
+          },
+          "DROP": {
+            "description": "Credit spread must fall this fraction from 4-week peak",
+            "type": "percent",
+            "ignore": true,
+            "default": 0.016,
+            "range": {
+              "min": 0.016,
+              "max": 0.016,
+              "step": 0.001
+            }
+          },
+          "SPREAD_DELTA": {
+            "description": "Consecutive weeks of declining credit spread required",
+            "type": "weeks",
+            "ignore": false,
+            "default": 2.0,
+            "range": {
+              "min": 2.0,
+              "max": 2.0,
+              "step": 1.0
+            }
+          },
+          "YIELD10_DELTA": {
+            "description": "Consecutive weeks of declining 10-year yield required",
+            "type": "weeks",
+            "ignore": true,
+            "default": 2.0,
+            "range": {
+              "min": 2.0,
+              "max": 2.0,
+              "step": 1.0
+            }
+          }
+        }
+      }
+    },
+    "SHYM": {
+      "name": "iShares Short Duration High Yield Muni Active ETF",
+      "type": "etf",
+      "asset_class": "high_yield_muni",
+      "tax_status": "tax_exempt_federal",
+      "data_sources": {
+        "price": {
+          "provider": "alpha_vantage",
+          "function": "TIME_SERIES_WEEKLY_ADJUSTED",
+          "symbol": "SHYM"
+        },
+        "indicators": {
+          "credit_spread": {
+            "provider": "fred",
+            "series_id": "BAMLH0A0HYM2",
+            "description": "ICE BofA US High Yield Index OAS"
+          },
+          "yield_10y": {
+            "provider": "fred",
+            "series_id": "DGS10",
+            "description": "10-Year Treasury Constant Maturity Rate"
+          },
+          "yield_2y": {
+            "provider": "fred",
+            "series_id": "DGS2",
+            "description": "2-Year Treasury Constant Maturity Rate"
+          }
+        }
+      },
+      "cash_rate": 0.023,
+      "cash_vehicle": "JMST",
+      "cash_vehicle_notes": "JPMorgan Ultra-Short Muni ETF, tax-exempt",
+      "start_invested": 0,
+      "parameters": {
+        "sell_triggers": {
+          "CHG4": {
+            "description": "Sell if 4-week credit spread change exceeds threshold",
+            "type": "percent",
+            "ignore": false,
+            "default": 0.07,
+            "range": {
+              "min": 0.07,
+              "max": 0.07,
+              "step": 0.01
+            }
+          },
+          "RET3": {
+            "description": "Sell if 3-week price return falls below threshold",
+            "type": "percent",
+            "ignore": false,
+            "default": -0.018,
+            "range": {
+              "min": -0.018,
+              "max": -0.018,
+              "step": 0.002
+            }
+          },
+          "SPREAD_LVL": {
+            "description": "Sell if credit spread exceeds absolute level",
+            "type": "absolute",
+            "ignore": true,
+            "default": 4.2,
+            "range": {
+              "min": 4.2,
+              "max": 4.2,
+              "step": 0.2
+            }
+          },
+          "YIELD10_CHG4": {
+            "description": "Sell if 10-year yield 4-week change exceeds threshold",
+            "type": "percent",
+            "ignore": false,
+            "default": 0.11,
+            "range": {
+              "min": 0.11,
+              "max": 0.11,
+              "step": 0.01
+            }
+          },
+          "YIELD2_CHG4": {
+            "description": "Sell if 2-year yield 4-week change exceeds threshold",
+            "type": "percent",
+            "ignore": true,
+            "default": 0.1,
+            "range": {
+              "min": 0.1,
+              "max": 0.1,
+              "step": 0.01
+            }
+          },
+          "CURVE_CHG4": {
+            "description": "Sell if yield curve (10y-2y) 4-week change falls more than threshold",
+            "type": "basis_points",
+            "ignore": false,
+            "default": 0.36,
+            "range": {
+              "min": 0.36,
+              "max": 0.36,
+              "step": 0.02
+            }
+          }
+        },
+        "buy_conditions": {
+          "MA": {
+            "description": "Price must be above n-week moving average",
+            "type": "weeks",
+            "ignore": false,
+            "default": 3.0,
+            "range": {
+              "min": 3.0,
+              "max": 3.0,
+              "step": 1.0
+            }
+          },
+          "DROP": {
+            "description": "Credit spread must fall this fraction from 4-week peak",
+            "type": "percent",
+            "ignore": false,
+            "default": 0.018,
+            "range": {
+              "min": 0.018,
+              "max": 0.018,
+              "step": 0.001
+            }
+          },
+          "SPREAD_DELTA": {
+            "description": "Consecutive weeks of declining credit spread required",
+            "type": "weeks",
+            "ignore": false,
+            "default": 2.0,
+            "range": {
+              "min": 2.0,
+              "max": 2.0,
+              "step": 1.0
+            }
+          },
+          "YIELD10_DELTA": {
+            "description": "Consecutive weeks of declining 10-year yield required",
+            "type": "weeks",
+            "ignore": true,
+            "default": 2.0,
+            "range": {
+              "min": 2.0,
+              "max": 2.0,
+              "step": 1.0
+            }
+          }
+        }
+      }
+    },
+    "NEA": {
+      "name": "Nuveen AMT-Free Quality Municipal Income Fund",
+      "type": "cef",
+      "asset_class": "investment_grade_muni",
+      "tax_status": "tax_exempt_federal",
+      "data_sources": {
+        "price": {
+          "provider": "alpha_vantage",
+          "function": "TIME_SERIES_WEEKLY_ADJUSTED",
+          "symbol": "NEA"
+        },
+        "indicators": {
+          "credit_spread": {
+            "provider": "fred",
+            "series_id": "BAMLH0A0HYM2",
+            "description": "ICE BofA US High Yield Index OAS"
+          },
+          "yield_10y": {
+            "provider": "fred",
+            "series_id": "DGS10",
+            "description": "10-Year Treasury Constant Maturity Rate"
+          },
+          "yield_2y": {
+            "provider": "fred",
+            "series_id": "DGS2",
+            "description": "2-Year Treasury Constant Maturity Rate"
+          }
+        }
+      },
+      "cash_rate": 0.023,
+      "cash_vehicle": "JMST",
+      "cash_vehicle_notes": "JPMorgan Ultra-Short Muni ETF, tax-exempt",
+      "start_invested": 1,
+      "parameters": {
+        "sell_triggers": {
+          "CHG4": {
+            "description": "Sell if 4-week credit spread change exceeds threshold",
+            "type": "percent",
+            "ignore": true,
+            "default": 0.175,
+            "range": {
+              "min": 0.175,
+              "max": 0.175,
+              "step": 0.005
+            }
+          },
+          "RET3": {
+            "description": "Sell if 3-week price return falls below threshold",
+            "type": "percent",
+            "ignore": true,
+            "default": -0.011,
+            "range": {
+              "min": -0.011,
+              "max": -0.011,
+              "step": 0.001
+            }
+          },
+          "SPREAD_LVL": {
+            "description": "Sell if credit spread exceeds absolute level",
+            "type": "absolute",
+            "ignore": true,
+            "default": 7.0,
+            "range": {
+              "min": 7.0,
+              "max": 7.0,
+              "step": 0.5
+            }
+          },
+          "YIELD10_CHG4": {
+            "description": "Sell if 10-year yield 4-week change exceeds threshold",
+            "type": "percent",
+            "ignore": true,
+            "default": 0.12,
+            "range": {
+              "min": 0.12,
+              "max": 0.12,
+              "step": 0.01
+            }
+          },
+          "YIELD2_CHG4": {
+            "description": "Sell if 2-year yield 4-week change exceeds threshold",
+            "type": "percent",
+            "ignore": true,
+            "default": 0.1,
+            "range": {
+              "min": 0.1,
+              "max": 0.1,
+              "step": 0.01
+            }
+          },
+          "CURVE_CHG4": {
+            "description": "Sell if yield curve (10y-2y) 4-week change falls more than threshold",
+            "type": "basis_points",
+            "ignore": false,
+            "default": 0.3,
+            "range": {
+              "min": 0.3,
+              "max": 0.3,
+              "step": 0.02
+            }
+          }
+        },
+        "buy_conditions": {
+          "MA": {
+            "description": "Price must be above n-week moving average",
+            "type": "weeks",
+            "ignore": false,
+            "default": 32.0,
+            "range": {
+              "min": 32.0,
+              "max": 32.0,
+              "step": 4.0
+            }
+          },
+          "DROP": {
+            "description": "Credit spread must fall this fraction from 4-week peak",
+            "type": "percent",
+            "ignore": true,
+            "default": 0.015,
+            "range": {
+              "min": 0.015,
+              "max": 0.015,
+              "step": 0.001
+            }
+          },
+          "SPREAD_DELTA": {
+            "description": "Consecutive weeks of declining credit spread required",
+            "type": "weeks",
+            "ignore": false,
+            "default": 2.0,
+            "range": {
+              "min": 2.0,
+              "max": 2.0,
+              "step": 1.0
+            }
+          },
+          "YIELD10_DELTA": {
+            "description": "Consecutive weeks of declining 10-year yield required",
+            "type": "weeks",
+            "ignore": true,
+            "default": 2.0,
+            "range": {
+              "min": 2.0,
+              "max": 2.0,
+              "step": 1.0
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -9,9 +9,9 @@
 | **SPREAD_LVL** | Absolute level of the credit spread | If spread is above this threshold, risk is too high — sell | 7.0 |
 | **CHG4_THR** | 4-week % change in credit spread (`chg4`) | If spread has risen more than this over 4 weeks, momentum is bad — sell | 16% |
 | **RET3_THR** | 3-week price return of SPHY (`ret3`) | If the price has dropped more than this over 3 weeks, sell | −2.25% |
-| **YIELD10_CHG4_THR** | 4-week % change in 10yr Treasury yield (`yield10_chg4`) | If 10yr yield has risen more than this over 4 weeks — sell | disabled |
-| **YIELD2_CHG4_THR** | 4-week % change in 2yr Treasury yield (`yield2_chg4`) | If 2yr yield has risen more than this over 4 weeks — sell | disabled |
-| **CURVE_CHG4_THR** | 4-week absolute change in yield curve 10y-2y (`curve_chg4`) | If curve has flattened by more than this — sell (stored positive, compared as `curve_chg4 < -threshold`) | disabled |
+| **YIELD10_CHG4** | 4-week % change in 10yr Treasury yield (`yield10_chg4`) | If 10yr yield has risen more than this over 4 weeks — sell | disabled |
+| **YIELD2_CHG4** | 4-week % change in 2yr Treasury yield (`yield2_chg4`) | If 2yr yield has risen more than this over 4 weeks — sell | disabled |
+| **CURVE_CHG4** | 4-week absolute change in yield curve 10y-2y (`curve_chg4`) | If curve has flattened by more than this — sell (stored positive, compared as `curve_chg4 < -threshold`) | disabled |
 
 ### BUY Triggers — buy only if **ALL** of these are true AND no sell condition is active (when not currently invested; starting in cash counts as already sold)
 
@@ -42,9 +42,9 @@ The `Fred` class in `backend/fred.py` accepts `series_id` and `col_name` params,
 | `ret3` | `close.pct_change(3)` — 3-week price return | RET3_THR sell rule |
 | `spread_delta` | `Spread.diff()` — week-over-week spread change | BUY rule: last 2 must both be negative |
 | `MA{n}` | `close.rolling(n).mean()` | BUY rule: price > MA |
-| `yield10_chg4` | `DGS10.pct_change(4)` — 4-week % change in 10yr yield | YIELD10_CHG4_THR sell rule |
-| `yield2_chg4` | `DGS2.pct_change(4)` — 4-week % change in 2yr yield | YIELD2_CHG4_THR sell rule |
-| `curve_chg4` | `YieldCurve.diff(4)` — 4-week absolute change in 10y-2y curve | CURVE_CHG4_THR sell rule |
+| `yield10_chg4` | `DGS10.pct_change(4)` — 4-week % change in 10yr yield | YIELD10_CHG4 sell rule |
+| `yield2_chg4` | `DGS2.pct_change(4)` — 4-week % change in 2yr yield | YIELD2_CHG4 sell rule |
+| `curve_chg4` | `YieldCurve.diff(4)` — 4-week absolute change in 10y-2y curve | CURVE_CHG4 sell rule |
 | `yield10_delta` | `DGS10.diff()` — week-over-week change in 10yr yield | BUY rule: last 2 must both be negative |
 
 ### Disabling Individual Factors
@@ -53,11 +53,11 @@ Any of the 10 factors can be disabled via a checkbox in the UI. This enables "wh
 
 - **Disabled sell factor** → never triggers (treated as `False`)
 - **Disabled buy factor** → always passes (treated as `True`)
-- `SPREAD_DELTA` and `YIELD10_DELTA` are now fully numeric parameters (integer, default 2) — they control the number of consecutive falling weeks required and appear as regular inputs in the UI
+- `SPREAD_DELTA` and `YIELD10_DELTA` are fully numeric parameters (integer, default 2) — they control the number of consecutive falling weeks required and appear as regular inputs in the UI
 
-In the optimizer, disabled factors collapse their grid to a single placeholder `[0]`, reducing total combinations. The 4 new treasury factors start disabled in `config.json` for all tickers.
+In the optimizer, disabled factors collapse their grid to a single placeholder `[0]`, reducing total combinations. The 4 treasury factors start with `ignore: true` in `securities_config.json` for all tickers.
 
-Backend: `SpreadStrategy.__init__` accepts `disabled: set` of factor names. `BaseOptimizer.__init__` accepts `disabled_factors: set`. API endpoints accept `disabled_factors: list[str]`.
+Backend: `GenericStrategy.__init__` accepts `params: dict` and `ignore: set` of factor names. `GenericOptimizer` accepts `disabled_factors: set`. API endpoints accept `disabled_factors: list[str]`.
 
 ### The Intuition
 
@@ -70,7 +70,7 @@ The strategy is designed around credit spreads (FRED data) as a risk signal for 
 
 ## SHYM
 
-SHYM (Xtrackers Short Duration High Yield Bond ETF) uses the **same strategy rules and parameters** as SPHY. Both inherit from `SpreadStrategy` in `strategy_spread.py`.
+SHYM (Xtrackers Short Duration High Yield Bond ETF) uses the **same strategy rules and parameters** as SPHY. Both use `GenericStrategy` driven by `securities_config.json`.
 
 The parameter values are tuned independently via the optimizer for each security. SHYM default grids are broad starting points until the optimizer finds security-specific best values.
 
@@ -81,16 +81,16 @@ The parameter values are tuned independently via the optimizer for each security
 | RET3_THR | 3-week price return sell trigger | Same rule, different optimal value |
 | MA | Moving average length for buy confirmation | Same rule, different optimal value |
 | DROP | Required spread pullback from 4-week peak for buy | Same rule, different optimal value |
-| YIELD10_CHG4_THR | 10yr yield 4-week change sell trigger | Same rule, starts disabled |
-| YIELD2_CHG4_THR | 2yr yield 4-week change sell trigger | Same rule, starts disabled |
-| CURVE_CHG4_THR | Yield curve flattening sell trigger | Same rule, starts disabled |
+| YIELD10_CHG4 | 10yr yield 4-week change sell trigger | Same rule, starts disabled |
+| YIELD2_CHG4 | 2yr yield 4-week change sell trigger | Same rule, starts disabled |
+| CURVE_CHG4 | Yield curve flattening sell trigger | Same rule, starts disabled |
 | YIELD10_DELTA | 10yr yield falling buy condition | Same rule, starts disabled |
 
 ---
 
 ## NEA
 
-NEA (Nuveen AMT-Free Quality Municipal Income Fund) uses the **same strategy rules and parameters** as SPHY. Both inherit from `SpreadStrategy` in `strategy_spread.py`.
+NEA (Nuveen AMT-Free Quality Municipal Income Fund) uses the **same strategy rules and parameters** as SPHY. Both use `GenericStrategy` driven by `securities_config.json`.
 
 The parameter values are tuned independently via the optimizer for each security. NEA default grids are broad starting points until the optimizer finds security-specific best values.
 
@@ -101,7 +101,7 @@ The parameter values are tuned independently via the optimizer for each security
 | RET3_THR | 3-week price return sell trigger | Same rule, different optimal value |
 | MA | Moving average length for buy confirmation | Same rule, different optimal value |
 | DROP | Required spread pullback from 4-week peak for buy | Same rule, different optimal value |
-| YIELD10_CHG4_THR | 10yr yield 4-week change sell trigger | Same rule, starts disabled |
-| YIELD2_CHG4_THR | 2yr yield 4-week change sell trigger | Same rule, starts disabled |
-| CURVE_CHG4_THR | Yield curve flattening sell trigger | Same rule, starts disabled |
+| YIELD10_CHG4 | 10yr yield 4-week change sell trigger | Same rule, starts disabled |
+| YIELD2_CHG4 | 2yr yield 4-week change sell trigger | Same rule, starts disabled |
+| CURVE_CHG4 | Yield curve flattening sell trigger | Same rule, starts disabled |
 | YIELD10_DELTA | 10yr yield falling buy condition | Same rule, starts disabled |

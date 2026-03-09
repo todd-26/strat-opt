@@ -8,7 +8,7 @@ DIV_COLUMN = "dividend amount"
 
 class WeeklyDataLoader:
     """
-    Loads weekly SPHY price/dividend data + daily FRED spread data,
+    Loads weekly price/dividend data + daily FRED spread data,
     converts spreads to weekly, merges all, and computes TR & weekly returns.
 
     Parameters
@@ -18,16 +18,16 @@ class WeeklyDataLoader:
     input_dir : Path
         Path to directory where CSV input files are stored.
     ticker : str
-        Ticker symbol (default "SPHY")
+        Ticker symbol
     """
 
-    def __init__(self, input_type: str, input_dir: Path, ticker: str = "SPHY"):
+    def __init__(self, input_type: str, input_dir: Path, ticker: str):
         self.input_type = input_type
         self.input_dir = input_dir
         self.ticker = ticker.upper()
 
     # ------------------------------------------------------------
-    # Load SPHY price + dividend data (already weekly)
+    # Load price + dividend data (already weekly)
     # ------------------------------------------------------------
     def load_price_dividend(self) -> pd.DataFrame:
         av = AlphaVantage(self.ticker, self.input_type, self.input_dir)
@@ -76,7 +76,7 @@ class WeeklyDataLoader:
         return treasury
 
     # ------------------------------------------------------------
-    # Merge SPHY weekly + FRED weekly spreads
+    # Merge price weekly + FRED weekly spreads
     # ------------------------------------------------------------
     def merge_price_spread(self, price_df: pd.DataFrame, spread_df: pd.DataFrame) -> pd.DataFrame:
         w_price = price_df.copy()
