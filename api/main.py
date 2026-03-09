@@ -284,6 +284,8 @@ def run_signal(req: SignalRequest):
         yield10_chg4=_safe_float(last_row.get("yield10_chg4")),
         yield2_chg4=_safe_float(last_row.get("yield2_chg4")),
         curve_chg4=_safe_float(last_row.get("curve_chg4")),
+        yield_curve=_safe_float(last_row.get("YieldCurve")),
+        curve_4wk_ago=_safe_float(df_ind.iloc[last_pos - 4]["YieldCurve"]) if last_pos >= 4 else None,
         yield10_delta=_safe_float(last_row.get("yield10_delta")),
         yield10_delta_history=[
             _safe_float(df_ind.iloc[last_pos - (p.YIELD10_DELTA - 1 - i)].get("yield10_delta"))

@@ -128,6 +128,8 @@ class SignalMetrics(BaseModel):
     yield10_chg4: Optional[float] = None
     yield2_chg4: Optional[float] = None
     curve_chg4: Optional[float] = None
+    yield_curve: Optional[float] = None
+    curve_4wk_ago: Optional[float] = None
     yield10_delta: Optional[float] = None
     yield10_delta_history: Optional[list[float]] = None
     spread_drop: Optional[float] = None

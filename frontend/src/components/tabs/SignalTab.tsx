@@ -199,7 +199,9 @@ export function SignalTab({ settings, ticker, defaultParams, paramDescriptions, 
                 <ThresholdRow label="ret3"      value={result.metrics.ret3}          disabled={disabledFactors.has('RET3')} pct />
                 <ThresholdRow label="10yr chg4" value={result.metrics.yield10_chg4}  disabled={disabledFactors.has('YIELD10_CHG4')} pct />
                 <ThresholdRow label="2yr chg4"  value={result.metrics.yield2_chg4}   disabled={disabledFactors.has('YIELD2_CHG4')} pct />
-                <ThresholdRow label="ΔCurve"    value={result.metrics.curve_chg4}    disabled={disabledFactors.has('CURVE_CHG4')} />
+                <ThresholdRow label="Curve now"  value={result.metrics.yield_curve}   disabled={disabledFactors.has('CURVE_CHG4')} />
+                <ThresholdRow label="Curve 4wk"  value={result.metrics.curve_4wk_ago} disabled={disabledFactors.has('CURVE_CHG4')} />
+                <ThresholdRow label="ΔCurve"    value={result.metrics.curve_chg4}    disabled={disabledFactors.has('CURVE_CHG4')} hint="<0 flatten · >0 widen" />
               </dl>
 
               <div className="mb-1 text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>Buy — ALL must be true</div>
@@ -238,12 +240,13 @@ function MetricRow({ label, value }: { label: string; value: string }) {
   )
 }
 
-function ThresholdRow({ label, value, history, disabled, pct }: {
+function ThresholdRow({ label, value, history, disabled, pct, hint }: {
   label: string
   value: number | null | undefined
   history?: number[] | null
   disabled?: boolean
   pct?: boolean
+  hint?: string
 }) {
   const fmt = (v: number | null | undefined) =>
     v == null ? '—' : pct ? `${(v * 100).toFixed(2)}%` : v.toFixed(4)
@@ -257,7 +260,7 @@ function ThresholdRow({ label, value, history, disabled, pct }: {
 
   return (
     <div className="flex justify-between" style={{ opacity: disabled ? 0.35 : 1 }}>
-      <dt style={{ color: 'var(--text-muted)' }}>{label}</dt>
+      <dt style={{ color: 'var(--text-muted)' }}>{label}{hint && <span className="ml-1 text-xs font-normal" style={{ color: 'var(--text-muted)', opacity: 0.7 }}>{hint}</span>}</dt>
       <dd className="font-medium tabular-nums" style={{ color: 'var(--text)' }}>
         {historyDisplay ?? display}
         {history != null && (
