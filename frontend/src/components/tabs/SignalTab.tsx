@@ -206,9 +206,10 @@ export function SignalTab({ settings, ticker, defaultParams, paramDescriptions, 
               <dl className="space-y-1.5 text-sm">
                 <ThresholdRow label="Close"    value={result.metrics.close}        disabled={disabledFactors.has('MA')} />
                 <ThresholdRow label="MA"       value={result.metrics.ma}           disabled={disabledFactors.has('MA')} />
-                <ThresholdRow label="4wk peak" value={result.metrics.spread_4wk_peak} disabled={disabledFactors.has('DROP')} />
-                <ThresholdRow label="Δspread"  value={result.metrics.spread_delta} disabled={disabledFactors.has('SPREAD_DELTA')} />
-                <ThresholdRow label="Δyield10" value={result.metrics.yield10_delta} disabled={disabledFactors.has('YIELD10_DELTA')} />
+                <ThresholdRow label="4wk Spread Peak" value={result.metrics.spread_4wk_peak} disabled={disabledFactors.has('DROP')} />
+                <ThresholdRow label="Drop"            value={result.metrics.spread_drop}    disabled={disabledFactors.has('DROP')} pct />
+                <ThresholdRow label="Δspread"         value={result.metrics.spread_delta}   history={result.metrics.spread_delta_history} disabled={disabledFactors.has('SPREAD_DELTA')} />
+                <ThresholdRow label="Δyield10" value={result.metrics.yield10_delta} history={result.metrics.yield10_delta_history} disabled={disabledFactors.has('YIELD10_DELTA')} />
               </dl>
             </div>
           </div>
@@ -237,22 +238,33 @@ function MetricRow({ label, value }: { label: string; value: string }) {
   )
 }
 
-function ThresholdRow({ label, value, disabled, pct }: {
+function ThresholdRow({ label, value, history, disabled, pct }: {
   label: string
   value: number | null | undefined
+  history?: number[] | null
   disabled?: boolean
   pct?: boolean
 }) {
-  const display = value == null
-    ? '—'
-    : pct
-      ? `${(value * 100).toFixed(2)}%`
-      : value.toFixed(4)
+  const fmt = (v: number | null | undefined) =>
+    v == null ? '—' : pct ? `${(v * 100).toFixed(2)}%` : v.toFixed(4)
+
+  const display = fmt(value)
+
+  const allPass = history != null && history.length > 0 && history.every(v => v != null && v < 0)
+  const historyDisplay = history != null && history.length > 0
+    ? history.map(fmt).join(', ')
+    : null
+
   return (
     <div className="flex justify-between" style={{ opacity: disabled ? 0.35 : 1 }}>
       <dt style={{ color: 'var(--text-muted)' }}>{label}</dt>
       <dd className="font-medium tabular-nums" style={{ color: 'var(--text)' }}>
-        {display}
+        {historyDisplay ?? display}
+        {history != null && (
+          <span className="ml-1.5 text-xs font-bold" style={{ color: allPass ? 'var(--buy)' : 'var(--sell)' }}>
+            {allPass ? '✓' : '✗'}
+          </span>
+        )}
         {disabled && <span className="ml-1 text-xs" style={{ color: 'var(--text-muted)' }}>(off)</span>}
       </dd>
     </div>
