@@ -172,3 +172,9 @@ class AppConfig(BaseModel):
     start_invested: int = 1
     sell_triggers: dict[str, ParamConfig]
     buy_conditions: dict[str, ParamConfig]
+
+
+class AddSecurityRequest(BaseModel):
+    ticker: str
+    name: str
+    template: str  # ticker to copy parameters from

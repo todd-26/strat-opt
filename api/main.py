@@ -1,8 +1,10 @@
+import os
 import sys
 import re
 import json
 import math
 import asyncio
+import requests as _requests
 import concurrent.futures
 from pathlib import Path
 from typing import AsyncGenerator
@@ -40,6 +42,7 @@ from models import (                               # noqa: E402
     OptimizerResultRow,
     StrategyParams,
     AppConfig,
+    AddSecurityRequest,
 )
 
 app = FastAPI(title="strat-opt API")
@@ -157,6 +160,32 @@ def _build_backtest_result(bt_result: dict, spread_delta_n=2, yield10_delta_n=2)
     )
 
 
+def _fetch_and_save_csv(ticker: str) -> None:
+    """Fetch weekly adjusted CSV from Alpha Vantage and save to inputs dir."""
+    api_key = os.environ.get("ALPHA_VANTAGE_API_KEY")
+    if not api_key:
+        raise ValueError("ALPHA_VANTAGE_API_KEY is not set in the environment.")
+    url_template = os.environ.get(
+        "ALPHA_VANTAGE_URL",
+        "https://www.alphavantage.co/query?function=TIME_SERIES_WEEKLY_ADJUSTED&symbol={ticker}&outputsize=full&datatype=csv&apikey={apikey}",
+    )
+    url = url_template.format(ticker=ticker, apikey=api_key)
+    resp = _requests.get(url, timeout=30)
+    resp.raise_for_status()
+    content = resp.text
+    # Alpha Vantage returns JSON error messages even for CSV requests
+    if content.strip().startswith("{"):
+        try:
+            err = json.loads(content)
+            msg = (err.get("Error Message") or err.get("Note") or
+                   err.get("Information") or "Unknown Alpha Vantage error")
+            raise ValueError(msg)
+        except json.JSONDecodeError:
+            pass
+    csv_path = INPUT_DIR / f"{ticker.lower()}-weekly-adjusted.csv"
+    csv_path.write_text(content, encoding="utf-8")
+
+
 def _security_to_appconfig(sec: dict) -> AppConfig:
     """Convert a securities_config.json security block to an AppConfig model."""
     p = sec["parameters"]
@@ -176,7 +205,75 @@ def _security_to_appconfig(sec: dict) -> AppConfig:
 
 @app.get("/api/securities")
 def get_securities():
-    return list(_load_config()["securities"].keys())
+    try:
+        cfg = _load_config()
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Cannot read securities_config.json: {exc}")
+    secs = cfg.get("securities", {})
+    if not secs:
+        raise HTTPException(status_code=500, detail="securities_config.json contains no securities. Add at least one entry.")
+    return list(secs.keys())
+
+
+@app.post("/api/securities")
+def add_security(req: AddSecurityRequest):
+    import copy
+    ticker   = req.ticker.upper().strip()
+    template = req.template.upper().strip()
+
+    if not re.match(r'^[A-Z]{1,10}$', ticker):
+        raise HTTPException(status_code=400, detail=f"Invalid ticker '{ticker}': use 1–10 uppercase letters only.")
+
+    full = _load_config()
+    if ticker in full["securities"]:
+        raise HTTPException(status_code=409, detail=f"{ticker} already exists.")
+    if template not in full["securities"]:
+        raise HTTPException(status_code=400, detail=f"Template ticker '{template}' not found.")
+
+    csv_path = INPUT_DIR / f"{ticker.lower()}-weekly-adjusted.csv"
+    if not csv_path.exists():
+        try:
+            _fetch_and_save_csv(ticker)
+        except ValueError as e:
+            raise HTTPException(status_code=400, detail=str(e))
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Failed to fetch data for {ticker}: {e}")
+
+    new_sec = copy.deepcopy(full["securities"][template])
+    new_sec["name"] = req.name.strip()
+    new_sec["data_sources"]["price"]["symbol"] = ticker
+    full["securities"][ticker] = new_sec
+
+    CONFIG_PATH.write_text(json.dumps(full, indent=2))
+    return {"ok": True}
+
+
+@app.post("/api/securities/{ticker}/fetch-data")
+def fetch_security_data(ticker: str):
+    ticker = ticker.upper()
+    full   = _load_config()
+    if ticker not in full["securities"]:
+        raise HTTPException(status_code=404, detail=f"{ticker} not found.")
+    try:
+        _fetch_and_save_csv(ticker)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Fetch failed: {e}")
+    return {"ok": True}
+
+
+@app.delete("/api/securities/{ticker}")
+def remove_security(ticker: str):
+    ticker = ticker.upper()
+    full   = _load_config()
+    if ticker not in full["securities"]:
+        raise HTTPException(status_code=404, detail=f"{ticker} not found.")
+    if len(full["securities"]) <= 1:
+        raise HTTPException(status_code=400, detail="Cannot remove the last security.")
+    del full["securities"][ticker]
+    CONFIG_PATH.write_text(json.dumps(full, indent=2))
+    return {"ok": True}
 
 
 @app.get("/api/date-range")

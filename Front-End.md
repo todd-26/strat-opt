@@ -159,6 +159,7 @@ Clicking a bolded value opens a popup showing the derivation:
 
 Accessible via the gear icon in the header. Contains:
 
+0. **Manage Securities** — at the top of the settings sheet. Lists all current securities; each has a trash icon to delete (disabled when only one remains; requires inline confirmation before deleting) and an "Update" button to re-fetch historical data from Alpha Vantage. Below the list, an "Add Security" form: Ticker (text), Name (text), Model after (dropdown of existing tickers), and an Add button. Adding auto-fetches the CSV from Alpha Vantage if not already present. After add/remove, the securities list in the header refreshes; if the active ticker was removed, the app switches to the first remaining one.
 1. **Color Theme** — radio or card selector for the four available themes; applied immediately on selection.
 2. **Input Source** — toggle between CSV (local files) and API (live Alpha Vantage / FRED).
 3. **Default Cash Rate** — annual cash yield rate (decimal, e.g., 0.04).
@@ -166,7 +167,7 @@ Accessible via the gear icon in the header. Contains:
 5. **Enabled Factors** — checkboxes for all 10 factors, grouped under "Sell Factors" (SPREAD_LVL, CHG4, RET3, YIELD10_CHG4, YIELD2_CHG4, CURVE_CHG4) and "Buy Factors" (MA, DROP, SPREAD_DELTA, YIELD10_DELTA). Checked = enabled (unchecked = disabled). Persisted in `securities_config.json` via `ignore` flag per parameter; tabs initialize from these on page load.
 6. **Default Parameter Values** — inputs to set the default parameter values that pre-fill the Current Signal tab on page load. Includes all 10 params. Edits are local until "Save Permanently" is clicked.
 7. **Default Optimizer Ranges** — min/max/step inputs for each of the 10 strategy parameters, pre-filling the Optimizer tab's range grid on page load. Edits are local until "Save Permanently" is clicked.
-7. **Save Permanently** — button at the bottom. POSTs `defaultParams` and `defaultRanges` to `POST /api/config`, which writes `api/config.json` to disk. Button shows: "Save Permanently" (idle), "Saving…" (in-flight), "Saved!" (success, reverts after 2 s), "Error — try again" (failure).
+8. **Save Permanently** — button at the bottom. POSTs `defaultParams` and `defaultRanges` to `POST /api/config`, which writes `api/config.json` to disk. Button shows: "Save Permanently" (idle), "Saving…" (in-flight), "Saved!" (success, reverts after 2 s), "Error — try again" (failure).
 
 **Persistence split**:
 - Theme and Input Source are persisted in `localStorage`.
@@ -218,7 +219,7 @@ interface AppConfig {
 ```
 
 ### Data flow
-`App.tsx` holds `config: AppConfig | null` state, loaded from `GET /api/config` on ticker change. It derives `defaultStrategyParams`, `defaultRanges`, `defaultDisabledFactors`, and `paramDescriptions` from the config and passes them as props to each tab. `SettingsSheet` receives `config` and `onSaveConfig` to support editing and saving.
+`App.tsx` holds `config: AppConfig | null` state, loaded from `GET /api/config` on ticker change. It derives `defaultStrategyParams`, `defaultRanges`, `defaultDisabledFactors`, and `paramDescriptions` from the config and passes them as props to each tab. `SettingsSheet` receives `config`, `onSaveConfig`, `securities`, `onAddSecurity`, `onRemoveSecurity`, and `onFetchData` props. `handleFetchData` in App.tsx calls `updateSecurityData`, then resets startDate/endDate and reloads dateRange when the updated ticker matches the current one. `lastConfigRef` (useRef) holds the last non-null config so SettingsSheet is rendered outside the `config &&` gate and never unmounts during ticker reload. `dateRangeError` state captures failures from `getDateRange`; passed to Header as optional `dateRangeError?: string | null` prop and displayed inline below the date pickers.
 
 ---
 

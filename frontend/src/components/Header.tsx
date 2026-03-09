@@ -11,6 +11,7 @@ interface Props {
   onStartDateChange: (v: string) => void
   onEndDateChange: (v: string) => void
   dateRange?: { min: string; max: string } | null
+  dateRangeError?: string | null
 }
 
 const inputStyle: React.CSSProperties = {
@@ -19,7 +20,7 @@ const inputStyle: React.CSSProperties = {
   border: '1px solid var(--border)',
 }
 
-export function Header({ ticker, securities, onTickerChange, onOpenSettings, startDate, endDate, onStartDateChange, onEndDateChange, dateRange }: Props) {
+export function Header({ ticker, securities, onTickerChange, onOpenSettings, startDate, endDate, onStartDateChange, onEndDateChange, dateRange, dateRangeError }: Props) {
   const [error, setError] = useState('')
   const hasCustomDates = startDate !== '' || endDate !== ''
 
@@ -92,6 +93,12 @@ export function Header({ ticker, securities, onTickerChange, onOpenSettings, sta
           >
             <X size={14} />
           </button>
+        )}
+
+        {dateRangeError && (
+          <span className="text-xs" style={{ color: 'var(--sell)' }} title={dateRangeError}>
+            Date range unavailable
+          </span>
         )}
       </div>
 

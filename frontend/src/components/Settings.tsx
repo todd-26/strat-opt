@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { X } from 'lucide-react'
+import { X, Trash2, RefreshCw } from 'lucide-react'
 import { themes } from '../lib/themes'
 import { NumInput } from './NumInput'
 import type { AppConfig, Settings } from '../types'
@@ -12,18 +12,86 @@ interface Props {
   config: AppConfig
   onSaveConfig: (c: AppConfig) => Promise<void>
   ticker: string
+  securities: string[]
+  onAddSecurity: (ticker: string, name: string, template: string) => Promise<void>
+  onRemoveSecurity: (ticker: string) => Promise<void>
+  onFetchData: (ticker: string) => Promise<void>
 }
 
-export function SettingsSheet({ open, onClose, settings, onUpdate, config, onSaveConfig, ticker }: Props) {
+export function SettingsSheet({ open, onClose, settings, onUpdate, config, onSaveConfig, ticker, securities, onAddSecurity, onRemoveSecurity, onFetchData }: Props) {
   const [localConfig, setLocalConfig] = useState<AppConfig>(config)
   const [saveStatus, setSaveStatus]   = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
+
+  // Manage Securities state
+  const [confirmDelete, setConfirmDelete]   = useState<string | null>(null)
+  const [updatingTickers, setUpdatingTickers] = useState<Set<string>>(new Set())
+  const [addTicker, setAddTicker]           = useState('')
+  const [addName, setAddName]               = useState('')
+  const [addTemplate, setAddTemplate]       = useState('')
+  const [manageStatus, setManageStatus]     = useState<string | null>(null)
+  const [manageError, setManageError]       = useState<string | null>(null)
 
   useEffect(() => {
     if (open) {
       setLocalConfig(config)
       setSaveStatus('idle')
+      setConfirmDelete(null)
+      setAddTicker('')
+      setAddName('')
+      setAddTemplate(securities[0] ?? '')
+      setManageStatus(null)
+      setManageError(null)
     }
   }, [open]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Default template to first security when list loads
+  useEffect(() => {
+    if (!addTemplate && securities.length > 0) setAddTemplate(securities[0])
+  }, [securities]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  async function handleDelete(t: string) {
+    setManageError(null)
+    try {
+      await onRemoveSecurity(t)
+      setConfirmDelete(null)
+      setManageStatus(`${t} removed.`)
+      setTimeout(() => setManageStatus(null), 3000)
+    } catch (e) {
+      setManageError(String(e))
+      setConfirmDelete(null)
+    }
+  }
+
+  async function handleUpdate(t: string) {
+    setManageError(null)
+    setUpdatingTickers(prev => new Set(prev).add(t))
+    try {
+      await onFetchData(t)
+      setManageStatus(`${t} data updated.`)
+      setTimeout(() => setManageStatus(null), 3000)
+    } catch (e) {
+      setManageError(String(e))
+    } finally {
+      setUpdatingTickers(prev => { const s = new Set(prev); s.delete(t); return s })
+    }
+  }
+
+  async function handleAdd() {
+    setManageError(null)
+    const t = addTicker.trim().toUpperCase()
+    if (!t) { setManageError('Ticker is required.'); return }
+    if (!addName.trim()) { setManageError('Name is required.'); return }
+    if (!addTemplate) { setManageError('Template is required.'); return }
+    try {
+      await onAddSecurity(t, addName.trim(), addTemplate)
+      setAddTicker('')
+      setAddName('')
+      setManageStatus(`${t} added.`)
+      setTimeout(() => setManageStatus(null), 3000)
+    } catch (e) {
+      setManageError(String(e))
+    }
+  }
 
   if (!open) return null
 
@@ -119,6 +187,91 @@ export function SettingsSheet({ open, onClose, settings, onUpdate, config, onSav
         </div>
 
         <div className="space-y-6 p-4">
+          {/* Manage Securities */}
+          <Section title="Manage Securities">
+            <div className="space-y-3">
+              {/* Existing securities list */}
+              <div className="space-y-1">
+                {securities.map((s) => (
+                  <div key={s} className="flex items-center justify-between rounded border px-3 py-2"
+                    style={{ borderColor: 'var(--border)', background: s === ticker ? 'var(--bg-input)' : 'transparent' }}>
+                    <span className="text-sm font-medium">{s}</span>
+                    <div className="flex items-center gap-1">
+                      {confirmDelete === s ? (
+                        <>
+                          <span className="text-xs" style={{ color: 'var(--sell)' }}>Remove {s}?</span>
+                          <button onClick={() => handleDelete(s)}
+                            className="rounded px-2 py-0.5 text-xs font-semibold"
+                            style={{ background: 'var(--sell)', color: '#fff' }}>Yes</button>
+                          <button onClick={() => setConfirmDelete(null)}
+                            className="rounded px-2 py-0.5 text-xs"
+                            style={{ background: 'var(--bg-input)', color: 'var(--text)' }}>No</button>
+                        </>
+                      ) : (
+                        <>
+                          <button
+                            onClick={() => handleUpdate(s)}
+                            disabled={updatingTickers.has(s)}
+                            className="rounded p-1 hover:opacity-70 disabled:opacity-50 disabled:cursor-not-allowed"
+                            title={`Update Historical Data for ${s}`}
+                            style={{ color: 'var(--text-muted)' }}
+                          >
+                            <RefreshCw size={14} className={updatingTickers.has(s) ? 'animate-spin' : ''} />
+                          </button>
+                          <button
+                            onClick={() => setConfirmDelete(s)}
+                            disabled={securities.length <= 1}
+                            className="rounded p-1 hover:opacity-70 disabled:opacity-30 disabled:cursor-not-allowed"
+                            title={securities.length <= 1 ? 'Cannot remove the last security' : `Remove ${s}`}
+                            style={{ color: 'var(--text-muted)' }}
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Add security form */}
+              <div className="space-y-2 pt-1 border-t" style={{ borderColor: 'var(--border)' }}>
+                <span className="text-xs font-medium" style={{ color: 'var(--text-muted)' }}>Add Security</span>
+                <input
+                  type="text" placeholder="Ticker (e.g. HYG)" value={addTicker}
+                  onChange={(e) => setAddTicker(e.target.value.toUpperCase())}
+                  className="w-full rounded border px-2 py-1.5 text-sm"
+                  style={{ background: 'var(--bg-input)', borderColor: 'var(--border)', color: 'var(--text)' }}
+                />
+                <input
+                  type="text" placeholder="Full name" value={addName}
+                  onChange={(e) => setAddName(e.target.value)}
+                  className="w-full rounded border px-2 py-1.5 text-sm"
+                  style={{ background: 'var(--bg-input)', borderColor: 'var(--border)', color: 'var(--text)' }}
+                />
+                <div>
+                  <label className="mb-1 block text-xs" style={{ color: 'var(--text-muted)' }}>Model after</label>
+                  <select value={addTemplate} onChange={(e) => setAddTemplate(e.target.value)}
+                    className="w-full rounded border px-2 py-1.5 text-sm"
+                    style={{ background: 'var(--bg-input)', borderColor: 'var(--border)', color: 'var(--text)' }}>
+                    {securities.map((s) => <option key={s} value={s}>{s}</option>)}
+                  </select>
+                </div>
+                <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
+                  CSV must exist at <code>inputs/{'{ticker}'.toLowerCase()}-weekly-adjusted.csv</code> before adding.
+                </p>
+                <button onClick={handleAdd}
+                  className="w-full rounded px-3 py-1.5 text-sm font-semibold"
+                  style={{ background: 'var(--accent)', color: 'var(--accent-text)' }}>
+                  Add Security
+                </button>
+              </div>
+
+              {manageStatus && <p className="text-xs font-medium" style={{ color: 'var(--buy)' }}>{manageStatus}</p>}
+              {manageError && <p className="text-xs" style={{ color: 'var(--sell)' }}>{manageError}</p>}
+            </div>
+          </Section>
+
           {/* Theme */}
           <Section title="Theme">
             <div className="space-y-2">

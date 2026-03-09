@@ -158,7 +158,11 @@ Backend Pipeline:
 ### API Server (api/)
 
 FastAPI server with endpoints:
-- `GET /api/securities` — Returns available tickers (`["SPHY", "SHYM", "NEA"]`)
+- `GET /api/securities` — Returns available tickers; raises HTTP 500 if config missing/invalid or no securities defined (startup validation)
+- `GET /api/date-range` — errors include response body text; `dateRangeError` state in App.tsx captures failures; passed to Header as prop for inline display
+- `POST /api/securities` — Adds a new security (body: `AddSecurityRequest{ticker, name, template}`); validates ticker format (1–10 uppercase letters), auto-fetches CSV from Alpha Vantage if not already present, no duplicate, clones parameters from template ticker
+- `POST /api/securities/{ticker}/fetch-data` — Fetches/overwrites CSV data for an existing security from Alpha Vantage; frontend: `updateSecurityData(ticker)` in lib/api.ts; `handleFetchData` in App.tsx resets startDate/endDate and reloads dateRange when ticker matches current
+- `DELETE /api/securities/{ticker}` — Removes a security; blocks if it is the last one
 - `GET /api/date-range` — Returns `{ min, max }` date strings for a ticker's data
 - `GET /api/config` — Returns `AppConfig` for a ticker (derived from `securities_config.json`)
 - `POST /api/config` — Saves `AppConfig` changes back to `securities_config.json`

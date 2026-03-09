@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useSettings } from './hooks/useSettings'
 import { applyTheme } from './lib/themes'
-import { getConfig, saveConfig, fetchSecurities, getDateRange } from './lib/api'
+import { getConfig, saveConfig, fetchSecurities, getDateRange, addSecurity, removeSecurity, updateSecurityData } from './lib/api'
 import { Header } from './components/Header'
 import { SettingsSheet } from './components/Settings'
 import { OptimizerTab } from './components/tabs/OptimizerTab'
@@ -28,12 +28,49 @@ export default function App() {
   const [startDate, setStartDate]     = useState('')
   const [endDate, setEndDate]         = useState('')
   const [dateRange, setDateRange]     = useState<{ min: string; max: string } | null>(null)
+  const [dateRangeError, setDateRangeError] = useState<string | null>(null)
+  const [startupError, setStartupError] = useState<string | null>(null)
+  const lastConfigRef = useRef<AppConfig | null>(null)
+  if (config !== null) lastConfigRef.current = config
 
   useEffect(() => { applyTheme(settings.theme) }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
-    fetchSecurities().then(list => { setSecurities(list); setTicker(t => t || list[0] || '') }).catch(() => {})
+    fetchSecurities()
+      .then(list => { setSecurities(list); setTicker(t => t || list[0] || '') })
+      .catch((e: unknown) => setStartupError(e instanceof Error ? e.message : String(e)))
   }, [])
+
+  async function refreshSecurities(nextTicker?: string) {
+    const list = await fetchSecurities()
+    setSecurities(list)
+    setTicker(t => {
+      const keep = nextTicker ?? t
+      return list.includes(keep) ? keep : list[0] ?? ''
+    })
+  }
+
+  async function handleAddSecurity(t: string, name: string, template: string) {
+    await addSecurity(t, name, template)
+    await refreshSecurities(t)
+  }
+
+  async function handleRemoveSecurity(t: string) {
+    await removeSecurity(t)
+    await refreshSecurities()
+  }
+
+  async function handleFetchData(t: string) {
+    await updateSecurityData(t)
+    if (t === ticker) {
+      setStartDate('')
+      setEndDate('')
+      setDateRangeError(null)
+      getDateRange(t)
+        .then(r => { setDateRange(r); setDateRangeError(null) })
+        .catch((e: unknown) => { setDateRange(null); setDateRangeError(e instanceof Error ? e.message : String(e)) })
+    }
+  }
 
   useEffect(() => {
     if (!ticker) return
@@ -45,9 +82,10 @@ export default function App() {
         const err = e instanceof Error ? e : new Error(String(e))
         setConfigError({ message: err.message, stack: err.stack })
       })
+    setDateRangeError(null)
     getDateRange(ticker)
-      .then(setDateRange)
-      .catch(() => setDateRange(null))
+      .then(r => { setDateRange(r); setDateRangeError(null) })
+      .catch((e: unknown) => { setDateRange(null); setDateRangeError(e instanceof Error ? e.message : String(e)) })
   }, [ticker])
 
   async function handleSaveConfig(newConfig: AppConfig) {
@@ -103,6 +141,24 @@ export default function App() {
     ...Object.entries(config.buy_conditions).filter(([, v]) => v.ignore).map(([k]) => k),
   ] : []
 
+  if (startupError) {
+    return (
+      <div className="flex min-h-screen items-center justify-center" style={{ background: 'var(--bg)' }}>
+        <div className="mx-4 w-full max-w-lg rounded-lg border shadow-xl" style={{ background: 'var(--bg-card)', borderColor: 'var(--sell)' }}>
+          <div className="border-b px-4 py-3" style={{ borderColor: 'var(--border)' }}>
+            <h2 className="font-semibold" style={{ color: 'var(--sell)' }}>Startup Error</h2>
+          </div>
+          <div className="px-4 py-4 space-y-3">
+            <p className="text-sm" style={{ color: 'var(--text)' }}>{startupError}</p>
+            <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
+              Ensure <code>api/securities_config.json</code> exists, is valid JSON, and contains at least one security entry. Then restart the server.
+            </p>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="flex min-h-screen flex-col" style={{ background: 'var(--bg)' }}>
       <Header
@@ -115,6 +171,7 @@ export default function App() {
         onStartDateChange={setStartDate}
         onEndDateChange={setEndDate}
         dateRange={dateRange}
+        dateRangeError={dateRangeError}
       />
 
       {/* Tab bar */}
@@ -156,15 +213,19 @@ export default function App() {
         )}
       </main>
 
-      {config && (
+      {lastConfigRef.current && (
         <SettingsSheet
           open={settingsOpen}
           onClose={() => setSettingsOpen(false)}
           settings={settings}
           onUpdate={updateSettings}
-          config={config}
+          config={config ?? lastConfigRef.current}
           onSaveConfig={handleSaveConfig}
           ticker={ticker}
+          securities={securities}
+          onAddSecurity={handleAddSecurity}
+          onRemoveSecurity={handleRemoveSecurity}
+          onFetchData={handleFetchData}
         />
       )}
 
