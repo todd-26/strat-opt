@@ -12,7 +12,7 @@ import type { AppConfig, StrategyParams, ParamRanges } from './types'
 type Tab = 'optimizer' | 'buyhold' | 'signal'
 
 const TABS: { id: Tab; label: string }[] = [
-  { id: 'optimizer', label: 'Optimizer' },
+  { id: 'optimizer', label: 'Backtester' },
   { id: 'buyhold',   label: 'Buy & Hold' },
   { id: 'signal',    label: 'Current Signal' },
 ]
