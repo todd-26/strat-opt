@@ -33,8 +33,12 @@ export function OptimizerTab({ settings, ticker, defaultRanges, paramDescription
     setStartInvested(startInvestedProp)
   }, [cashRateProp, startInvestedProp])
 
+  useEffect(() => { setRanges(defaultRanges) }, [defaultRanges])
+
   const [collapsed, setCollapsed]         = useState(false)
   const [disabledFactors, setDisabledFactors] = useState<Set<string>>(new Set(defaultDisabledFactors ?? []))
+
+  useEffect(() => { setDisabledFactors(new Set(defaultDisabledFactors ?? [])) }, [defaultDisabledFactors])
   function toggleFactor(f: string) {
     setDisabledFactors(prev => { const n = new Set(prev); n.has(f) ? n.delete(f) : n.add(f); return n })
   }
