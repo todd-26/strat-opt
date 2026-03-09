@@ -77,10 +77,12 @@ export interface SignalMetrics {
   ret3?: number | null
   chg4?: number | null
   spread_delta?: number | null
+  spread_delta_history?: number[] | null
   yield10_chg4?: number | null
   yield2_chg4?: number | null
   curve_chg4?: number | null
   yield10_delta?: number | null
+  yield10_delta_history?: number[] | null
   spread_drop?: number | null
   spread_4wk_peak?: number | null
   last_date: string

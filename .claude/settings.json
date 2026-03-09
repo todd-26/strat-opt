@@ -1,11 +1,12 @@
 {
   "hooks": {
-    "Stop": [
+    "PostToolUse": [
       {
+        "matcher": "Edit|Write",
         "hooks": [
           {
             "type": "command",
-            "command": "python3 \"$(git rev-parse --show-toplevel)/.claude/hooks/check-md.py\""
+            "command": "python3 .claude/hooks/check-md.py"
           }
         ]
       }

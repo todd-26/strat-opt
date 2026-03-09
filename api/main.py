@@ -277,10 +277,18 @@ def run_signal(req: SignalRequest):
         ret3=_safe_float(last_row.get("ret3")),
         chg4=_safe_float(last_row.get("chg4")),
         spread_delta=_safe_float(last_row.get("spread_delta")),
+        spread_delta_history=[
+            _safe_float(df_ind.iloc[last_pos - (p.SPREAD_DELTA - 1 - i)].get("spread_delta"))
+            for i in range(p.SPREAD_DELTA) if last_pos - (p.SPREAD_DELTA - 1 - i) >= 0
+        ] or None,
         yield10_chg4=_safe_float(last_row.get("yield10_chg4")),
         yield2_chg4=_safe_float(last_row.get("yield2_chg4")),
         curve_chg4=_safe_float(last_row.get("curve_chg4")),
         yield10_delta=_safe_float(last_row.get("yield10_delta")),
+        yield10_delta_history=[
+            _safe_float(df_ind.iloc[last_pos - (p.YIELD10_DELTA - 1 - i)].get("yield10_delta"))
+            for i in range(p.YIELD10_DELTA) if last_pos - (p.YIELD10_DELTA - 1 - i) >= 0
+        ] or None,
         spread_drop=_safe_float(spread_drop_val),
         spread_4wk_peak=_safe_float(spread_peak),
         last_date=last_idx.strftime("%Y-%m-%d"),

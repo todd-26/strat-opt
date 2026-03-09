@@ -49,6 +49,21 @@ strat-opt/
 └── start-prod.bat          # Rebuilds frontend then serves on :8000
 ```
 
+## Doc Maintenance Hook (MANDATORY)
+
+A `PostToolUse` hook runs `.claude/hooks/check-md.py` after every `Edit` or `Write` to a non-.md file. It exits with code 2 to block and force doc updates before continuing.
+
+**After every non-.md edit, update ALL FOUR doc files if relevant:**
+- `CLAUDE.md` — project instructions (this file)
+- `MEMORY.md` — persistent cross-session memory (`~/.claude/projects/.../memory/MEMORY.md`)
+- `definitions.md` — strategy/parameter definitions (project root)
+- `Front-End.md` — frontend architecture (project root)
+
+Rules:
+- Do NOT batch — check after each edit or small group of related edits
+- Do NOT only update MEMORY.md and skip CLAUDE.md (past failure pattern)
+- `definitions.md` and `Front-End.md` are in the project root; use `ls` or `Read` directly (Glob may miss them)
+
 ## Context Efficiency
 
 ### Subagent Discipline
@@ -165,7 +180,7 @@ Signal and optimizer endpoints accept `disabled_factors` (list of factor names t
 React/Vite SPA with three tabs:
 - **Optimizer** — Grid search with parameter range inputs, streaming progress, sortable results table, drill-down charts
 - **Buy & Hold** — Baseline comparison run
-- **Current Signal** — Shows BUY/SELL/HOLD signal with current metrics, a Factor Values panel (showing current metric readings per sell/buy factor including spread_drop computed from 4-week peak, disabled factors dimmed), and full trade history
+- **Current Signal** — Shows BUY/SELL/HOLD signal with current metrics, a Factor Values panel (showing current metric readings per sell/buy factor; buy section includes 4wk Spread Peak, Drop %, Δspread with N-week history + ✓/✗ badge, Δyield10 with N-week history + ✓/✗ badge; disabled factors dimmed), and full trade history
 
 Key features:
 - Theming system (4 themes: Slate, Navy & Gold, Charcoal & Green, High Contrast)

@@ -96,7 +96,13 @@ Each strategy parameter gets a single value input (not a range). Pre-filled with
 - Below the metrics: a **MetricsCard** showing APY and final value.
 
 **Right — Factor Values**:
-A panel showing the current metric reading for each factor, grouped into **Sell** (trigger if ANY true) and **Buy** (ALL must be true) sections. Disabled factors are shown at reduced opacity with an "(off)" label. Each row: factor label on the left, current metric value on the right (percentage factors shown as %). Implemented via `ThresholdRow` component in `SignalTab.tsx`. Sell factors: Spread, chg4, ret3, 10yr chg4, 2yr chg4, ΔCurve. Buy factors: Close, MA, Drop (spread_drop, computed same as trade history: 1 − spread/4wk-peak), Δspread, Δyield10.
+A panel showing the current metric reading for each factor, grouped into **Sell** (trigger if ANY true) and **Buy** (ALL must be true) sections. Disabled factors are shown at reduced opacity with an "(off)" label. Each row: factor label on the left, current metric value on the right (percentage factors shown as %). Implemented via `ThresholdRow` component in `SignalTab.tsx`.
+
+Sell factors: Spread, chg4, ret3, 10yr chg4, 2yr chg4, ΔCurve.
+
+Buy factors: Close, MA, 4wk Spread Peak (spread_4wk_peak, the rolling 4-week max of Spread), Drop (spread_drop = 1 − spread/4wk-peak, shown as %), Δspread, Δyield10.
+
+`ThresholdRow` accepts an optional `history` prop (used for Δspread and Δyield10). When provided, it displays all N history values inline (oldest → newest, comma-separated) and appends a green ✓ or red ✗ badge indicating whether all N values are negative (i.e., the consecutive-weeks condition passes). `SignalMetrics` includes `spread_delta_history` and `yield10_delta_history` (list of floats, oldest first, length = SPREAD_DELTA / YIELD10_DELTA param value) populated in `run_signal`.
 
 **Trade History** (full width, below the signal/metrics):
 A table of all historical buy/sell events with columns: Date, Action, Price, MA, Spread, Drop, chg4, ret3, Δspread, Δ10yr%, Δ2yr%, ΔCurve, Δyield10 (13 columns total).

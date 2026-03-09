@@ -124,10 +124,12 @@ class SignalMetrics(BaseModel):
     ret3: Optional[float] = None
     chg4: Optional[float] = None
     spread_delta: Optional[float] = None
+    spread_delta_history: Optional[list[float]] = None
     yield10_chg4: Optional[float] = None
     yield2_chg4: Optional[float] = None
     curve_chg4: Optional[float] = None
     yield10_delta: Optional[float] = None
+    yield10_delta_history: Optional[list[float]] = None
     spread_drop: Optional[float] = None
     spread_4wk_peak: Optional[float] = None
     last_date: str
