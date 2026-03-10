@@ -176,7 +176,7 @@ Signal and optimizer endpoints accept `disabled_factors` (list of factor names t
 ### Frontend (frontend/)
 
 React/Vite SPA with three tabs:
-- **Optimizer** — Grid search with parameter range inputs, streaming progress, sortable results table, drill-down charts
+- **Backtester** — Grid search with parameter range inputs, streaming progress, sortable results table, drill-down charts
 - **Buy & Hold** — Baseline comparison run
 - **Current Signal** — Shows BUY/SELL/HOLD signal with current metrics, a Factor Values panel (showing current metric readings per sell/buy factor; buy section includes 4wk Spread Peak, Drop %, Δspread with N-week history + ✓/✗ badge, Δyield10 with N-week history + ✓/✗ badge; disabled factors dimmed), and full trade history
 

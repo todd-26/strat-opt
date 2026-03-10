@@ -35,8 +35,10 @@ export function SignalTab({ settings, ticker, defaultParams, paramDescriptions, 
     setCashRate(cashRateProp)
     setStartInvested(startInvestedProp)
   }, [cashRateProp, startInvestedProp])
+  useEffect(() => { setParams(defaultParams) }, [defaultParams])
   const [collapsed, setCollapsed] = useState(false)
   const [disabledFactors, setDisabledFactors] = useState<Set<string>>(new Set(defaultDisabledFactors ?? []))
+  useEffect(() => { setDisabledFactors(new Set(defaultDisabledFactors ?? [])) }, [defaultDisabledFactors])
   function toggleFactor(f: string) {
     setDisabledFactors(prev => { const n = new Set(prev); n.has(f) ? n.delete(f) : n.add(f); return n })
   }
