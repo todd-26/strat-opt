@@ -175,10 +175,11 @@ Signal and optimizer endpoints accept `disabled_factors` (list of factor names t
 
 ### Frontend (frontend/)
 
-React/Vite SPA with three tabs:
+React/Vite SPA with four tabs:
 - **Backtester** — Grid search with parameter range inputs, streaming progress, sortable results table, drill-down charts
 - **Buy & Hold** — Baseline comparison run
-- **Current Signal** — Shows BUY/SELL/HOLD signal with current metrics, a Factor Values panel (showing current metric readings per sell/buy factor; buy section includes 4wk Spread Peak, Drop %, Δspread with N-week history + ✓/✗ badge, Δyield10 with N-week history + ✓/✗ badge; disabled factors dimmed), and full trade history
+- **Current Signal** — Shows BUY/SELL/HOLD signal with current metrics
+- **Signals** — Runs current signal across all (or selected) securities at once; uses each security's saved defaults; results painted serially as they complete; no date range filter (always uses full history), a Factor Values panel (showing current metric readings per sell/buy factor; buy section includes 4wk Spread Peak, Drop %, Δspread with N-week history + ✓/✗ badge, Δyield10 with N-week history + ✓/✗ badge; disabled factors dimmed), and full trade history
 
 Key features:
 - Theming system (4 themes: Slate, Navy & Gold, Charcoal & Green, High Contrast)
@@ -186,7 +187,7 @@ Key features:
 - Parameter defaults, cash rate, and start position persisted to `api/securities_config.json` via API
 - Equity curve charts with buy/sell markers, CSV/PNG export
 - Recharts for visualization
-- Global date range picker in `Header.tsx` (From/To); filters data for all three tabs; not persisted; shows actual data range as placeholder when empty
+- Global date range picker in `Header.tsx` (From/To); filters data for Backtester, Buy & Hold, and Current Signal tabs; hidden on Signals tab via `hideDates` prop; not persisted; shows actual data range as placeholder when empty
 - Factor disable checkboxes in ParameterPanel (both single and range modes); disabled factors are skipped in strategy evaluation and optimizer grid iteration
 - Trade history table has 13 columns (Date, Action, Price, MA, Spread, Drop, chg4, ret3, Δspread, Δ10yr%, Δ2yr%, ΔCurve, Δyield10); triggered values are bolded per trade action with clickable popups showing derivations
 

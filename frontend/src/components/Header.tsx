@@ -12,6 +12,7 @@ interface Props {
   onEndDateChange: (v: string) => void
   dateRange?: { min: string; max: string } | null
   dateRangeError?: string | null
+  hideDates?: boolean
 }
 
 const inputStyle: React.CSSProperties = {
@@ -20,7 +21,7 @@ const inputStyle: React.CSSProperties = {
   border: '1px solid var(--border)',
 }
 
-export function Header({ ticker, securities, onTickerChange, onOpenSettings, startDate, endDate, onStartDateChange, onEndDateChange, dateRange, dateRangeError }: Props) {
+export function Header({ ticker, securities, onTickerChange, onOpenSettings, startDate, endDate, onStartDateChange, onEndDateChange, dateRange, dateRangeError, hideDates }: Props) {
   const [error, setError] = useState('')
   const hasCustomDates = startDate !== '' || endDate !== ''
 
@@ -63,43 +64,45 @@ export function Header({ ticker, securities, onTickerChange, onOpenSettings, sta
           ))}
         </select>
 
-        <DateField
-          label="From"
-          value={startDate}
-          defaultValue={dateRange?.min}
-          min={dateRange?.min}
-          max={dateRange?.max}
-          onChange={onStartDateChange}
-          onClear={() => onStartDateChange('')}
-          onBlur={() => validate(startDate, endDate)}
-        />
-        <DateField
-          label="To"
-          value={endDate}
-          defaultValue={dateRange?.max}
-          min={dateRange?.min}
-          max={dateRange?.max}
-          onChange={onEndDateChange}
-          onClear={() => onEndDateChange('')}
-          onBlur={() => validate(startDate, endDate)}
-        />
+        {!hideDates && <>
+          <DateField
+            label="From"
+            value={startDate}
+            defaultValue={dateRange?.min}
+            min={dateRange?.min}
+            max={dateRange?.max}
+            onChange={onStartDateChange}
+            onClear={() => onStartDateChange('')}
+            onBlur={() => validate(startDate, endDate)}
+          />
+          <DateField
+            label="To"
+            value={endDate}
+            defaultValue={dateRange?.max}
+            min={dateRange?.min}
+            max={dateRange?.max}
+            onChange={onEndDateChange}
+            onClear={() => onEndDateChange('')}
+            onBlur={() => validate(startDate, endDate)}
+          />
 
-        {hasCustomDates && (
-          <button
-            onClick={() => { onStartDateChange(''); onEndDateChange('') }}
-            className="rounded p-1 transition-opacity hover:opacity-70"
-            title="Reset to full date range"
-            style={{ color: 'var(--text-muted)' }}
-          >
-            <X size={14} />
-          </button>
-        )}
+          {hasCustomDates && (
+            <button
+              onClick={() => { onStartDateChange(''); onEndDateChange('') }}
+              className="rounded p-1 transition-opacity hover:opacity-70"
+              title="Reset to full date range"
+              style={{ color: 'var(--text-muted)' }}
+            >
+              <X size={14} />
+            </button>
+          )}
 
-        {dateRangeError && (
-          <span className="text-xs" style={{ color: 'var(--sell)' }} title={dateRangeError}>
-            Date range unavailable
-          </span>
-        )}
+          {dateRangeError && (
+            <span className="text-xs" style={{ color: 'var(--sell)' }} title={dateRangeError}>
+              Date range unavailable
+            </span>
+          )}
+        </>}
       </div>
 
       <button
