@@ -121,10 +121,17 @@ class WeeklyDataLoader:
 
         print("Data range:", weekly.index.min().date(), "to", weekly.index.max().date())
 
+        data_min = weekly.index.min().date()
+        data_max = weekly.index.max().date()
         if start_date:
             weekly = weekly.loc[pd.Timestamp(start_date):]
         if end_date:
             weekly = weekly.loc[:pd.Timestamp(end_date)]
+        if weekly.empty:
+            raise ValueError(
+                f"Date range {start_date or 'start'} – {end_date or 'end'} "
+                f"is outside available data for this security ({data_min} to {data_max})"
+            )
 
         # Weekly return from TR
         weekly["Ret"] = weekly["TR"].pct_change()

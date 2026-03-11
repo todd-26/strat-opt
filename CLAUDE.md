@@ -170,7 +170,7 @@ FastAPI server with endpoints:
 - `POST /api/run/signal` — Runs strategy and returns current signal + trade history
 - `POST /api/run/optimizer` — Runs grid search with SSE streaming progress
 
-All three run endpoints accept optional `start_date`/`end_date` (YYYY-MM-DD strings) to restrict the data window.
+All three run endpoints accept optional `start_date`/`end_date` (YYYY-MM-DD strings) to restrict the data window. If the range produces an empty slice, `WeeklyDataLoader.load()` raises `ValueError` with the available range; endpoints catch it and return HTTP 400.
 Signal and optimizer endpoints accept `disabled_factors` (list of factor names to ignore).
 
 ### Frontend (frontend/)
