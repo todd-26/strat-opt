@@ -319,7 +319,7 @@ export function SettingsSheet({ open, onClose, settings, onUpdate, config, onSav
                     <label key={v} className="flex items-center gap-2 text-sm">
                       <input type="radio" name="startInvested" value={v} checked={localConfig.start_invested === v}
                         onChange={() => setLocalConfig(prev => ({ ...prev, start_invested: v }))} />
-                      {v === 1 ? 'Invested' : 'Cash'}
+                      {v === 1 ? 'Invested' : 'Not Invested'}
                     </label>
                   ))}
                 </div>

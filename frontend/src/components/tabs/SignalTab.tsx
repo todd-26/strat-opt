@@ -99,7 +99,7 @@ export function SignalTab({ settings, ticker, defaultParams, paramDescriptions, 
               }}
             >
               <option value={1}>Invested</option>
-              <option value={0}>Cash</option>
+              <option value={0}>Not Invested</option>
             </select>
           </div>
 

@@ -139,11 +139,13 @@ A quick-check dashboard that runs the current signal across multiple securities 
 - **Select All / Deselect All** buttons
 - **Run Signals** button — disabled while running or when nothing is checked
 
-**Securities list**: One row per security. Each row has a checkbox (all checked by default), the ticker, and a signal badge that appears as results arrive. Results paint **serially** (one at a time) as each security completes. Each run uses the security's saved default params and disabled factors from `securities_config.json`; no date range filter is applied (full history).
+**Securities list**: One row per security. Each row has: checkbox (all checked by default), ticker, an **Invested / Not Invested toggle**, and a signal badge that appears as results arrive. Results paint **serially** (one at a time) as each security completes. Each run uses the security's saved default params and disabled factors from `securities_config.json`; no date range filter is applied (full history).
 
-Signal badges: `▲ BUY` (green), `▼ SELL` (red), `● HOLD` (amber). Errors show the message inline in red. Rows for unchecked securities are dimmed (opacity 0.45). Clicking a row toggles its checkbox.
+The **Invested/Not Invested toggle** shows the current `start_invested` value. Clicking it immediately flips the value and persists it via `POST /api/config` (fire-and-forget with revert on failure). Toggle is green-tinted for Invested, amber-tinted for Not Invested.
 
-**No config dependency** — `SignalsTab` is independent of the active ticker; it fetches each security's config at run time via `GET /api/config`.
+Signal badges: `▲ BUY` (green), `▼ SELL` (red), `● HOLD` (amber). Errors show the message inline in red. Rows for unchecked securities are dimmed (opacity 0.45).
+
+**Config prefetch** — `SignalsTab` fetches all security configs on mount (in parallel) so the toggles are populated immediately. Falls back to fetching at run time if a config wasn't loaded yet.
 
 ---
 
