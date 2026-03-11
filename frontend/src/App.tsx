@@ -164,7 +164,7 @@ export default function App() {
       <Header
         ticker={ticker}
         securities={securities}
-        onTickerChange={(t) => { setTicker(t); setActiveTab('optimizer') }}
+        onTickerChange={(t) => { setTicker(t) }}
         onOpenSettings={() => setSettingsOpen(true)}
         startDate={startDate}
         endDate={endDate}
