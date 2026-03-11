@@ -779,7 +779,7 @@
           }
         }
       },
-      "cash_rate": 0.023,
+      "cash_rate": 0.0305,
       "cash_vehicle": "JMST",
       "cash_vehicle_notes": "JPMorgan Ultra-Short Muni ETF, tax-exempt",
       "start_invested": 1,
@@ -788,22 +788,22 @@
           "CHG4": {
             "description": "Sell if 4-week credit spread change exceeds threshold",
             "type": "percent",
-            "ignore": true,
-            "default": 0.175,
+            "ignore": false,
+            "default": 0.125,
             "range": {
-              "min": 0.175,
-              "max": 0.175,
+              "min": 0.125,
+              "max": 0.125,
               "step": 0.005
             }
           },
           "RET3": {
             "description": "Sell if 3-week price return falls below threshold",
             "type": "percent",
-            "ignore": true,
-            "default": -0.011,
+            "ignore": false,
+            "default": -0.018,
             "range": {
-              "min": -0.011,
-              "max": -0.011,
+              "min": -0.018,
+              "max": -0.018,
               "step": 0.001
             }
           },
@@ -821,18 +821,7 @@
           "YIELD10_CHG4": {
             "description": "Sell if 10-year yield 4-week change exceeds threshold",
             "type": "percent",
-            "ignore": true,
-            "default": 0.12,
-            "range": {
-              "min": 0.12,
-              "max": 0.12,
-              "step": 0.01
-            }
-          },
-          "YIELD2_CHG4": {
-            "description": "Sell if 2-year yield 4-week change exceeds threshold",
-            "type": "percent",
-            "ignore": true,
+            "ignore": false,
             "default": 0.1,
             "range": {
               "min": 0.1,
@@ -840,10 +829,21 @@
               "step": 0.01
             }
           },
+          "YIELD2_CHG4": {
+            "description": "Sell if 2-year yield 4-week change exceeds threshold",
+            "type": "percent",
+            "ignore": false,
+            "default": 0.077,
+            "range": {
+              "min": 0.077,
+              "max": 0.077,
+              "step": 0.001
+            }
+          },
           "CURVE_CHG4": {
             "description": "Sell if yield curve (10y-2y) 4-week change falls more than threshold",
             "type": "basis_points",
-            "ignore": false,
+            "ignore": true,
             "default": 0.3,
             "range": {
               "min": 0.3,
@@ -856,12 +856,12 @@
           "MA": {
             "description": "Price must be above n-week moving average",
             "type": "weeks",
-            "ignore": false,
-            "default": 32.0,
+            "ignore": true,
+            "default": 6.0,
             "range": {
-              "min": 32.0,
-              "max": 32.0,
-              "step": 4.0
+              "min": 6.0,
+              "max": 6.0,
+              "step": 1.0
             }
           },
           "DROP": {
@@ -878,7 +878,7 @@
           "SPREAD_DELTA": {
             "description": "Consecutive weeks of declining credit spread required",
             "type": "weeks",
-            "ignore": false,
+            "ignore": true,
             "default": 2.0,
             "range": {
               "min": 2.0,
