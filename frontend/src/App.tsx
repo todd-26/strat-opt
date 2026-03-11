@@ -7,14 +7,16 @@ import { SettingsSheet } from './components/Settings'
 import { OptimizerTab } from './components/tabs/OptimizerTab'
 import { BuyHoldTab } from './components/tabs/BuyHoldTab'
 import { SignalTab } from './components/tabs/SignalTab'
+import { SignalsTab } from './components/tabs/SignalsTab'
 import type { AppConfig, StrategyParams, ParamRanges } from './types'
 
-type Tab = 'optimizer' | 'buyhold' | 'signal'
+type Tab = 'optimizer' | 'buyhold' | 'signal' | 'signals'
 
 const TABS: { id: Tab; label: string }[] = [
   { id: 'optimizer', label: 'Backtester' },
   { id: 'buyhold',   label: 'Buy & Hold' },
   { id: 'signal',    label: 'Current Signal' },
+  { id: 'signals',   label: 'Signals' },
 ]
 
 export default function App() {
@@ -172,6 +174,7 @@ export default function App() {
         onEndDateChange={setEndDate}
         dateRange={dateRange}
         dateRangeError={dateRangeError}
+        hideDates={activeTab === 'signals'}
       />
 
       {/* Tab bar */}
@@ -210,6 +213,9 @@ export default function App() {
         )}
         {config && activeTab === 'signal' && defaultStrategyParams && (
           <SignalTab key={ticker} settings={settings} ticker={ticker} defaultParams={defaultStrategyParams} paramDescriptions={paramDescriptions} startDate={startDate} endDate={endDate} cashRate={config.cash_rate} startInvested={config.start_invested} defaultDisabledFactors={defaultDisabledFactors} />
+        )}
+        {activeTab === 'signals' && (
+          <SignalsTab securities={securities} settings={settings} />
         )}
       </main>
 

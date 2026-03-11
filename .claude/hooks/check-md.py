@@ -17,6 +17,7 @@ if not path.endswith(".md"):
         "  - MEMORY.md (persistent memory)\n"
         "  - definitions.md (strategy/parameter definitions)\n"
         "  - Front-End.md (frontend architecture)\n"
-        "Do this NOW before making any further edits."
+        "Do this NOW before making any further edits.",
+        file=sys.stderr
     )
     sys.exit(2)

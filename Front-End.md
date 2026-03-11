@@ -27,7 +27,7 @@ Themes are applied globally and persisted in localStorage.
 A persistent top header containing:
 - App name on the left (e.g., **strat-opt**)
 - Security **dropdown** next to the name (populated from `GET /api/securities`; currently SPHY and SHYM)
-- **From / To date inputs** for a global date range filter (not persisted; applies to all three tabs). By default they display the actual data range (min/max) for the selected security, fetched from `GET /api/date-range`; internally stored as `''` (no filter) until the user changes them. Uses `<input type="date">` — browser native calendar, enforces valid dates. A small popover appears below each field on focus with **Today** (clamped to data range) and **Clear** (resets field to default range) buttons. On blur, validates: end < start or date out of data range shows an error popup and clears the bad field. An **X** button appears when either date is customized to reset both to default.
+- **From / To date inputs** for a global date range filter (not persisted; applies to Backtester, Buy & Hold, and Current Signal tabs). Hidden when the **Signals** tab is active (via `hideDates` prop) since that tab always uses full history. By default they display the actual data range (min/max) for the selected security, fetched from `GET /api/date-range`; internally stored as `''` (no filter) until the user changes them. Uses `<input type="date">` — browser native calendar, enforces valid dates. A small popover appears below each field on focus with **Today** (clamped to data range) and **Clear** (resets field to default range) buttons. On blur, validates: end < start or date out of data range shows an error popup and clears the bad field. An **X** button appears when either date is customized to reset both to default.
 - Gear icon on the right to open Settings
 
 ### Tab Navigation
@@ -35,8 +35,9 @@ Below the header: a single row of tabs, one per run type:
 - **Optimizer**
 - **Buy & Hold**
 - **Current Signal**
+- **Signals**
 
-Each tab has its own independent state (parameters, results).
+Each tab has its own independent state (parameters, results). Selecting a different security does **not** reset the active tab.
 
 ### Parameter Panel (per tab)
 Each tab has a collapsible parameter panel. It starts expanded. After a run completes successfully, it collapses automatically so results get full focus. The user can re-expand it at any time.
@@ -126,6 +127,23 @@ Clicking a bolded value opens a popup showing the derivation:
 - Δyield10: this week's delta + prior week's delta (confirms both negative)
 
 **Export**: CSV download of the trade history table.
+
+---
+
+### Signals Tab
+
+A quick-check dashboard that runs the current signal across multiple securities at once.
+
+**Controls** (top panel):
+- **Data Source** dropdown (CSV / Live API) — local to this tab, initialized from `settings.inputType`
+- **Select All / Deselect All** buttons
+- **Run Signals** button — disabled while running or when nothing is checked
+
+**Securities list**: One row per security. Each row has a checkbox (all checked by default), the ticker, and a signal badge that appears as results arrive. Results paint **serially** (one at a time) as each security completes. Each run uses the security's saved default params and disabled factors from `securities_config.json`; no date range filter is applied (full history).
+
+Signal badges: `▲ BUY` (green), `▼ SELL` (red), `● HOLD` (amber). Errors show the message inline in red. Rows for unchecked securities are dimmed (opacity 0.45). Clicking a row toggles its checkbox.
+
+**No config dependency** — `SignalsTab` is independent of the active ticker; it fetches each security's config at run time via `GET /api/config`.
 
 ---
 
