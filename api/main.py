@@ -291,7 +291,10 @@ def get_date_range(ticker: str = Query(), input_type: str = Query(default="csv")
 @app.post("/api/run/buyhold", response_model=BacktestResult)
 def run_buyhold(req: BuyHoldRequest):
     loader = WeeklyDataLoader(req.input_type, INPUT_DIR, req.ticker)
-    df     = loader.load(start_date=req.start_date, end_date=req.end_date)
+    try:
+        df = loader.load(start_date=req.start_date, end_date=req.end_date)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
     strat = BuyAndHoldStrategy()
     positions, buys, sells = strat.run(df)
@@ -307,7 +310,10 @@ def run_signal(req: SignalRequest):
     p = req.params
 
     loader = WeeklyDataLoader(req.input_type, INPUT_DIR, req.ticker)
-    df     = loader.load(start_date=req.start_date, end_date=req.end_date)
+    try:
+        df = loader.load(start_date=req.start_date, end_date=req.end_date)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
     df_ind = IndicatorEngine.apply_all(df.copy(), p.MA)
 
     strat = GenericStrategy(
