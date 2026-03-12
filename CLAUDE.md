@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**strat-opt** is a financial strategy backtesting and optimization framework with a React/Vite frontend and FastAPI backend. It generates buy/sell signals for income-focused ETFs (currently SPHY — SPDR Portfolio High Yield Bond ETF), backtests those signals against historical weekly price/dividend data merged with FRED credit spread data, and optimizes strategy parameters via grid search.
+**SignalVane** is a financial strategy backtesting and signal tool for income-focused ETFs. It has a React/Vite frontend and FastAPI backend. It generates buy/sell signals based on credit spread and price data, backtests those signals against historical weekly price/dividend data merged with FRED credit spread and treasury yield data, and optimizes strategy parameters via grid search. Securities are fully config-driven — adding a new one requires only a new entry in `api/securities_config.json`.
 
 ## Project Structure
 
@@ -22,10 +22,10 @@ strat-opt/
 │   ├── fred.py             # Credit spread data source
 │   ├── indicators.py       # Technical indicator calculations
 │   ├── strategy_base.py    # Abstract strategy interface
-│   ├── strategy_generic.py # GenericStrategy — config-driven, replaces all per-security classes
+│   ├── strategy_generic.py # GenericStrategy — config-driven, handles all securities
 │   ├── strategy_buyhold.py # Buy-and-hold baseline
 │   ├── backtester.py       # Converts positions to equity curves
-│   └── optimizer_generic.py # GenericOptimizer — config-driven, replaces all per-security optimizers
+│   └── optimizer_generic.py # GenericOptimizer — config-driven, handles all securities
 ├── frontend/               # React/Vite UI
 │   ├── src/
 │   │   ├── App.tsx         # Main app with tab navigation
@@ -35,11 +35,10 @@ strat-opt/
 │   │   └── types/          # TypeScript interfaces
 │   └── package.json
 ├── inputs/                 # CSV data files
-│   ├── sphy-weekly-adjusted.csv  # Alpha Vantage data for SPHY
-│   ├── shym-weekly-adjusted.csv  # Alpha Vantage data for SHYM
-│   ├── BAMLH0A0HYM2.csv          # FRED credit spread data
-│   ├── DGS10.csv                 # FRED 10yr Treasury yield
-│   └── DGS2.csv                  # FRED 2yr Treasury yield
+│   ├── {ticker}-weekly-adjusted.csv  # Alpha Vantage data (one file per security)
+│   ├── BAMLH0A0HYM2.csv              # FRED credit spread data
+│   ├── DGS10.csv                     # FRED 10yr Treasury yield
+│   └── DGS2.csv                      # FRED 2yr Treasury yield
 ├── .env                    # Environment variables (API keys)
 ├── serve.bat               # Normal use: serves pre-built frontend + API on :8000
 └── start-prod.bat          # Rebuilds frontend then serves on :8000
@@ -56,8 +55,8 @@ A `PostToolUse` hook runs `.claude/hooks/check-md.py` after every `Edit` or `Wri
 - `Front-End.md` — frontend architecture (project root)
 
 Rules:
-- Do NOT batch — check after each edit or small group of related edits
-- Do NOT only update MEMORY.md and skip CLAUDE.md (past failure pattern)
+- If more code edits remain, finish them first then update all relevant docs in one batch
+- Do NOT only update MEMORY.md and skip CLAUDE.md
 - `definitions.md` and `Front-End.md` are in the project root; use `ls` or `Read` directly (Glob may miss them)
 
 ## Context Efficiency
@@ -129,7 +128,8 @@ Backend Pipeline:
 
 **Data layer** (`data_loader.py`, `data_source.py`, `alpha_vantage.py`, `fred.py`):
 - `WeeklyDataLoader` loads weekly prices/dividends, FRED daily spreads, and FRED daily treasury yields (DGS10, DGS2); resamples all FRED series to weekly (W-FRI); merges via two `merge_asof` calls; computes total return factor (`TR_factor`, `TR`) and `YieldCurve = DGS10 - DGS2`
-- `Fred` class accepts `series_id` and `col_name` params — reusable for any FRED series (defaults: `BAMLH0A0HYM2` / `Spread`)
+- `WeeklyDataLoader.load()` raises `ValueError` (with available data range in message) if date slice produces empty DataFrame; all three run endpoints catch it and return HTTP 400
+- `Fred` class accepts `series_id` and `col_name` params — reusable for any FRED series
 - `DataSource` / `CsvSource` / `ApiSource` abstract CSV vs live API data sources
 - `ApiSource` caches responses in a module-level dict keyed by `(url, params, date)`; cache is valid for the calendar day and cleared on process restart
 
@@ -138,7 +138,7 @@ Backend Pipeline:
 
 **Strategy** (`strategy_base.py`, `strategy_generic.py`, `strategy_buyhold.py`):
 - `BaseStrategy` defines abstract interface: `evaluate_sell()`, `evaluate_buy()`, `run()`
-- `GenericStrategy(BaseStrategy)` — single config-driven strategy for all securities; replaces all per-security subclasses
+- `GenericStrategy(BaseStrategy)` — single config-driven strategy for all securities
 - `BuyAndHoldStrategy` always invested, used as baseline
 - `GenericStrategy` accepts `params: dict` and `ignore: set` of factor names; disabled sell factors → never trigger, disabled buy factors → always pass
 - Valid sell factor names: `SPREAD_LVL`, `CHG4`, `RET3`, `YIELD10_CHG4`, `YIELD2_CHG4`, `CURVE_CHG4`
@@ -150,7 +150,7 @@ Backend Pipeline:
 - Computes final value and APY
 
 **Optimizer** (`optimizer_generic.py`):
-- `GenericOptimizer` — single config-driven optimizer for all securities; replaces all per-security subclasses
+- `GenericOptimizer` — single config-driven optimizer for all securities (UI calls this the Backtester)
 - Accepts `param_grids: dict`, `start_date`/`end_date`, `disabled_factors` set
 - Disabled grids collapse to `[0]` (single placeholder) to reduce combinations
 - Supports `progress_callback` for streaming progress to frontend
@@ -158,19 +158,18 @@ Backend Pipeline:
 ### API Server (api/)
 
 FastAPI server with endpoints:
-- `GET /api/securities` — Returns available tickers; raises HTTP 500 if config missing/invalid or no securities defined (startup validation)
-- `GET /api/date-range` — errors include response body text; `dateRangeError` state in App.tsx captures failures; passed to Header as prop for inline display
-- `POST /api/securities` — Adds a new security (body: `AddSecurityRequest{ticker, name, template}`); validates ticker format (1–10 uppercase letters), auto-fetches CSV from Alpha Vantage if not already present, no duplicate, clones parameters from template ticker
-- `POST /api/securities/{ticker}/fetch-data` — Fetches/overwrites CSV data for an existing security from Alpha Vantage; frontend: `updateSecurityData(ticker)` in lib/api.ts; `handleFetchData` in App.tsx resets startDate/endDate and reloads dateRange when ticker matches current
-- `DELETE /api/securities/{ticker}` — Removes a security; blocks if it is the last one
-- `GET /api/date-range` — Returns `{ min, max }` date strings for a ticker's data
+- `GET /api/securities` — Returns available tickers; raises HTTP 500 if config missing/invalid or no securities defined
+- `POST /api/securities` — Adds a new security (body: `AddSecurityRequest{ticker, name, template}`); validates ticker format (1–10 uppercase letters), auto-fetches CSV from Alpha Vantage if not already present, clones parameters from template ticker
+- `POST /api/securities/{ticker}/fetch-data` — Fetches/overwrites CSV data for an existing security from Alpha Vantage
+- `DELETE /api/securities/{ticker}` — Removes a security; blocks (HTTP 400) if it is the last one
+- `GET /api/date-range` — Returns `{ min, max }` date strings for a ticker's data; errors include response body text
 - `GET /api/config` — Returns `AppConfig` for a ticker (derived from `securities_config.json`)
 - `POST /api/config` — Saves `AppConfig` changes back to `securities_config.json`
 - `POST /api/run/buyhold` — Runs buy-and-hold backtest
 - `POST /api/run/signal` — Runs strategy and returns current signal + trade history
-- `POST /api/run/optimizer` — Runs grid search with SSE streaming progress
+- `POST /api/run/optimizer` — Runs grid search with SSE streaming progress (UI label: Backtester)
 
-All three run endpoints accept optional `start_date`/`end_date` (YYYY-MM-DD strings) to restrict the data window. If the range produces an empty slice, `WeeklyDataLoader.load()` raises `ValueError` with the available range; endpoints catch it and return HTTP 400.
+All three run endpoints accept optional `start_date`/`end_date` (YYYY-MM-DD strings) to restrict the data window; return HTTP 400 if range is empty.
 Signal and optimizer endpoints accept `disabled_factors` (list of factor names to ignore).
 
 ### Frontend (frontend/)
@@ -178,30 +177,29 @@ Signal and optimizer endpoints accept `disabled_factors` (list of factor names t
 React/Vite SPA with four tabs:
 - **Backtester** — Grid search with parameter range inputs, streaming progress, sortable results table, drill-down charts
 - **Buy & Hold** — Baseline comparison run
-- **Current Signal** — Shows BUY/SELL/HOLD signal with current metrics
-- **Signals** — Runs current signal across all (or selected) securities at once; uses each security's saved defaults; results painted serially as they complete; no date range filter (always uses full history); shows Invested/Not Invested toggle per row (saves immediately via POST /api/config); configs prefetched on mount, a Factor Values panel (showing current metric readings per sell/buy factor; buy section includes 4wk Spread Peak, Drop %, Δspread with N-week history + ✓/✗ badge, Δyield10 with N-week history + ✓/✗ badge; disabled factors dimmed), and full trade history
+- **Current Signal** — Shows BUY/SELL/HOLD signal with current metrics, Factor Values panel, and full trade history
+- **Signals** — Runs current signal across all (or selected) securities at once; uses each security's saved defaults; results painted serially as they complete; no date range filter (always uses full history); shows Invested/Not Invested toggle per row (saves immediately via POST /api/config); configs prefetched on mount
 
 Key features:
 - Theming system (4 themes: Slate, Navy & Gold, Charcoal & Green, High Contrast)
-- Theme and input type persisted to localStorage; cash rate and start position persisted to `api/securities_config.json` (per-security)
-- Parameter defaults, cash rate, and start position persisted to `api/securities_config.json` via API
-- Equity curve charts with buy/sell markers, CSV/PNG export; ticker + APY labels embedded inside PNG-captured div only (not in toolbar); `strategyLabel` prop (default `"Strategy"`) lets BuyHoldTab label it `"Buy & Hold"` instead
+- Theme and input type persisted to localStorage; all other settings (cash rate, start position, params, ranges, disabled factors) persisted to `api/securities_config.json` (per-security)
+- Equity curve charts with buy/sell markers, CSV/PNG export; ticker + APY labels embedded inside PNG-captured div only (not in toolbar); `strategyLabel` prop (default `"Strategy"`) lets BuyHoldTab label it `"Buy & Hold"`; date range shown right-justified in chart header
 - Recharts for visualization
-- Global date range picker in `Header.tsx` (From/To); filters data for Backtester, Buy & Hold, and Current Signal tabs; hidden on Signals tab via `hideDates` prop; not persisted; shows actual data range as placeholder when empty
-- Factor disable checkboxes in ParameterPanel (both single and range modes); disabled factors are skipped in strategy evaluation and optimizer grid iteration
+- Global date range picker in `Header.tsx` (From/To); filters data for Backtester, Buy & Hold, and Current Signal tabs; hidden on Signals tab via `hideDates` prop; not persisted
+- Factor disable checkboxes in ParameterPanel (both single and range modes); disabled factors are skipped in strategy evaluation and backtester grid iteration
 - Trade history table has 13 columns (Date, Action, Price, MA, Spread, Drop, chg4, ret3, Δspread, Δ10yr%, Δ2yr%, ΔCurve, Δyield10); triggered values are bolded per trade action with clickable popups showing derivations
 
-## SPHY Trading Logic
+## Trading Logic
 
 **SELL if ANY of:**
 - `spread > SPREAD_LVL` (absolute spread too high)
-- `chg4 > CHG4_THR` (4-week spread change too high)
-- `ret3 < RET3_THR` (3-week price return too negative)
+- `chg4 > CHG4` (4-week spread change too high)
+- `ret3 < RET3` (3-week price return too negative)
 - `yield10_chg4 > YIELD10_CHG4` (10yr yield rose too much over 4 weeks)
 - `yield2_chg4 > YIELD2_CHG4` (2yr yield rose too much over 4 weeks)
 - `curve_chg4 < -CURVE_CHG4` (yield curve flattened too much over 4 weeks)
 
-**BUY if ALL of** (only when not currently invested; starting in cash counts as already sold; also requires no sell condition active):
+**BUY if ALL of** (only when not currently invested; starting Not Invested counts as already sold; also requires no sell condition active):
 - `close > MA` (price above moving average)
 - Last `SPREAD_DELTA` weekly `spread_delta` values are negative (spreads falling; configurable, default 2)
 - `spread ≤ recent_4wk_peak × (1 − DROP)` (spread dropped from peak)
@@ -210,7 +208,7 @@ Key features:
 
 ## Externalized Configuration
 
-Parameter defaults and optimizer ranges are stored in `api/securities_config.json`, not hardcoded. Each security has `sell_triggers` and `buy_conditions` dicts where every parameter has `{description, ignore, default, range: {min, max, step}}`:
+Parameter defaults and backtester ranges are stored in `api/securities_config.json`, not hardcoded. Each security has `sell_triggers` and `buy_conditions` dicts where every parameter has `{description, ignore, default, range: {min, max, step}}`:
 
 ```json
 {
@@ -234,17 +232,16 @@ Parameter defaults and optimizer ranges are stored in `api/securities_config.jso
 }
 ```
 
-The `ignore` flag replaces the old `disabledFactors` array. The frontend loads `AppConfig` (derived from this file) on startup and uses it to populate parameter inputs, initialize disabled factor checkboxes, and set run defaults. Users can edit and save permanently via the Settings panel.
+The `ignore` flag controls whether a factor is disabled. The frontend loads `AppConfig` on startup and uses it to populate parameter inputs, initialize disabled factor checkboxes, and set run defaults. Users can edit and save permanently via the Settings panel.
 
 ## Key Design Decisions
 
 - **CSV is default** — API mode is available but rate-limited; CSV provides consistent, fast local testing
-- **Streaming optimizer** — SSE pushes progress updates to frontend for responsive UI during long grid searches
+- **Streaming backtester** — SSE pushes progress updates to frontend for responsive UI during long grid searches
 - **Generic strategy/optimizer** — `GenericStrategy` and `GenericOptimizer` are fully config-driven; adding a new security only requires a new entry in `securities_config.json`
 - **Externalized parameters** — Defaults, ranges, and `ignore` flags in `securities_config.json`, not source code, enabling UI-driven tuning
 - **Decoupled backtester** — Reusable for any asset/strategy combination
 
 ## Future Direction
 
-- Add more securities (each needs only a new entry in `securities_config.json` — no new strategy/optimizer code)
 - Potentially move config to database for multi-user scenarios
