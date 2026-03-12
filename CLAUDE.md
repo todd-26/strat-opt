@@ -185,7 +185,7 @@ Key features:
 - Theming system (4 themes: Slate, Navy & Gold, Charcoal & Green, High Contrast)
 - Theme and input type persisted to localStorage; cash rate and start position persisted to `api/securities_config.json` (per-security)
 - Parameter defaults, cash rate, and start position persisted to `api/securities_config.json` via API
-- Equity curve charts with buy/sell markers, CSV/PNG export
+- Equity curve charts with buy/sell markers, CSV/PNG export; ticker + APY labels embedded inside PNG-captured div only (not in toolbar); `strategyLabel` prop (default `"Strategy"`) lets BuyHoldTab label it `"Buy & Hold"` instead
 - Recharts for visualization
 - Global date range picker in `Header.tsx` (From/To); filters data for Backtester, Buy & Hold, and Current Signal tabs; hidden on Signals tab via `hideDates` prop; not persisted; shows actual data range as placeholder when empty
 - Factor disable checkboxes in ParameterPanel (both single and range modes); disabled factors are skipped in strategy evaluation and optimizer grid iteration

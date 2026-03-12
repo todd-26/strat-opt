@@ -264,6 +264,7 @@ export function OptimizerTab({ settings, ticker, defaultRanges, paramDescription
               chartError={drillError}
               onToggleChart={handleToggleChart}
               buyholdResult={buyholdResult}
+              ticker={ticker}
             />
           </div>
         </>

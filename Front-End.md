@@ -63,7 +63,7 @@ Each strategy parameter gets three inputs: **min**, **max**, and **step**. Pre-f
 
 **Chart**: Equity curve for the best-performing parameter set (or the selected row after drill-down). Buy-and-hold overlay is shown by default but can be toggled off.
 
-**Export**: CSV download of the full results table. PNG export of the chart.
+**Export**: CSV download of the full results table. PNG export of the chart. The ticker and APY labels appear **only inside the PNG-captured div** (not in the toolbar). `EquityCurveChart` accepts a `strategyLabel` prop (default `"Strategy"`) so Buy & Hold tab can pass `"Buy & Hold"` instead. `buyholdApy` label is only shown when the overlay is active.
 
 ---
 
