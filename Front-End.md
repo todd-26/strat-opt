@@ -2,7 +2,7 @@
 
 ## Overview
 
-A React/Vite single-page application that provides a polished, professional interface for running the strat-opt strategy tools. Runs on localhost initially; designed to be accessible from other devices on the local network without any changes. A local Python backend (FastAPI recommended) serves as the API layer between the UI and the existing Python pipeline.
+A React/Vite single-page application providing a polished, professional interface for **SignalVane** — a financial strategy backtesting and signal tool for income-focused ETFs. Runs on localhost; accessible from other devices on the local network without any changes. A local Python/FastAPI backend serves as the API layer between the UI and the Python pipeline.
 
 ---
 
@@ -10,7 +10,7 @@ A React/Vite single-page application that provides a polished, professional inte
 
 **Default theme**: Neutral/corporate — light background, slate gray, white, and teal accents. Structured, data-focused, and businesslike (similar to Morningstar or a wealth management tool). Not flashy.
 
-**Typography**: Clean sans-serif (e.g., Inter). Comfortable line height. Data tables use monospace or tabular number rendering for alignment.
+**Typography**: Clean sans-serif (Inter). Comfortable line height. Data tables use monospace or tabular number rendering for alignment.
 
 **Themes**: The default is slate gray + white + teal. Additional themes are selectable in Settings:
 - Navy + white + gold (classic finance)
@@ -25,24 +25,24 @@ Themes are applied globally and persisted in localStorage.
 
 ### Header
 A persistent top header containing:
-- App name on the left (e.g., **strat-opt**)
-- Security **dropdown** next to the name (populated from `GET /api/securities`; currently SPHY and SHYM)
-- **From / To date inputs** for a global date range filter (not persisted; applies to Backtester, Buy & Hold, and Current Signal tabs). Hidden when the **Signals** tab is active (via `hideDates` prop) since that tab always uses full history. By default they display the actual data range (min/max) for the selected security, fetched from `GET /api/date-range`; internally stored as `''` (no filter) until the user changes them. Uses `<input type="date">` — browser native calendar, enforces valid dates. A small popover appears below each field on focus with **Today** (clamped to data range) and **Clear** (resets field to default range) buttons. On blur, validates: end < start or date out of data range shows an error popup and clears the bad field. An **X** button appears when either date is customized to reset both to default.
+- App name **SignalVane** on the left
+- Security **dropdown** next to the name (populated from `GET /api/securities`; securities are user-configurable via Settings)
+- **From / To date inputs** for a global date range filter (not persisted; applies to Backtester, Buy & Hold, and Current Signal tabs). Hidden when the **Signals** tab is active (via `hideDates` prop) since that tab always uses full history. By default they display the actual data range (min/max) for the selected security, fetched from `GET /api/date-range`; internally stored as `''` (no filter) until the user changes them. Uses `<input type="date">` — browser native calendar. An **X** button appears when either date is customized to reset both to default. On blur, validates: end < start or date out of data range shows an error popup and clears the bad field.
 - Gear icon on the right to open Settings
 
 ### Tab Navigation
-Below the header: a single row of tabs, one per run type:
-- **Optimizer**
+Below the header: a single row of tabs:
+- **Backtester**
 - **Buy & Hold**
 - **Current Signal**
 - **Signals**
 
 Each tab has its own independent state (parameters, results). Selecting a different security does **not** reset the active tab.
 
-### Parameter Panel (per tab)
-Each tab has a collapsible parameter panel. It starts expanded. After a run completes successfully, it collapses automatically so results get full focus. The user can re-expand it at any time.
+### Parameter Panel (Backtester, Buy & Hold, Current Signal)
+Each of these three tabs has a collapsible parameter panel. It starts expanded. After a run completes successfully, it collapses automatically so results get full focus. The user can re-expand it at any time.
 
-**Factor Checkboxes**: Each factor has a checkbox to enable/disable it. Factors are grouped under "Sell Factors" (SPREAD_LVL, CHG4, RET3, YIELD10_CHG4, YIELD2_CHG4, CURVE_CHG4) and "Buy Factors" (MA, DROP, SPREAD_DELTA, YIELD10_DELTA) headers. Disabled factors grey out their inputs (opacity 0.45). `SPREAD_DELTA` and `YIELD10_DELTA` are fully numeric inputs (integer, default 2) controlling how many consecutive falling weeks are required — they behave identically to all other parameters. In the optimizer, disabled factors collapse their grid to a single placeholder value, reducing total combinations.
+**Factor Checkboxes**: Each factor has a checkbox to enable/disable it. Factors are grouped under "Sell Factors" (SPREAD_LVL, CHG4, RET3, YIELD10_CHG4, YIELD2_CHG4, CURVE_CHG4) and "Buy Factors" (MA, DROP, SPREAD_DELTA, YIELD10_DELTA) headers. Disabled factors grey out their inputs (opacity 0.45). `SPREAD_DELTA` and `YIELD10_DELTA` are fully numeric inputs (integer, default 2) controlling how many consecutive falling weeks are required — they behave identically to all other parameters. In the backtester, disabled factors collapse their grid to a single placeholder value, reducing total combinations.
 
 ### Results Area
 Results are displayed **side by side**: the chart on the left, key summary metrics on the right. Both are given equal visual prominence.
@@ -51,33 +51,31 @@ Results are displayed **side by side**: the chart on the left, key summary metri
 
 ## Run Types
 
-### Optimizer Tab
+### Backtester Tab
 
 **Parameters panel** (collapsible):
-Each strategy parameter gets three inputs: **min**, **max**, and **step**. Pre-filled with sensible defaults. Layout is a clean form — labeled rows, compact, not overwhelming.
+Each strategy parameter gets three inputs: **min**, **max**, and **step**. Pre-filled from saved defaults in `securities_config.json`. Layout is a clean form — labeled rows, compact, not overwhelming.
 
 **After running:**
 - A **summary card** at the top highlights the best parameter combination and its APY.
 - Below it, a **full sortable results table** lists all combinations with their APY and parameter values.
-- Clicking a row in the table **selects** it and shows a **"Run Backtest"** button. Confirming runs a backtest with those parameters and displays the result inline.
+- Clicking a row in the table **selects** it and shows a chart icon to expand a drill-down chart for that parameter set.
 
-**Chart**: Equity curve for the best-performing parameter set (or the selected row after drill-down). Buy-and-hold overlay is shown by default but can be toggled off.
+**Chart**: Equity curve for the selected drill-down row. Buy & Hold overlay is off by default; toggled on via checkbox. The chart header (visible in PNG export) shows: ticker, Strategy APY, Buy & Hold APY (when overlay active), and date range right-justified.
 
-**Export**: CSV download of the full results table. PNG export of the chart. The ticker and APY labels appear **only inside the PNG-captured div** (not in the toolbar). `EquityCurveChart` accepts a `strategyLabel` prop (default `"Strategy"`) so Buy & Hold tab can pass `"Buy & Hold"` instead. `buyholdApy` label is only shown when the overlay is active.
+**Export**: CSV download of the full results table. PNG export of the chart.
 
 ---
 
 ### Buy & Hold Tab
 
 **Parameters panel** (collapsible):
-- Security selector (dropdown — SPHY only initially, ready to expand)
-- Starting position (invested or cash)
 - Cash rate (annual yield %)
-- Input source (CSV or API)
+- Input source (CSV or Live API)
 
 **After running:**
 - Summary card: final value, APY, date range.
-- Equity curve chart.
+- Equity curve chart. Chart header shows ticker and Buy & Hold APY.
 
 **Export**: CSV download of weekly equity data. PNG export of chart.
 
@@ -86,14 +84,13 @@ Each strategy parameter gets three inputs: **min**, **max**, and **step**. Pre-f
 ### Current Signal Tab
 
 **Parameters panel** (collapsible):
-Each strategy parameter gets a single value input (not a range). Pre-filled with the current best known parameters.
+Each strategy parameter gets a single value input (not a range). Pre-filled with saved defaults.
 
 **After running**, two things are shown side by side:
 
 **Left — Current Signal**:
-- A large, prominent signal badge: **BUY**, **HOLD**, or **SELL**, color-coded (green / neutral / red).
+- A large, prominent signal badge: **▲ BUY**, **● HOLD**, or **▼ SELL**, color-coded (green / amber / red).
 - The current values of the key metrics that drove the decision (spread, MA, ret3, chg4, spread_delta, etc.).
-- The date the current signal was first triggered.
 - Below the metrics: a **MetricsCard** showing APY and final value.
 
 **Right — Factor Values**:
@@ -151,17 +148,17 @@ Signal badges: `▲ BUY` (green), `▼ SELL` (red), `● HOLD` (amber). Errors s
 
 ## Chart Behavior
 
-- **Library**: No strong preference; Recharts is the default recommendation (React-native, lightweight, good toggle and export support).
+- **Library**: Recharts (React-native, lightweight).
 - **Buy/sell signal markers**: Up-triangles below the line for buys, down-triangles above the line for sells, color-coded green/red.
-- **Buy-and-hold overlay**: Shown as a second line on the same chart. Toggleable via a checkbox or toggle button near the chart.
-- **PNG export**: Available on all charts via an export button.
+- **Buy & Hold overlay**: Shown as a second dashed line on the same chart. Off by default; toggled on via checkbox near the chart.
+- **PNG export**: Available on all charts. The PNG-captured area includes a header row showing: ticker, APY label (configurable via `strategyLabel` prop, default `"Strategy"`; Buy & Hold tab passes `"Buy & Hold"`), Buy & Hold APY (when overlay active), and date range right-justified.
 
 ---
 
 ## Loading & Progress
 
-- While any run is executing, a **progress bar** is shown in the results area.
-- For the optimizer, the progress bar reflects how many parameter combinations have been evaluated (requires the backend to stream or report progress).
+- While any run is executing, a loading state is shown in the results area.
+- For the backtester, SSE streaming reports progress (combinations evaluated / total) with a live progress bar.
 - The Run button is disabled while a run is in progress.
 
 ---
@@ -170,28 +167,29 @@ Signal badges: `▲ BUY` (green), `▼ SELL` (red), `● HOLD` (amber). Errors s
 
 - Errors (backend failures, bad parameters, etc.) appear as a **dismissible error banner** at the top of the results area.
 - The banner includes the error message and a close (×) button.
-- Form validation errors appear inline below the relevant input field before a run is triggered.
-- Optimizer tab validates that max ≥ min for every **enabled** parameter range before submitting; disabled factors skip validation. Shows an inline error naming the offending parameter(s) and does not run.
+- Form validation errors appear inline before a run is triggered.
+- Backtester tab validates that max ≥ min for every **enabled** parameter range before submitting; disabled factors skip validation. Shows an inline error naming the offending parameter(s) and does not run.
+- If the selected date range produces no data for a security, the backend returns HTTP 400 with a message showing the available data range.
 
 ---
 
-## Settings (Gear Icon → Modal or Slide-over Panel)
+## Settings (Gear Icon → Slide-over Panel)
 
 Accessible via the gear icon in the header. Contains:
 
-0. **Manage Securities** — at the top of the settings sheet. Lists all current securities; each has a trash icon to delete (disabled when only one remains; requires inline confirmation before deleting) and an "Update" button to re-fetch historical data from Alpha Vantage. Below the list, an "Add Security" form: Ticker (text), Name (text), Model after (dropdown of existing tickers), and an Add button. Adding auto-fetches the CSV from Alpha Vantage if not already present. After add/remove, the securities list in the header refreshes; if the active ticker was removed, the app switches to the first remaining one.
-1. **Color Theme** — radio or card selector for the four available themes; applied immediately on selection.
-2. **Input Source** — toggle between CSV (local files) and API (live Alpha Vantage / FRED).
-3. **Default Cash Rate** — annual cash yield rate (decimal, e.g., 0.04).
-4. **Default Starting Position** — radio: Invested or Cash.
-5. **Enabled Factors** — checkboxes for all 10 factors, grouped under "Sell Factors" (SPREAD_LVL, CHG4, RET3, YIELD10_CHG4, YIELD2_CHG4, CURVE_CHG4) and "Buy Factors" (MA, DROP, SPREAD_DELTA, YIELD10_DELTA). Checked = enabled (unchecked = disabled). Persisted in `securities_config.json` via `ignore` flag per parameter; tabs initialize from these on page load.
+0. **Manage Securities** — at the top of the settings sheet. Lists all current securities; each row has a refresh icon (re-fetches historical data from Alpha Vantage) and a trash icon (delete; disabled when only one remains; requires inline confirmation). Below the list, an "Add Security" form: Ticker (auto-uppercased), Name, Template (dropdown of existing tickers), and an Add button. Adding auto-fetches the CSV from Alpha Vantage if not already present. After add/remove, the securities list in the header refreshes; if the active ticker was removed, the app switches to the first remaining one.
+1. **Color Theme** — selector for the four available themes; applied immediately on selection.
+2. **Input Source** — toggle between CSV (local files) and API (live Alpha Vantage / FRED). Persisted in localStorage.
+3. **Default Cash Rate** — annual cash yield rate (decimal, e.g., 0.04). Per-security, saved to `securities_config.json`.
+4. **Default Starting Position** — radio: Invested or Not Invested. Per-security, saved to `securities_config.json`.
+5. **Enabled Factors** — checkboxes for all 10 factors, grouped under "Sell Factors" and "Buy Factors". Checked = enabled. Persisted via `ignore` flag per parameter in `securities_config.json`; tabs initialize from these on page load.
 6. **Default Parameter Values** — inputs to set the default parameter values that pre-fill the Current Signal tab on page load. Includes all 10 params. Edits are local until "Save Permanently" is clicked.
-7. **Default Optimizer Ranges** — min/max/step inputs for each of the 10 strategy parameters, pre-filling the Optimizer tab's range grid on page load. Edits are local until "Save Permanently" is clicked.
-8. **Save Permanently** — button at the bottom. POSTs `defaultParams` and `defaultRanges` to `POST /api/config`, which writes `api/config.json` to disk. Button shows: "Save Permanently" (idle), "Saving…" (in-flight), "Saved!" (success, reverts after 2 s), "Error — try again" (failure).
+7. **Default Backtester Ranges** — min/max/step inputs for each of the 10 strategy parameters, pre-filling the Backtester tab's range grid on page load. Edits are local until "Save Permanently" is clicked.
+8. **Save Permanently** — button at the bottom. POSTs changes to `POST /api/config`, which writes `api/securities_config.json` to disk. Button shows: "Save Permanently" (idle), "Saving…" (in-flight), "Saved!" (success, reverts after 2 s), "Error — try again" (failure).
 
 **Persistence split**:
 - Theme and Input Source are persisted in `localStorage`.
-- Cash Rate, Starting Position, Disabled Factors, Default Parameters, and Default Optimizer Ranges are persisted in `api/securities_config.json` via the API (per-security). They are **not** stored in `localStorage`.
+- Cash Rate, Starting Position, Disabled Factors, Default Parameters, and Default Backtester Ranges are persisted in `api/securities_config.json` via the API (per-security). They are **not** stored in `localStorage`.
 
 ---
 
@@ -239,20 +237,14 @@ interface AppConfig {
 ```
 
 ### Data flow
-`App.tsx` holds `config: AppConfig | null` state, loaded from `GET /api/config` on ticker change. It derives `defaultStrategyParams`, `defaultRanges`, `defaultDisabledFactors`, and `paramDescriptions` from the config and passes them as props to each tab. `SettingsSheet` receives `config`, `onSaveConfig`, `securities`, `onAddSecurity`, `onRemoveSecurity`, and `onFetchData` props. `handleFetchData` in App.tsx calls `updateSecurityData`, then resets startDate/endDate and reloads dateRange when the updated ticker matches the current one. `lastConfigRef` (useRef) holds the last non-null config so SettingsSheet is rendered outside the `config &&` gate and never unmounts during ticker reload. `dateRangeError` state captures failures from `getDateRange`; passed to Header as optional `dateRangeError?: string | null` prop and displayed inline below the date pickers.
-
----
-
-## Security / Multi-Security
-
-- A security **dropdown** is present in the UI from day one, pre-populated with SPHY only.
-- The selected security is shown as a badge in the header.
-- The architecture should not hardcode SPHY in the UI logic — the dropdown drives the selection, making it straightforward to add more securities later.
+`App.tsx` holds `config: AppConfig | null` state, loaded from `GET /api/config` on ticker change. It derives `defaultStrategyParams`, `defaultRanges`, `defaultDisabledFactors`, and `paramDescriptions` from the config and passes them as props to each tab. `SettingsSheet` receives `config`, `onSaveConfig`, `securities`, `onAddSecurity`, `onRemoveSecurity`, and `onFetchData` props. `handleFetchData` in App.tsx calls `updateSecurityData`, then resets startDate/endDate and reloads dateRange when the updated ticker matches the current one. `lastConfigRef` (useRef) holds the last non-null config so SettingsSheet is rendered outside the `config &&` gate and never unmounts during ticker reload. `dateRangeError` state captures failures from `getDateRange`; passed to Header as optional `dateRangeError?: string | null` prop and displayed inline next to the date pickers. `hideDates` optional bool prop hides date pickers when active tab is `'signals'`.
 
 ---
 
 ## Deployment
 
-- **Initial**: Runs on `localhost` — React dev server (or built static files) + Python backend on a local port.
-- **Near-term**: Accessible from other devices on the local network by binding to `0.0.0.0`. No authentication required.
-- **No cloud hosting planned.** `serve.bat` launches the pre-built frontend + backend on port 8000. `start-prod.bat` rebuilds the frontend first, then serves.
+- Runs on `localhost` — pre-built static frontend + FastAPI backend on port 8000.
+- Accessible from other devices on the local network (bound to `0.0.0.0`). No authentication required.
+- **No cloud hosting planned.**
+- `serve.bat` — launches pre-built frontend + backend on port 8000 (normal use).
+- `start-prod.bat` — rebuilds frontend then serves on port 8000 (use after frontend changes).
