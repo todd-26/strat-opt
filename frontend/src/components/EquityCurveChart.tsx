@@ -25,6 +25,10 @@ interface Props {
   selldates?: string[]
   buyholdCurve?: EquityPoint[]
   showBuyHoldToggle?: boolean
+  strategyApy?: number
+  buyholdApy?: number
+  strategyLabel?: string
+  title?: string
   id?: string
 }
 
@@ -58,6 +62,10 @@ export function EquityCurveChart({
   selldates = [],
   buyholdCurve,
   showBuyHoldToggle = false,
+  strategyApy,
+  buyholdApy,
+  strategyLabel = 'Strategy',
+  title,
   id = 'equity-chart',
 }: Props) {
   const [showBuyHold, setShowBuyHold] = useState(false)
@@ -142,6 +150,28 @@ export function EquityCurveChart({
       </div>
 
       <div ref={chartRef} id={id} style={{ background: 'var(--bg-card)' }}>
+        {(title || strategyApy !== undefined) && (
+          <div className="flex items-center gap-4 px-2 pt-2 pb-1">
+            {title && (
+              <span className="text-sm font-bold" style={{ color: 'var(--text)' }}>{title}</span>
+            )}
+            {strategyApy !== undefined && (
+              <span className="text-sm font-semibold" style={{ color: 'var(--accent)' }}>
+                {strategyLabel}: {(strategyApy * 100).toFixed(2)}% APY
+              </span>
+            )}
+            {showBuyHold && buyholdApy !== undefined && (
+              <span className="text-sm font-medium" style={{ color: 'var(--text-muted)' }}>
+                Buy &amp; Hold: {(buyholdApy * 100).toFixed(2)}% APY
+              </span>
+            )}
+            {chartData.length > 0 && (
+              <span className="ml-auto text-xs" style={{ color: 'var(--text-muted)' }}>
+                {chartData[0].date} – {chartData[chartData.length - 1].date}
+              </span>
+            )}
+          </div>
+        )}
         <ResponsiveContainer width="100%" height={380}>
           <ComposedChart data={chartData} margin={{ top: 8, right: 16, left: 0, bottom: 8 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />

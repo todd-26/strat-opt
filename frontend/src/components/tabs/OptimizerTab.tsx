@@ -180,7 +180,7 @@ export function OptimizerTab({ settings, ticker, defaultRanges, paramDescription
               className="rounded border px-2 py-1.5 text-sm"
               style={{ background: 'var(--bg-input)', borderColor: 'var(--border)', color: 'var(--text)' }}>
               <option value={1}>Invested</option>
-              <option value={0}>Cash</option>
+              <option value={0}>Not Invested</option>
             </select>
           </div>
 
@@ -264,6 +264,7 @@ export function OptimizerTab({ settings, ticker, defaultRanges, paramDescription
               chartError={drillError}
               onToggleChart={handleToggleChart}
               buyholdResult={buyholdResult}
+              ticker={ticker}
             />
           </div>
         </>

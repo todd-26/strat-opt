@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
-import { getConfig, runSignal } from '../../lib/api'
-import type { Settings, StrategyParams } from '../../types'
+import { getConfig, saveConfig, runSignal } from '../../lib/api'
+import type { AppConfig, Settings, StrategyParams } from '../../types'
 
 type RowState = { signal: 'BUY' | 'SELL' | 'HOLD' } | { error: string } | 'running' | null
 
@@ -24,10 +24,33 @@ const SIGNAL_LABEL: Record<'BUY' | 'SELL' | 'HOLD', string> = {
 export function SignalsTab({ securities, settings }: Props) {
   const [inputType, setInputType]   = useState(settings.inputType)
   const [checked, setChecked]       = useState<Set<string>>(new Set(securities))
+  const [configs, setConfigs]       = useState<Map<string, AppConfig>>(new Map())
   const [results, setResults]       = useState<Map<string, RowState>>(new Map())
   const [running, setRunning]       = useState(false)
 
   useEffect(() => { setChecked(new Set(securities)) }, [securities])
+
+  // Prefetch all configs on mount and when securities change
+  useEffect(() => {
+    securities.forEach(ticker => {
+      getConfig(ticker).then(cfg => {
+        setConfigs(prev => new Map(prev).set(ticker, cfg))
+      }).catch(() => {/* ignore — run will surface the error */})
+    })
+  }, [securities])
+
+  async function toggleInvested(ticker: string) {
+    const cfg = configs.get(ticker)
+    if (!cfg) return
+    const updated = { ...cfg, start_invested: (cfg.start_invested === 1 ? 0 : 1) as 0 | 1 }
+    setConfigs(prev => new Map(prev).set(ticker, updated))
+    try {
+      await saveConfig(ticker, updated)
+    } catch {
+      // Revert on failure
+      setConfigs(prev => new Map(prev).set(ticker, cfg))
+    }
+  }
 
   const allChecked  = securities.length > 0 && securities.every(t => checked.has(t))
   const noneChecked = securities.every(t => !checked.has(t))
@@ -52,7 +75,7 @@ export function SignalsTab({ securities, settings }: Props) {
     })
     for (const ticker of toRun) {
       try {
-        const config = await getConfig(ticker)
+        const config = configs.get(ticker) ?? await getConfig(ticker)
         const params: StrategyParams = {
           MA:           config.buy_conditions.MA.default,
           DROP:         config.buy_conditions.DROP.default,
@@ -140,15 +163,17 @@ export function SignalsTab({ securities, settings }: Props) {
         {securities.map((ticker, i) => {
           const result    = results.get(ticker)
           const isChecked = checked.has(ticker)
+          const cfg       = configs.get(ticker)
+          const invested  = cfg?.start_invested === 1
+
           return (
             <div
               key={ticker}
-              className="flex items-center gap-3 px-4 py-3 cursor-pointer"
+              className="flex items-center gap-3 px-4 py-3"
               style={{
                 borderBottom: i < securities.length - 1 ? '1px solid var(--border)' : undefined,
                 opacity: isChecked ? 1 : 0.45,
               }}
-              onClick={() => toggleTicker(ticker)}
             >
               <input
                 type="checkbox"
@@ -156,11 +181,32 @@ export function SignalsTab({ securities, settings }: Props) {
                 onChange={() => toggleTicker(ticker)}
                 disabled={running}
                 className="h-4 w-4 cursor-pointer"
-                onClick={e => e.stopPropagation()}
               />
-              <span className="font-mono font-semibold flex-1" style={{ color: 'var(--text)' }}>
+
+              <span className="font-mono font-semibold w-16" style={{ color: 'var(--text)' }}>
                 {ticker}
               </span>
+
+              {/* Invested toggle */}
+              <button
+                onClick={() => toggleInvested(ticker)}
+                disabled={running || !cfg}
+                title="Click to toggle position"
+                className="px-2 py-0.5 rounded text-xs font-medium transition-opacity"
+                style={{
+                  background: invested ? 'color-mix(in srgb, var(--buy) 20%, transparent)' : 'color-mix(in srgb, var(--hold) 15%, transparent)',
+                  color:      invested ? 'var(--buy)' : 'var(--hold)',
+                  border:     `1px solid ${invested ? 'var(--buy)' : 'var(--hold)'}`,
+                  opacity:    !cfg ? 0.4 : 1,
+                  cursor:     running || !cfg ? 'not-allowed' : 'pointer',
+                  minWidth:   '7rem',
+                }}
+              >
+                {!cfg ? '…' : invested ? 'Invested' : 'Not Invested'}
+              </button>
+
+              <div className="flex-1" />
+
               {result === 'running' && (
                 <span className="text-xs animate-pulse" style={{ color: 'var(--text-muted)' }}>Running…</span>
               )}

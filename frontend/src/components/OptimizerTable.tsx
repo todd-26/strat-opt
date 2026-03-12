@@ -16,6 +16,7 @@ interface Props {
   chartError: string | null
   onToggleChart: (params: StrategyParams) => void
   buyholdResult: BacktestResult | null
+  ticker?: string
 }
 
 function toParams(row: OptimizerResultRow): StrategyParams {
@@ -80,6 +81,7 @@ export function OptimizerTable({
   chartError,
   onToggleChart,
   buyholdResult,
+  ticker,
 }: Props) {
   const [sortKey, setSortKey] = useState<SortKey>('APY')
   const [sortDir, setSortDir] = useState<SortDir>('desc')
@@ -172,6 +174,9 @@ export function OptimizerTable({
                           selldates={chartResult.sell_dates}
                           buyholdCurve={buyholdResult?.equity_curve}
                           showBuyHoldToggle={true}
+                          strategyApy={chartResult.apy}
+                          buyholdApy={buyholdResult?.apy}
+                          title={ticker}
                           id={`chart-${i}`}
                         />
                       )}

@@ -92,6 +92,9 @@ export function BuyHoldTab({ settings, ticker, cashRate, startDate, endDate }: P
             </h3>
             <EquityCurveChart
               equityCurve={result.equity_curve}
+              strategyApy={result.apy}
+              strategyLabel="Buy & Hold"
+              title={ticker}
               id="buyhold-chart"
             />
           </div>
