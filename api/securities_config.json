@@ -338,11 +338,11 @@
           "CHG4": {
             "description": "Sell if 4-week credit spread change exceeds threshold",
             "type": "percent",
-            "ignore": true,
-            "default": 0.175,
+            "ignore": false,
+            "default": 0.33,
             "range": {
-              "min": 0.175,
-              "max": 0.175,
+              "min": 0.33,
+              "max": 0.33,
               "step": 0.005
             }
           },
@@ -371,11 +371,11 @@
           "YIELD10_CHG4": {
             "description": "Sell if 10-year yield 4-week change exceeds threshold",
             "type": "percent",
-            "ignore": true,
-            "default": 0.12,
+            "ignore": false,
+            "default": 0.07,
             "range": {
-              "min": 0.12,
-              "max": 0.12,
+              "min": 0.07,
+              "max": 0.07,
               "step": 0.01
             }
           },
@@ -385,8 +385,8 @@
             "ignore": true,
             "default": 0.1,
             "range": {
-              "min": 0.1,
-              "max": 0.1,
+              "min": 0.04,
+              "max": 0.04,
               "step": 0.01
             }
           },
@@ -394,10 +394,10 @@
             "description": "Sell if yield curve (10y-2y) 4-week change falls more than threshold",
             "type": "basis_points",
             "ignore": false,
-            "default": 0.3,
+            "default": 0.46,
             "range": {
-              "min": 0.3,
-              "max": 0.3,
+              "min": 0.48,
+              "max": 0.48,
               "step": 0.02
             }
           }
@@ -406,7 +406,7 @@
           "MA": {
             "description": "Price must be above n-week moving average",
             "type": "weeks",
-            "ignore": false,
+            "ignore": true,
             "default": 32.0,
             "range": {
               "min": 32.0,
@@ -420,15 +420,15 @@
             "ignore": true,
             "default": 0.015,
             "range": {
-              "min": 0.015,
-              "max": 0.015,
+              "min": 0.012,
+              "max": 0.032,
               "step": 0.001
             }
           },
           "SPREAD_DELTA": {
             "description": "Consecutive weeks of declining credit spread required",
             "type": "weeks",
-            "ignore": false,
+            "ignore": true,
             "default": 2.0,
             "range": {
               "min": 2.0,
@@ -739,7 +739,7 @@
           "YIELD10_DELTA": {
             "description": "Consecutive weeks of declining 10-year yield required",
             "type": "weeks",
-            "ignore": false,
+            "ignore": true,
             "default": 1.0,
             "range": {
               "min": 1.0,
