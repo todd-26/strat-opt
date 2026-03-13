@@ -29,20 +29,18 @@ export function Header({ ticker, securities, onTickerChange, onOpenSettings, sta
     const effStart = newStart || dateRange?.min || ''
     const effEnd = newEnd || dateRange?.max || ''
     if (newStart && dateRange?.min && newStart < dateRange.min) {
-      setError(`Start date ${newStart} is before the earliest available data (${dateRange.min}). Date cleared.`)
-      onStartDateChange('')
+      setError(`Start date ${newStart} is before the earliest available data (${dateRange.min}).`)
       return false
     }
     if (newEnd && dateRange?.max && newEnd > dateRange.max) {
-      setError(`End date ${newEnd} is after the latest available data (${dateRange.max}). Date cleared.`)
-      onEndDateChange('')
+      setError(`End date ${newEnd} is after the latest available data (${dateRange.max}).`)
       return false
     }
     if (effStart && effEnd && effEnd < effStart) {
-      setError(`End date (${effEnd}) cannot be before start date (${effStart}). End date cleared.`)
-      onEndDateChange('')
+      setError(`End date (${effEnd}) cannot be before start date (${effStart}).`)
       return false
     }
+    setError('')
     return true
   }
 
