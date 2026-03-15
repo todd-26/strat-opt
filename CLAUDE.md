@@ -132,6 +132,7 @@ Backend Pipeline:
 - `Fred` class accepts `series_id` and `col_name` params — reusable for any FRED series
 - `DataSource` / `CsvSource` / `ApiSource` abstract CSV vs live API data sources
 - `ApiSource` caches responses in a module-level dict keyed by `(url, params, date)`; cache is valid for the calendar day and cleared on process restart
+- `ApiSource` detects JSON error responses when expecting CSV (Alpha Vantage quirk — returns JSON on rate limit/invalid ticker); raises `ValueError` with the API's message
 
 **Indicators** (`indicators.py`):
 - `IndicatorEngine.apply_all()` adds: `MA` (n-week moving average), `chg4` (4-week spread change), `ret3` (3-week price return), `spread_delta` (week-over-week spread change), `yield10_chg4` (4-week % change in 10yr yield), `yield2_chg4` (4-week % change in 2yr yield), `curve_chg4` (4-week absolute change in yield curve), `yield10_delta` (week-over-week change in 10yr yield)

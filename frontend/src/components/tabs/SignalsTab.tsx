@@ -73,7 +73,11 @@ export function SignalsTab({ securities, settings }: Props) {
       toRun.forEach(t => next.set(t, 'running'))
       return next
     })
-    for (const ticker of toRun) {
+    for (let i = 0; i < toRun.length; i++) {
+      if (i > 0 && inputType === 'api') {
+        await new Promise(r => setTimeout(r, 1500))
+      }
+      const ticker = toRun[i]
       try {
         const config = configs.get(ticker) ?? await getConfig(ticker)
         const params: StrategyParams = {

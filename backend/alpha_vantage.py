@@ -43,6 +43,13 @@ class AlphaVantage:
         else:
             data_source = CsvSource(f"{self.input_dir}/{self.ticker.lower()}-weekly-adjusted.csv")
         df = data_source.data
+        if "timestamp" not in df.columns:
+            cols = list(df.columns)
+            raise ValueError(
+                f"Unexpected Alpha Vantage response for {self.ticker}: "
+                f"expected 'timestamp' column but received columns {cols[:6]}. "
+                f"This may indicate an API rate limit or error response."
+            )
         df["date"] = pd.to_datetime(df["timestamp"], format=self.DATE_FMT, errors="coerce").dt.normalize()
         df = df.drop(columns=["open", "high", "low", "volume", "timestamp", "adjusted close"])  # Keep only relevant columns
         return df
