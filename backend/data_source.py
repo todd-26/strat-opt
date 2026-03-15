@@ -58,6 +58,13 @@ class ApiSource(DataSource):
                 raise ValueError("data_node must be provided for JSON data.")
             self.data = pd.DataFrame(response.json()[data_node])
         elif api_data == ApiData.CSV:
+            if response.text.lstrip().startswith('{'):
+                import json
+                try:
+                    msg = next(iter(json.loads(response.text).values()))
+                except Exception:
+                    msg = response.text[:200]
+                raise ValueError(f"API returned an error instead of CSV data: {msg}")
             self.data = pd.read_csv(io.StringIO(response.text))
 
         _api_cache[cache_key] = self.data.copy()
