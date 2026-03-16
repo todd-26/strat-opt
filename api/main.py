@@ -6,6 +6,7 @@ import math
 import asyncio
 import requests as _requests
 import concurrent.futures
+import pandas as _pd
 from pathlib import Path
 from typing import AsyncGenerator
 from dotenv import load_dotenv
@@ -186,6 +187,45 @@ def _fetch_and_save_csv(ticker: str) -> None:
     csv_path.write_text(content, encoding="utf-8")
 
 
+_FRED_SERIES = ('BAMLH0A0HYM2', 'DGS10', 'DGS2')
+
+
+def _fetch_and_save_fred(series_id: str) -> None:
+    """Fetch full FRED series history from API and save to inputs CSV, bypassing app cache."""
+    api_key = os.environ.get("FRED_API_KEY")
+    url = os.environ.get("FRED_URL")
+    if not api_key:
+        raise ValueError("FRED_API_KEY is not set")
+    if not url:
+        raise ValueError("FRED_URL is not set")
+    params = {
+        'api_key': api_key,
+        'series_id': series_id,
+        'file_type': 'json',
+        'observation_start': '2000-01-01',
+    }
+    resp = _requests.get(url, params=params, timeout=30)
+    resp.raise_for_status()
+    data = resp.json()
+    if 'observations' not in data:
+        msg = next(iter(data.values()), "Unknown FRED error") if data else "Empty response"
+        raise ValueError(f"FRED API error for {series_id}: {msg}")
+    df = _pd.DataFrame(data['observations'])[['date', 'value']]
+    (INPUT_DIR / f"{series_id}.csv").write_text(df.to_csv(index=False), encoding='utf-8')
+
+
+def _update_fred_if_stale(av_ticker: str) -> None:
+    """Refresh any FRED CSVs that are older than the given security's AV CSV."""
+    av_path = INPUT_DIR / f"{av_ticker.lower()}-weekly-adjusted.csv"
+    if not av_path.exists():
+        return
+    av_mtime = av_path.stat().st_mtime
+    for series_id in _FRED_SERIES:
+        fred_path = INPUT_DIR / f"{series_id}.csv"
+        if not fred_path.exists() or fred_path.stat().st_mtime < av_mtime:
+            _fetch_and_save_fred(series_id)
+
+
 def _security_to_appconfig(sec: dict) -> AppConfig:
     """Convert a securities_config.json security block to an AppConfig model."""
     p = sec["parameters"]
@@ -234,6 +274,7 @@ def add_security(req: AddSecurityRequest):
     if not csv_path.exists():
         try:
             _fetch_and_save_csv(ticker)
+            _update_fred_if_stale(ticker)
         except ValueError as e:
             raise HTTPException(status_code=400, detail=str(e))
         except Exception as e:
@@ -256,6 +297,7 @@ def fetch_security_data(ticker: str):
         raise HTTPException(status_code=404, detail=f"{ticker} not found.")
     try:
         _fetch_and_save_csv(ticker)
+        _update_fred_if_stale(ticker)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:

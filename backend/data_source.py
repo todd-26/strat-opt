@@ -49,8 +49,10 @@ class ApiSource(DataSource):
         cache_key = (url, params_key, date.today())
         if cache_key in _api_cache:
             self.data = _api_cache[cache_key].copy()
+            self.from_cache = True
             return
 
+        self.from_cache = False
         response = requests.get(self.url, params=params)
         response.raise_for_status()
         if api_data == ApiData.JSON:
