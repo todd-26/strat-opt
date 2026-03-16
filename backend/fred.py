@@ -35,7 +35,7 @@ class Fred:
                 'api_key': apikey,
                 'series_id': self.series_id,
                 'file_type': 'json',
-                'observation_start': '2012-06-29',
+                'observation_start': '2000-01-01',
                 'frequency': 'wef',  # weekly frequency taken on Fridays
                 'aggregation_method': 'eop'  # end of period values
             }
@@ -48,6 +48,9 @@ class Fred:
         '''
         if self.input_type == "api":
             data_source = ApiSource(self.url, ApiData.JSON, "observations", self.params)
+            if not data_source.from_cache:
+                csv_path = Path(self.input_dir) / f"{self.series_id}.csv"
+                data_source.data[['date', 'value']].to_csv(csv_path, index=False)
         else:
             data_source = CsvSource(f"{self.input_dir}/{self.series_id}.csv")
         df = data_source.data

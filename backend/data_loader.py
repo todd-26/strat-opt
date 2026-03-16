@@ -119,6 +119,12 @@ class WeeklyDataLoader:
             direction="backward"
         ).set_index("date")
 
+        # Cap at the latest date where FRED data is available.
+        # merge_asof carries the last FRED value forward into newer price rows,
+        # which would produce misleading signals using stale spread/yield data.
+        fred_max = min(spread_df["date"].max(), treasury_df["date"].max())
+        weekly = weekly[weekly.index <= fred_max]
+
         print("Data range:", weekly.index.min().date(), "to", weekly.index.max().date())
 
         data_min = weekly.index.min().date()

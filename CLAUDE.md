@@ -128,6 +128,10 @@ Backend Pipeline:
 
 **Data layer** (`data_loader.py`, `data_source.py`, `alpha_vantage.py`, `fred.py`):
 - `WeeklyDataLoader` loads weekly prices/dividends, FRED daily spreads, and FRED daily treasury yields (DGS10, DGS2); resamples all FRED series to weekly (W-FRI); merges via two `merge_asof` calls; computes total return factor (`TR_factor`, `TR`) and `YieldCurve = DGS10 - DGS2`
+- After merging, `load()` caps the result at `min(spread_df["date"].max(), treasury_df["date"].max())` — prevents `merge_asof` from silently carrying stale FRED values into price rows newer than the latest FRED data
+- `Fred.get_data()` auto-saves `['date', 'value']` to `inputs/{series_id}.csv` on cache miss (fresh API call); `observation_start` set to `'2000-01-01'` for full history
+- `ApiSource` exposes `from_cache: bool` so callers can detect whether data came from cache or a live fetch
+- `main.py` `_fetch_and_save_fred(series_id)` fetches full FRED history directly (bypasses `_api_cache`); `_update_fred_if_stale(ticker)` refreshes all three FRED CSVs if older than the AV CSV; called from both `fetch_security_data` and `add_security`
 - `WeeklyDataLoader.load()` raises `ValueError` (with available data range in message) if date slice produces empty DataFrame; all three run endpoints catch it and return HTTP 400
 - `Fred` class accepts `series_id` and `col_name` params — reusable for any FRED series
 - `DataSource` / `CsvSource` / `ApiSource` abstract CSV vs live API data sources
