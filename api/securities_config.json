@@ -639,21 +639,21 @@
             "description": "Sell if 4-week credit spread change exceeds threshold",
             "type": "percent",
             "ignore": false,
-            "default": 0.07,
+            "default": 0.225,
             "range": {
-              "min": 0.05,
-              "max": 0.08,
-              "step": 0.01
+              "min": 0.225,
+              "max": 0.225,
+              "step": 0.005
             }
           },
           "RET3": {
             "description": "Sell if 3-week price return falls below threshold",
             "type": "percent",
             "ignore": false,
-            "default": -0.018,
+            "default": -0.016,
             "range": {
-              "min": -0.018,
-              "max": -0.018,
+              "min": -0.016,
+              "max": -0.016,
               "step": 0.002
             }
           },
@@ -672,11 +672,11 @@
             "description": "Sell if 10-year yield 4-week change exceeds threshold",
             "type": "percent",
             "ignore": false,
-            "default": 0.11,
+            "default": 0.18,
             "range": {
-              "min": 0.11,
-              "max": 0.11,
-              "step": 0.01
+              "min": 0.181,
+              "max": 0.181,
+              "step": 0.001
             }
           },
           "YIELD2_CHG4": {
@@ -693,7 +693,7 @@
           "CURVE_CHG4": {
             "description": "Sell if yield curve (10y-2y) 4-week change falls more than threshold",
             "type": "basis_points",
-            "ignore": false,
+            "ignore": true,
             "default": 0.36,
             "range": {
               "min": 0.36,
@@ -706,7 +706,7 @@
           "MA": {
             "description": "Price must be above n-week moving average",
             "type": "weeks",
-            "ignore": false,
+            "ignore": true,
             "default": 3.0,
             "range": {
               "min": 3.0,
@@ -717,7 +717,7 @@
           "DROP": {
             "description": "Credit spread must fall this fraction from 4-week peak",
             "type": "percent",
-            "ignore": false,
+            "ignore": true,
             "default": 0.018,
             "range": {
               "min": 0.018,

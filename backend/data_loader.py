@@ -3,9 +3,6 @@ from pathlib import Path
 from alpha_vantage import AlphaVantage
 from fred import Fred
 
-DIV_COLUMN = "dividend amount"
-
-
 class WeeklyDataLoader:
     """
     Loads weekly price/dividend data + daily FRED spread data,
@@ -34,11 +31,10 @@ class WeeklyDataLoader:
         df = av.get_data().copy()
 
         df = df.sort_values("date").reset_index(drop=True)
-        df[DIV_COLUMN] = pd.to_numeric(df[DIV_COLUMN], errors="coerce").fillna(0.0)
 
-        # Compute total return factor
+        # close is already adjusted close (split + dividend adjusted); TR from period returns.
         df["close_prev"] = df["close"].shift(1).fillna(df["close"])
-        df["TR_factor"] = (df["close"] + df[DIV_COLUMN]) / df["close_prev"]
+        df["TR_factor"] = df["close"] / df["close_prev"]
         df["TR"] = df["TR_factor"].cumprod()
 
         return df
