@@ -44,6 +44,11 @@ Each of these three tabs has a collapsible parameter panel. It starts expanded. 
 
 **Factor Checkboxes**: Each factor has a checkbox to enable/disable it. Factors are grouped under "Sell Factors" (SPREAD_LVL, CHG4, RET3, YIELD10_CHG4, YIELD2_CHG4, CURVE_CHG4) and "Buy Factors" (MA, DROP, SPREAD_DELTA, YIELD10_DELTA) headers. Disabled factors grey out their inputs (opacity 0.45). `SPREAD_DELTA` and `YIELD10_DELTA` are fully numeric inputs (integer, default 2) controlling how many consecutive falling weeks are required — they behave identically to all other parameters. In the backtester, disabled factors collapse their grid to a single placeholder value, reducing total combinations.
 
+**Settings isolation**: Opening or saving Settings does **not** affect parameter values in the Backtester or Current Signal tabs. Each tab initializes from config on mount (React `key={ticker}` remounts on ticker change). Two buttons in the controls row manage the relationship explicitly:
+- **Reset from Settings** — restores all tab parameters to the current saved defaults; accent-colored and enabled only when values differ from saved defaults; muted and disabled otherwise.
+- **Save to Settings** — writes the tab's current values back to `securities_config.json` (updates defaults, ranges, ignore flags, cash rate, start position); accent-colored and enabled only when values differ from saved defaults; shows Saving… / Saved! / Error feedback.
+- **Save Permanently** (Settings sheet) — same pattern: accent + enabled only when `localConfig` differs from the loaded `config`; muted + disabled when no changes.
+
 ### Results Area
 Results are displayed **side by side**: the chart on the left, key summary metrics on the right. Both are given equal visual prominence.
 

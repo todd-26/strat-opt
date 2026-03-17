@@ -95,6 +95,8 @@ export function SettingsSheet({ open, onClose, settings, onUpdate, config, onSav
 
   if (!open) return null
 
+  const hasChanges = JSON.stringify(localConfig) !== JSON.stringify(config)
+
   async function handleSavePermanently() {
     setSaveStatus('saving')
     try {
@@ -424,12 +426,18 @@ export function SettingsSheet({ open, onClose, settings, onUpdate, config, onSav
           </Section>
 
           {/* Save */}
-          <button onClick={handleSavePermanently} disabled={saveStatus === 'saving'}
-            className="w-full rounded px-4 py-2 text-sm font-semibold disabled:opacity-50"
-            style={{
-              background: saveStatus === 'error' ? 'var(--sell)' : saveStatus === 'saved' ? 'var(--buy)' : 'var(--accent)',
-              color: saveStatus === 'saved' ? '#fff' : 'var(--accent-text)',
-            }}>
+          <button
+            onClick={handleSavePermanently}
+            disabled={(!hasChanges && saveStatus === 'idle') || saveStatus === 'saving'}
+            className="w-full rounded px-4 py-2 text-sm font-semibold disabled:opacity-40"
+            style={saveStatus === 'error'
+              ? { background: 'var(--sell)', color: '#fff' }
+              : saveStatus === 'saved'
+              ? { background: 'var(--buy)', color: '#fff' }
+              : hasChanges
+              ? { background: 'var(--accent)', color: 'var(--accent-text)' }
+              : { background: 'var(--bg-input)', color: 'var(--text-muted)', border: '1px solid var(--border)' }}
+          >
             {saveButtonLabel()}
           </button>
         </div>

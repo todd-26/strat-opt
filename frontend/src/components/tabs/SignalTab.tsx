@@ -5,7 +5,7 @@ import { SignalBadge } from '../SignalBadge'
 import { TradeHistoryTable } from '../TradeHistoryTable'
 import { MetricsCard } from '../MetricsCard'
 import { NumInput } from '../NumInput'
-import type { Settings, StrategyParams } from '../../types'
+import type { Settings, StrategyParams, AppConfig } from '../../types'
 
 interface Props {
   settings: Settings
@@ -17,6 +17,8 @@ interface Props {
   startDate?: string
   endDate?: string
   defaultDisabledFactors?: string[]
+  config: AppConfig
+  onSaveConfig: (config: AppConfig) => Promise<void>
 }
 
 function fmt(v: number | null | undefined, decimals = 4): string {
@@ -24,21 +26,65 @@ function fmt(v: number | null | undefined, decimals = 4): string {
   return v.toFixed(decimals)
 }
 
-export function SignalTab({ settings, ticker, defaultParams, paramDescriptions, cashRate: cashRateProp, startInvested: startInvestedProp, startDate, endDate, defaultDisabledFactors }: Props) {
+function paramsEqual(a: StrategyParams, b: StrategyParams) {
+  return (Object.keys(a) as (keyof StrategyParams)[]).every(k => a[k] === b[k])
+}
+
+export function SignalTab({ settings, ticker, defaultParams, paramDescriptions, cashRate: cashRateProp, startInvested: startInvestedProp, startDate, endDate, defaultDisabledFactors, config, onSaveConfig }: Props) {
   const { result, loading, error, run } = useSignal()
   const [params, setParams] = useState<StrategyParams>(defaultParams)
   const [startInvested, setStartInvested] = useState<0 | 1>(startInvestedProp)
   const [cashRate, setCashRate] = useState(cashRateProp)
   const [inputType, setInputType] = useState(settings.inputType)
-
-  useEffect(() => {
-    setCashRate(cashRateProp)
-    setStartInvested(startInvestedProp)
-  }, [cashRateProp, startInvestedProp])
-  useEffect(() => { setParams(defaultParams) }, [defaultParams])
   const [collapsed, setCollapsed] = useState(false)
   const [disabledFactors, setDisabledFactors] = useState<Set<string>>(new Set(defaultDisabledFactors ?? []))
-  useEffect(() => { setDisabledFactors(new Set(defaultDisabledFactors ?? [])) }, [defaultDisabledFactors])
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
+
+  const hasChanges =
+    cashRate !== cashRateProp ||
+    startInvested !== startInvestedProp ||
+    !paramsEqual(params, defaultParams) ||
+    disabledFactors.size !== (defaultDisabledFactors ?? []).length ||
+    !(defaultDisabledFactors ?? []).every(f => disabledFactors.has(f))
+
+  function handleResetFromSettings() {
+    setParams(defaultParams)
+    setDisabledFactors(new Set(defaultDisabledFactors ?? []))
+    setCashRate(cashRateProp)
+    setStartInvested(startInvestedProp)
+  }
+
+  async function handleSaveToSettings() {
+    setSaveStatus('saving')
+    try {
+      const updated: AppConfig = {
+        ...config,
+        cash_rate: cashRate,
+        start_invested: startInvested,
+        sell_triggers: {
+          CHG4:         { ...config.sell_triggers.CHG4,         default: params.CHG4,         ignore: disabledFactors.has('CHG4') },
+          RET3:         { ...config.sell_triggers.RET3,         default: params.RET3,         ignore: disabledFactors.has('RET3') },
+          SPREAD_LVL:   { ...config.sell_triggers.SPREAD_LVL,   default: params.SPREAD_LVL,   ignore: disabledFactors.has('SPREAD_LVL') },
+          YIELD10_CHG4: { ...config.sell_triggers.YIELD10_CHG4, default: params.YIELD10_CHG4, ignore: disabledFactors.has('YIELD10_CHG4') },
+          YIELD2_CHG4:  { ...config.sell_triggers.YIELD2_CHG4,  default: params.YIELD2_CHG4,  ignore: disabledFactors.has('YIELD2_CHG4') },
+          CURVE_CHG4:   { ...config.sell_triggers.CURVE_CHG4,   default: params.CURVE_CHG4,   ignore: disabledFactors.has('CURVE_CHG4') },
+        },
+        buy_conditions: {
+          MA:           { ...config.buy_conditions.MA,           default: params.MA,           ignore: disabledFactors.has('MA') },
+          DROP:         { ...config.buy_conditions.DROP,         default: params.DROP,         ignore: disabledFactors.has('DROP') },
+          SPREAD_DELTA: { ...config.buy_conditions.SPREAD_DELTA, default: params.SPREAD_DELTA, ignore: disabledFactors.has('SPREAD_DELTA') },
+          YIELD10_DELTA:{ ...config.buy_conditions.YIELD10_DELTA,default: params.YIELD10_DELTA,ignore: disabledFactors.has('YIELD10_DELTA') },
+        },
+      }
+      await onSaveConfig(updated)
+      setSaveStatus('saved')
+      setTimeout(() => setSaveStatus('idle'), 2000)
+    } catch {
+      setSaveStatus('error')
+      setTimeout(() => setSaveStatus('idle'), 3000)
+    }
+  }
+
   function toggleFactor(f: string) {
     setDisabledFactors(prev => { const n = new Set(prev); n.has(f) ? n.delete(f) : n.add(f); return n })
   }
@@ -141,6 +187,33 @@ export function SignalTab({ settings, ticker, defaultParams, paramDescriptions, 
           >
             {loading ? 'Running…' : 'Get Current Signal'}
           </button>
+
+          <div className="ml-auto flex gap-2">
+            <button
+              onClick={handleResetFromSettings}
+              disabled={!hasChanges}
+              className="rounded px-3 py-1.5 text-sm disabled:opacity-40"
+              style={hasChanges
+                ? { background: 'var(--accent)', color: 'var(--accent-text)' }
+                : { background: 'var(--bg-input)', color: 'var(--text-muted)', border: '1px solid var(--border)' }}
+            >
+              Reset from Settings
+            </button>
+            <button
+              onClick={handleSaveToSettings}
+              disabled={!hasChanges || saveStatus === 'saving'}
+              className="rounded px-3 py-1.5 text-sm disabled:opacity-40"
+              style={saveStatus === 'error'
+                ? { background: 'var(--sell)', color: '#fff' }
+                : saveStatus === 'saved'
+                ? { background: 'var(--buy)', color: '#fff' }
+                : hasChanges
+                ? { background: 'var(--accent)', color: 'var(--accent-text)' }
+                : { background: 'var(--bg-input)', color: 'var(--text-muted)', border: '1px solid var(--border)' }}
+            >
+              {saveStatus === 'saving' ? 'Saving…' : saveStatus === 'saved' ? 'Saved!' : saveStatus === 'error' ? 'Error' : 'Save to Settings'}
+            </button>
+          </div>
         </div>
       </div>
 
