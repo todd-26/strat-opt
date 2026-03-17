@@ -44,6 +44,7 @@ from models import (                               # noqa: E402
     StrategyParams,
     AppConfig,
     AddSecurityRequest,
+    ReorderSecuritiesRequest,
 )
 
 app = FastAPI(title="strat-opt API")
@@ -302,6 +303,16 @@ def fetch_security_data(ticker: str):
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Fetch failed: {e}")
+    return {"ok": True}
+
+
+@app.post("/api/securities/reorder")
+def reorder_securities(body: ReorderSecuritiesRequest):
+    full = _load_config()
+    existing = full["securities"]
+    # Rebuild dict in requested order, ignoring unknown tickers
+    full["securities"] = {t: existing[t] for t in body.tickers if t in existing}
+    CONFIG_PATH.write_text(json.dumps(full, indent=2))
     return {"ok": True}
 
 

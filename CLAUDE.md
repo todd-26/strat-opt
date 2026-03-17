@@ -165,6 +165,7 @@ Backend Pipeline:
 FastAPI server with endpoints:
 - `GET /api/securities` — Returns available tickers; raises HTTP 500 if config missing/invalid or no securities defined
 - `POST /api/securities` — Adds a new security (body: `AddSecurityRequest{ticker, name, template}`); validates ticker format (1–10 uppercase letters), auto-fetches CSV from Alpha Vantage if not already present, clones parameters from template ticker
+- `POST /api/securities/reorder` — Accepts `{tickers: string[]}` and rewrites `securities_config.json` with keys in the given order; Python dict insertion order preserves the sequence for all subsequent reads
 - `POST /api/securities/{ticker}/fetch-data` — Fetches/overwrites CSV data for an existing security from Alpha Vantage
 - `DELETE /api/securities/{ticker}` — Removes a security; blocks (HTTP 400) if it is the last one
 - `GET /api/date-range` — Returns `{ min, max }` date strings for a ticker's data; errors include response body text

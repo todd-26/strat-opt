@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useSettings } from './hooks/useSettings'
 import { applyTheme } from './lib/themes'
-import { getConfig, saveConfig, fetchSecurities, getDateRange, addSecurity, removeSecurity, updateSecurityData } from './lib/api'
+import { getConfig, saveConfig, fetchSecurities, getDateRange, addSecurity, removeSecurity, updateSecurityData, reorderSecurities } from './lib/api'
 import { Header } from './components/Header'
 import { SettingsSheet } from './components/Settings'
 import { OptimizerTab } from './components/tabs/OptimizerTab'
@@ -60,6 +60,11 @@ export default function App() {
   async function handleRemoveSecurity(t: string) {
     await removeSecurity(t)
     await refreshSecurities()
+  }
+
+  async function handleReorderSecurities(tickers: string[]) {
+    await reorderSecurities(tickers)
+    setSecurities(tickers)
   }
 
   async function handleFetchData(t: string) {
@@ -231,6 +236,7 @@ export default function App() {
           securities={securities}
           onAddSecurity={handleAddSecurity}
           onRemoveSecurity={handleRemoveSecurity}
+          onReorderSecurities={handleReorderSecurities}
           onFetchData={handleFetchData}
         />
       )}

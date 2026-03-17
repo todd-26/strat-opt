@@ -600,8 +600,8 @@
         }
       }
     },
-    "JMST": {
-      "name": "JPMorgan Ultra-Short Municipal Income ETF",
+    "HYMB": {
+      "name": "State Street\u00ae Blackstone High Income ETF",
       "type": "etf",
       "asset_class": "high_yield_muni",
       "tax_status": "tax_exempt_federal",
@@ -609,7 +609,7 @@
         "price": {
           "provider": "alpha_vantage",
           "function": "TIME_SERIES_WEEKLY_ADJUSTED",
-          "symbol": "JMST"
+          "symbol": "HYMB"
         },
         "indicators": {
           "credit_spread": {
@@ -632,24 +632,24 @@
       "cash_rate": 0.023,
       "cash_vehicle": "JMST",
       "cash_vehicle_notes": "JPMorgan Ultra-Short Muni ETF, tax-exempt",
-      "start_invested": 1,
+      "start_invested": 0,
       "parameters": {
         "sell_triggers": {
           "CHG4": {
             "description": "Sell if 4-week credit spread change exceeds threshold",
             "type": "percent",
-            "ignore": true,
+            "ignore": false,
             "default": 0.07,
             "range": {
-              "min": 0.07,
-              "max": 0.07,
+              "min": 0.05,
+              "max": 0.08,
               "step": 0.01
             }
           },
           "RET3": {
             "description": "Sell if 3-week price return falls below threshold",
             "type": "percent",
-            "ignore": true,
+            "ignore": false,
             "default": -0.018,
             "range": {
               "min": -0.018,
@@ -672,28 +672,28 @@
             "description": "Sell if 10-year yield 4-week change exceeds threshold",
             "type": "percent",
             "ignore": false,
-            "default": 0.125,
+            "default": 0.11,
             "range": {
-              "min": 0.125,
-              "max": 0.125,
-              "step": 0.001
+              "min": 0.11,
+              "max": 0.11,
+              "step": 0.01
             }
           },
           "YIELD2_CHG4": {
             "description": "Sell if 2-year yield 4-week change exceeds threshold",
             "type": "percent",
-            "ignore": false,
-            "default": 0.141,
+            "ignore": true,
+            "default": 0.1,
             "range": {
-              "min": 0.141,
-              "max": 0.141,
-              "step": 0.001
+              "min": 0.1,
+              "max": 0.1,
+              "step": 0.01
             }
           },
           "CURVE_CHG4": {
             "description": "Sell if yield curve (10y-2y) 4-week change falls more than threshold",
             "type": "basis_points",
-            "ignore": true,
+            "ignore": false,
             "default": 0.36,
             "range": {
               "min": 0.36,
@@ -707,10 +707,10 @@
             "description": "Price must be above n-week moving average",
             "type": "weeks",
             "ignore": false,
-            "default": 2.0,
+            "default": 3.0,
             "range": {
-              "min": 2.0,
-              "max": 2.0,
+              "min": 3.0,
+              "max": 3.0,
               "step": 1.0
             }
           },
@@ -718,10 +718,10 @@
             "description": "Credit spread must fall this fraction from 4-week peak",
             "type": "percent",
             "ignore": false,
-            "default": 0.024,
+            "default": 0.018,
             "range": {
-              "min": 0.024,
-              "max": 0.024,
+              "min": 0.018,
+              "max": 0.018,
               "step": 0.001
             }
           },
@@ -740,10 +740,10 @@
             "description": "Consecutive weeks of declining 10-year yield required",
             "type": "weeks",
             "ignore": true,
-            "default": 1.0,
+            "default": 2.0,
             "range": {
-              "min": 1.0,
-              "max": 1.0,
+              "min": 2.0,
+              "max": 2.0,
               "step": 1.0
             }
           }
@@ -900,8 +900,8 @@
         }
       }
     },
-    "HYMB": {
-      "name": "State Street\u00ae Blackstone High Income ETF",
+    "JMST": {
+      "name": "JPMorgan Ultra-Short Municipal Income ETF",
       "type": "etf",
       "asset_class": "high_yield_muni",
       "tax_status": "tax_exempt_federal",
@@ -909,7 +909,7 @@
         "price": {
           "provider": "alpha_vantage",
           "function": "TIME_SERIES_WEEKLY_ADJUSTED",
-          "symbol": "HYMB"
+          "symbol": "JMST"
         },
         "indicators": {
           "credit_spread": {
@@ -932,24 +932,24 @@
       "cash_rate": 0.023,
       "cash_vehicle": "JMST",
       "cash_vehicle_notes": "JPMorgan Ultra-Short Muni ETF, tax-exempt",
-      "start_invested": 0,
+      "start_invested": 1,
       "parameters": {
         "sell_triggers": {
           "CHG4": {
             "description": "Sell if 4-week credit spread change exceeds threshold",
             "type": "percent",
-            "ignore": false,
+            "ignore": true,
             "default": 0.07,
             "range": {
-              "min": 0.05,
-              "max": 0.08,
+              "min": 0.07,
+              "max": 0.07,
               "step": 0.01
             }
           },
           "RET3": {
             "description": "Sell if 3-week price return falls below threshold",
             "type": "percent",
-            "ignore": false,
+            "ignore": true,
             "default": -0.018,
             "range": {
               "min": -0.018,
@@ -972,28 +972,28 @@
             "description": "Sell if 10-year yield 4-week change exceeds threshold",
             "type": "percent",
             "ignore": false,
-            "default": 0.11,
+            "default": 0.125,
             "range": {
-              "min": 0.11,
-              "max": 0.11,
-              "step": 0.01
+              "min": 0.125,
+              "max": 0.125,
+              "step": 0.001
             }
           },
           "YIELD2_CHG4": {
             "description": "Sell if 2-year yield 4-week change exceeds threshold",
             "type": "percent",
-            "ignore": true,
-            "default": 0.1,
+            "ignore": false,
+            "default": 0.141,
             "range": {
-              "min": 0.1,
-              "max": 0.1,
-              "step": 0.01
+              "min": 0.141,
+              "max": 0.141,
+              "step": 0.001
             }
           },
           "CURVE_CHG4": {
             "description": "Sell if yield curve (10y-2y) 4-week change falls more than threshold",
             "type": "basis_points",
-            "ignore": false,
+            "ignore": true,
             "default": 0.36,
             "range": {
               "min": 0.36,
@@ -1007,10 +1007,10 @@
             "description": "Price must be above n-week moving average",
             "type": "weeks",
             "ignore": false,
-            "default": 3.0,
+            "default": 2.0,
             "range": {
-              "min": 3.0,
-              "max": 3.0,
+              "min": 2.0,
+              "max": 2.0,
               "step": 1.0
             }
           },
@@ -1018,10 +1018,10 @@
             "description": "Credit spread must fall this fraction from 4-week peak",
             "type": "percent",
             "ignore": false,
-            "default": 0.018,
+            "default": 0.024,
             "range": {
-              "min": 0.018,
-              "max": 0.018,
+              "min": 0.024,
+              "max": 0.024,
               "step": 0.001
             }
           },
@@ -1040,10 +1040,10 @@
             "description": "Consecutive weeks of declining 10-year yield required",
             "type": "weeks",
             "ignore": true,
-            "default": 2.0,
+            "default": 1.0,
             "range": {
-              "min": 2.0,
-              "max": 2.0,
+              "min": 1.0,
+              "max": 1.0,
               "step": 1.0
             }
           }
