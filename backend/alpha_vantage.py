@@ -51,5 +51,9 @@ class AlphaVantage:
                 f"This may indicate an API rate limit or error response."
             )
         df["date"] = pd.to_datetime(df["timestamp"], format=self.DATE_FMT, errors="coerce").dt.normalize()
-        df = df.drop(columns=["open", "high", "low", "volume", "timestamp", "adjusted close"])  # Keep only relevant columns
+        # Use adjusted close as price — it is split-corrected and continuous across split events.
+        # Raw close has discontinuities at splits (e.g. HYMB 2:1 split Jan 2023: $49.86 → $25.27).
+        # adjusted close absorbs both splits and dividends, so TR is computed from its period returns.
+        df["close"] = pd.to_numeric(df["adjusted close"], errors="coerce")
+        df = df.drop(columns=["open", "high", "low", "volume", "timestamp", "adjusted close", "dividend amount"])
         return df

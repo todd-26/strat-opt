@@ -178,3 +178,7 @@ class AddSecurityRequest(BaseModel):
     ticker: str
     name: str
     template: str  # ticker to copy parameters from
+
+
+class ReorderSecuritiesRequest(BaseModel):
+    tickers: list[str]

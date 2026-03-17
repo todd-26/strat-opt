@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { X, Trash2, RefreshCw } from 'lucide-react'
+import { X, Trash2, RefreshCw, GripVertical } from 'lucide-react'
 import { themes } from '../lib/themes'
 import { NumInput } from './NumInput'
 import type { AppConfig, Settings } from '../types'
@@ -15,10 +15,11 @@ interface Props {
   securities: string[]
   onAddSecurity: (ticker: string, name: string, template: string) => Promise<void>
   onRemoveSecurity: (ticker: string) => Promise<void>
+  onReorderSecurities: (tickers: string[]) => Promise<void>
   onFetchData: (ticker: string) => Promise<void>
 }
 
-export function SettingsSheet({ open, onClose, settings, onUpdate, config, onSaveConfig, ticker, securities, onAddSecurity, onRemoveSecurity, onFetchData }: Props) {
+export function SettingsSheet({ open, onClose, settings, onUpdate, config, onSaveConfig, ticker, securities, onAddSecurity, onRemoveSecurity, onReorderSecurities, onFetchData }: Props) {
   const [localConfig, setLocalConfig] = useState<AppConfig>(config)
   const [saveStatus, setSaveStatus]   = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
 
@@ -30,6 +31,13 @@ export function SettingsSheet({ open, onClose, settings, onUpdate, config, onSav
   const [addTemplate, setAddTemplate]       = useState('')
   const [manageStatus, setManageStatus]     = useState<string | null>(null)
   const [manageError, setManageError]       = useState<string | null>(null)
+
+  // Drag-to-reorder state
+  const [localSecurities, setLocalSecurities] = useState<string[]>(securities)
+  const [dragIdx, setDragIdx]               = useState<number | null>(null)
+  const [dragOverIdx, setDragOverIdx]       = useState<number | null>(null)
+
+  useEffect(() => { setLocalSecurities(securities) }, [securities])
 
   useEffect(() => {
     if (open) {
@@ -43,6 +51,22 @@ export function SettingsSheet({ open, onClose, settings, onUpdate, config, onSav
       setManageError(null)
     }
   }, [open]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  async function handleReorder(toIdx: number) {
+    if (dragIdx === null || dragIdx === toIdx) return
+    const newOrder = [...localSecurities]
+    const [moved] = newOrder.splice(dragIdx, 1)
+    newOrder.splice(toIdx, 0, moved)
+    setLocalSecurities(newOrder)
+    setDragIdx(null)
+    setDragOverIdx(null)
+    try {
+      await onReorderSecurities(newOrder)
+    } catch (e) {
+      setManageError(String(e))
+      setLocalSecurities(securities)
+    }
+  }
 
   // Default template to first security when list loads
   useEffect(() => {
@@ -194,10 +218,26 @@ export function SettingsSheet({ open, onClose, settings, onUpdate, config, onSav
             <div className="space-y-3">
               {/* Existing securities list */}
               <div className="space-y-1">
-                {securities.map((s) => (
-                  <div key={s} className="flex items-center justify-between rounded border px-3 py-2"
-                    style={{ borderColor: 'var(--border)', background: s === ticker ? 'var(--bg-input)' : 'transparent' }}>
-                    <span className="text-sm font-medium">{s}</span>
+                {localSecurities.map((s, i) => (
+                  <div
+                    key={s}
+                    draggable
+                    onDragStart={() => setDragIdx(i)}
+                    onDragOver={(e) => { e.preventDefault(); setDragOverIdx(i) }}
+                    onDrop={(e) => { e.preventDefault(); handleReorder(i) }}
+                    onDragEnd={() => { setDragIdx(null); setDragOverIdx(null) }}
+                    className="flex items-center justify-between rounded border px-2 py-2"
+                    style={{
+                      borderColor: dragOverIdx === i && dragIdx !== i ? 'var(--accent)' : 'var(--border)',
+                      background: s === ticker ? 'var(--bg-input)' : 'transparent',
+                      opacity: dragIdx === i ? 0.4 : 1,
+                      cursor: 'default',
+                    }}
+                  >
+                    <div className="flex items-center gap-1.5">
+                      <GripVertical size={14} style={{ color: 'var(--text-muted)', cursor: 'grab', flexShrink: 0 }} />
+                      <span className="text-sm font-medium">{s}</span>
+                    </div>
                     <div className="flex items-center gap-1">
                       {confirmDelete === s ? (
                         <>
@@ -222,9 +262,9 @@ export function SettingsSheet({ open, onClose, settings, onUpdate, config, onSav
                           </button>
                           <button
                             onClick={() => setConfirmDelete(s)}
-                            disabled={securities.length <= 1}
+                            disabled={localSecurities.length <= 1}
                             className="rounded p-1 hover:opacity-70 disabled:opacity-30 disabled:cursor-not-allowed"
-                            title={securities.length <= 1 ? 'Cannot remove the last security' : `Remove ${s}`}
+                            title={localSecurities.length <= 1 ? 'Cannot remove the last security' : `Remove ${s}`}
                             style={{ color: 'var(--text-muted)' }}
                           >
                             <Trash2 size={14} />

@@ -127,7 +127,8 @@ Backend Pipeline:
 ### Backend Pipeline (backend/)
 
 **Data layer** (`data_loader.py`, `data_source.py`, `alpha_vantage.py`, `fred.py`):
-- `WeeklyDataLoader` loads weekly prices/dividends, FRED daily spreads, and FRED daily treasury yields (DGS10, DGS2); resamples all FRED series to weekly (W-FRI); merges via two `merge_asof` calls; computes total return factor (`TR_factor`, `TR`) and `YieldCurve = DGS10 - DGS2`
+- `WeeklyDataLoader` loads weekly prices, FRED daily spreads, and FRED daily treasury yields (DGS10, DGS2); resamples all FRED series to weekly (W-FRI); merges via two `merge_asof` calls; computes total return factor (`TR_factor`, `TR`) and `YieldCurve = DGS10 - DGS2`
+- **Price series uses `adjusted close`** (not raw close): split-corrected and continuous across split events (e.g. HYMB 2:1 split Jan 2023). `TR_factor = adj_close / adj_close_prev` — dividends are already embedded in adj_close, so no separate dividend addition. Raw `close` and `dividend amount` columns are discarded in `alpha_vantage.py`.
 - After merging, `load()` caps the result at `min(spread_df["date"].max(), treasury_df["date"].max())` — prevents `merge_asof` from silently carrying stale FRED values into price rows newer than the latest FRED data
 - `Fred.get_data()` auto-saves `['date', 'value']` to `inputs/{series_id}.csv` on cache miss (fresh API call); `observation_start` set to `'2000-01-01'` for full history
 - `ApiSource` exposes `from_cache: bool` so callers can detect whether data came from cache or a live fetch
@@ -165,6 +166,7 @@ Backend Pipeline:
 FastAPI server with endpoints:
 - `GET /api/securities` — Returns available tickers; raises HTTP 500 if config missing/invalid or no securities defined
 - `POST /api/securities` — Adds a new security (body: `AddSecurityRequest{ticker, name, template}`); validates ticker format (1–10 uppercase letters), auto-fetches CSV from Alpha Vantage if not already present, clones parameters from template ticker
+- `POST /api/securities/reorder` — Accepts `{tickers: string[]}` and rewrites `securities_config.json` with keys in the given order; Python dict insertion order preserves the sequence for all subsequent reads
 - `POST /api/securities/{ticker}/fetch-data` — Fetches/overwrites CSV data for an existing security from Alpha Vantage
 - `DELETE /api/securities/{ticker}` — Removes a security; blocks (HTTP 400) if it is the last one
 - `GET /api/date-range` — Returns `{ min, max }` date strings for a ticker's data; errors include response body text
