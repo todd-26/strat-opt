@@ -257,9 +257,6 @@ export function SettingsSheet({ open, onClose, settings, onUpdate, config, onSav
                     {securities.map((s) => <option key={s} value={s}>{s}</option>)}
                   </select>
                 </div>
-                <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                  CSV must exist at <code>inputs/{'{ticker}'.toLowerCase()}-weekly-adjusted.csv</code> before adding.
-                </p>
                 <button onClick={handleAdd}
                   className="w-full rounded px-3 py-1.5 text-sm font-semibold"
                   style={{ background: 'var(--accent)', color: 'var(--accent-text)' }}>
