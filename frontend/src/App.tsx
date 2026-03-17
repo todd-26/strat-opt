@@ -206,13 +206,13 @@ export default function App() {
           <p className="text-sm" style={{ color: 'var(--text-muted)' }}>Loading…</p>
         )}
         {config && defaultRanges && activeTab === 'optimizer' && (
-          <OptimizerTab key={ticker} settings={settings} ticker={ticker} defaultRanges={defaultRanges} paramDescriptions={paramDescriptions} startDate={startDate} endDate={endDate} cashRate={config.cash_rate} startInvested={config.start_invested} defaultDisabledFactors={defaultDisabledFactors} />
+          <OptimizerTab key={ticker} settings={settings} ticker={ticker} defaultRanges={defaultRanges} paramDescriptions={paramDescriptions} startDate={startDate} endDate={endDate} cashRate={config.cash_rate} startInvested={config.start_invested} defaultDisabledFactors={defaultDisabledFactors} config={config} onSaveConfig={handleSaveConfig} />
         )}
         {config && activeTab === 'buyhold' && (
           <BuyHoldTab key={ticker} settings={settings} ticker={ticker} startDate={startDate} endDate={endDate} cashRate={config.cash_rate} />
         )}
         {config && activeTab === 'signal' && defaultStrategyParams && (
-          <SignalTab key={ticker} settings={settings} ticker={ticker} defaultParams={defaultStrategyParams} paramDescriptions={paramDescriptions} startDate={startDate} endDate={endDate} cashRate={config.cash_rate} startInvested={config.start_invested} defaultDisabledFactors={defaultDisabledFactors} />
+          <SignalTab key={ticker} settings={settings} ticker={ticker} defaultParams={defaultStrategyParams} paramDescriptions={paramDescriptions} startDate={startDate} endDate={endDate} cashRate={config.cash_rate} startInvested={config.start_invested} defaultDisabledFactors={defaultDisabledFactors} config={config} onSaveConfig={handleSaveConfig} />
         )}
         {activeTab === 'signals' && (
           <SignalsTab securities={securities} settings={settings} />

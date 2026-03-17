@@ -6,8 +6,8 @@ import { OptimizerTable } from '../OptimizerTable'
 import { EquityCurveChart } from '../EquityCurveChart'
 import { MetricsCard } from '../MetricsCard'
 import { NumInput } from '../NumInput'
-import type { Settings, StrategyParams, BacktestResult } from '../../types'
-import { streamOptimizer, runBuyHold } from '../../lib/api'
+import type { Settings, StrategyParams, BacktestResult, AppConfig } from '../../types'
+import { streamOptimizer, runBuyHold, saveConfig } from '../../lib/api'
 
 interface Props {
   settings: Settings
@@ -19,26 +19,74 @@ interface Props {
   startDate?: string
   endDate?: string
   defaultDisabledFactors?: string[]
+  config: AppConfig
+  onSaveConfig: (config: AppConfig) => Promise<void>
 }
 
-export function OptimizerTab({ settings, ticker, defaultRanges, paramDescriptions, cashRate: cashRateProp, startInvested: startInvestedProp, startDate, endDate, defaultDisabledFactors }: Props) {
+function setsEqual(a: Set<string>, b: Set<string>) {
+  return a.size === b.size && [...a].every(v => b.has(v))
+}
+
+function rangesEqual(a: ParamRanges, b: ParamRanges) {
+  return (Object.keys(a) as (keyof ParamRanges)[]).every(
+    k => a[k].min === b[k].min && a[k].max === b[k].max && a[k].step === b[k].step
+  )
+}
+
+export function OptimizerTab({ settings, ticker, defaultRanges, paramDescriptions, cashRate: cashRateProp, startInvested: startInvestedProp, startDate, endDate, defaultDisabledFactors, config, onSaveConfig }: Props) {
   const { result, progress, loading, error, run, cancel } = useOptimizer()
   const [ranges, setRanges]           = useState<ParamRanges>(defaultRanges)
   const [inputType, setInputType]     = useState(settings.inputType)
   const [cashRate, setCashRate]       = useState(cashRateProp)
   const [startInvested, setStartInvested] = useState<0 | 1>(startInvestedProp)
-
-  useEffect(() => {
-    setCashRate(cashRateProp)
-    setStartInvested(startInvestedProp)
-  }, [cashRateProp, startInvestedProp])
-
-  useEffect(() => { setRanges(defaultRanges) }, [defaultRanges])
-
   const [collapsed, setCollapsed]         = useState(false)
   const [disabledFactors, setDisabledFactors] = useState<Set<string>>(new Set(defaultDisabledFactors ?? []))
+  const [saveStatus, setSaveStatus]   = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
 
-  useEffect(() => { setDisabledFactors(new Set(defaultDisabledFactors ?? [])) }, [defaultDisabledFactors])
+  const hasChanges =
+    cashRate !== cashRateProp ||
+    startInvested !== startInvestedProp ||
+    !setsEqual(disabledFactors, new Set(defaultDisabledFactors ?? [])) ||
+    !rangesEqual(ranges, defaultRanges)
+
+  function handleResetFromSettings() {
+    setRanges(defaultRanges)
+    setDisabledFactors(new Set(defaultDisabledFactors ?? []))
+    setCashRate(cashRateProp)
+    setStartInvested(startInvestedProp)
+  }
+
+  async function handleSaveToSettings() {
+    setSaveStatus('saving')
+    try {
+      const updated: AppConfig = {
+        ...config,
+        cash_rate: cashRate,
+        start_invested: startInvested,
+        sell_triggers: {
+          CHG4:         { ...config.sell_triggers.CHG4,         range: ranges.CHG4,         ignore: disabledFactors.has('CHG4') },
+          RET3:         { ...config.sell_triggers.RET3,         range: ranges.RET3,         ignore: disabledFactors.has('RET3') },
+          SPREAD_LVL:   { ...config.sell_triggers.SPREAD_LVL,   range: ranges.SPREAD_LVL,   ignore: disabledFactors.has('SPREAD_LVL') },
+          YIELD10_CHG4: { ...config.sell_triggers.YIELD10_CHG4, range: ranges.YIELD10_CHG4, ignore: disabledFactors.has('YIELD10_CHG4') },
+          YIELD2_CHG4:  { ...config.sell_triggers.YIELD2_CHG4,  range: ranges.YIELD2_CHG4,  ignore: disabledFactors.has('YIELD2_CHG4') },
+          CURVE_CHG4:   { ...config.sell_triggers.CURVE_CHG4,   range: ranges.CURVE_CHG4,   ignore: disabledFactors.has('CURVE_CHG4') },
+        },
+        buy_conditions: {
+          MA:           { ...config.buy_conditions.MA,           range: ranges.MA,           ignore: disabledFactors.has('MA') },
+          DROP:         { ...config.buy_conditions.DROP,         range: ranges.DROP,         ignore: disabledFactors.has('DROP') },
+          SPREAD_DELTA: { ...config.buy_conditions.SPREAD_DELTA, range: ranges.SPREAD_DELTA, ignore: disabledFactors.has('SPREAD_DELTA') },
+          YIELD10_DELTA:{ ...config.buy_conditions.YIELD10_DELTA,range: ranges.YIELD10_DELTA,ignore: disabledFactors.has('YIELD10_DELTA') },
+        },
+      }
+      await onSaveConfig(updated)
+      setSaveStatus('saved')
+      setTimeout(() => setSaveStatus('idle'), 2000)
+    } catch {
+      setSaveStatus('error')
+      setTimeout(() => setSaveStatus('idle'), 3000)
+    }
+  }
+
   function toggleFactor(f: string) {
     setDisabledFactors(prev => { const n = new Set(prev); n.has(f) ? n.delete(f) : n.add(f); return n })
   }
@@ -208,6 +256,33 @@ export function OptimizerTab({ settings, ticker, defaultRanges, paramDescription
           ) : (
             <button onClick={handleRun} className="rounded px-4 py-2 text-sm font-semibold" style={{ background: 'var(--accent)', color: 'var(--accent-text)' }}>Run Backtester</button>
           )}
+
+          <div className="ml-auto flex gap-2">
+            <button
+              onClick={handleResetFromSettings}
+              disabled={!hasChanges}
+              className="rounded px-3 py-1.5 text-sm disabled:opacity-40"
+              style={hasChanges
+                ? { background: 'var(--accent)', color: 'var(--accent-text)' }
+                : { background: 'var(--bg-input)', color: 'var(--text-muted)', border: '1px solid var(--border)' }}
+            >
+              Reset from Settings
+            </button>
+            <button
+              onClick={handleSaveToSettings}
+              disabled={!hasChanges || saveStatus === 'saving'}
+              className="rounded px-3 py-1.5 text-sm disabled:opacity-40"
+              style={saveStatus === 'error'
+                ? { background: 'var(--sell)', color: '#fff' }
+                : saveStatus === 'saved'
+                ? { background: 'var(--buy)', color: '#fff' }
+                : hasChanges
+                ? { background: 'var(--accent)', color: 'var(--accent-text)' }
+                : { background: 'var(--bg-input)', color: 'var(--text-muted)', border: '1px solid var(--border)' }}
+            >
+              {saveStatus === 'saving' ? 'Saving…' : saveStatus === 'saved' ? 'Saved!' : saveStatus === 'error' ? 'Error' : 'Save to Settings'}
+            </button>
+          </div>
         </div>
       </div>
 

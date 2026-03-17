@@ -192,6 +192,8 @@ Key features:
 - Recharts for visualization
 - Global date range picker in `Header.tsx` (From/To); filters data for Backtester, Buy & Hold, and Current Signal tabs; hidden on Signals tab via `hideDates` prop; not persisted
 - Factor disable checkboxes in ParameterPanel (both single and range modes); disabled factors are skipped in strategy evaluation and backtester grid iteration
+- **Settings isolation**: Opening/saving Settings does NOT reset Backtester or Current Signal tab state. Tabs initialize from config on mount; `key={ticker}` remount handles ticker changes. Prop-syncing `useEffect` hooks were removed from both `OptimizerTab` and `SignalTab`. Each tab has "Reset from Settings" and "Save to Settings" buttons — both styled accent and enabled only when the tab's current values differ from saved defaults (`hasChanges`); muted and disabled otherwise. Both tabs accept `config: AppConfig` and `onSaveConfig` props.
+- **Settings "Save Permanently"** button is also only active (accent) when `localConfig` differs from the `config` prop (`hasChanges = JSON.stringify(localConfig) !== JSON.stringify(config)`).
 - Trade history table has 13 columns (Date, Action, Price, MA, Spread, Drop, chg4, ret3, Δspread, Δ10yr%, Δ2yr%, ΔCurve, Δyield10); triggered values are bolded per trade action with clickable popups showing derivations
 
 ## Trading Logic

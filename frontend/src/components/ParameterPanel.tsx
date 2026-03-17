@@ -266,7 +266,12 @@ function Field({
         step={step}
         disabled={disabled}
         onFocus={() => setEditing(true)}
-        onChange={(e) => { setEditing(true); setLocal(e.target.value) }}
+        onChange={(e) => {
+          setEditing(true)
+          setLocal(e.target.value)
+          const n = parseFloat(e.target.value)
+          if (!isNaN(n)) onChange(String(n))
+        }}
         onBlur={commit}
         onKeyDown={(e) => { if (e.key === 'Enter') commit() }}
         className="w-full rounded border px-2 py-1.5 text-sm disabled:opacity-50"

@@ -41,7 +41,12 @@ export function NumInput({
       value={editing.current ? local : String(value)}
       step={step}
       onFocus={() => { editing.current = true }}
-      onChange={(e) => { editing.current = true; setLocal(e.target.value) }}
+      onChange={(e) => {
+        editing.current = true
+        setLocal(e.target.value)
+        const n = parseFloat(e.target.value)
+        if (!isNaN(n)) onChange(n)
+      }}
       onBlur={commit}
       onKeyDown={(e) => { if (e.key === 'Enter') commit() }}
       className={className}
