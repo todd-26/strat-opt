@@ -73,7 +73,6 @@ export function ParameterPanel(props: Props) {
 // ── Single form ─────────────────────────────────────────────────────────────
 
 const SINGLE_FIELDS: { key: keyof StrategyParams; factor: string; label: string; step: string }[] = [
-  { key: 'SPREAD_LVL', factor: 'SPREAD_LVL', label: 'SPREAD_LVL',       step: '0.5'    },
   { key: 'CHG4',       factor: 'CHG4',       label: 'CHG4',             step: '0.001'  },
   { key: 'RET3',       factor: 'RET3',       label: 'RET3',             step: '0.0005' },
   { key: 'YIELD10_CHG4', factor: 'YIELD10_CHG4', label: 'YIELD10_CHG4',      step: '0.01'   },
@@ -85,7 +84,7 @@ const SINGLE_FIELDS: { key: keyof StrategyParams; factor: string; label: string;
   { key: 'YIELD10_DELTA', factor: 'YIELD10_DELTA', label: 'Δyield10 (weeks)',step: '1'     },
 ]
 
-const SELL_FACTORS  = ['SPREAD_LVL', 'CHG4', 'RET3', 'YIELD10_CHG4', 'YIELD2_CHG4', 'CURVE_CHG4']
+const SELL_FACTORS  = ['CHG4', 'RET3', 'YIELD10_CHG4', 'YIELD2_CHG4', 'CURVE_CHG4']
 const BUY_FACTORS   = ['MA', 'DROP', 'SPREAD_DELTA', 'YIELD10_DELTA']
 
 function SingleForm({
@@ -149,7 +148,6 @@ const PARAM_LABELS: Record<keyof ParamRanges, string> = {
   DROP:        'DROP',
   CHG4:        'CHG4',
   RET3:        'RET3',
-  SPREAD_LVL:  'SPREAD_LVL',
   YIELD10_CHG4:  'YIELD10_CHG4',
   YIELD2_CHG4:   'YIELD2_CHG4',
   CURVE_CHG4:  'CURVE_CHG4',
@@ -157,7 +155,7 @@ const PARAM_LABELS: Record<keyof ParamRanges, string> = {
   YIELD10_DELTA: 'Δyield10 (weeks)',
 }
 
-const RANGE_SELL_KEYS: (keyof ParamRanges)[] = ['SPREAD_LVL', 'CHG4', 'RET3', 'YIELD10_CHG4', 'YIELD2_CHG4', 'CURVE_CHG4']
+const RANGE_SELL_KEYS: (keyof ParamRanges)[] = ['CHG4', 'RET3', 'YIELD10_CHG4', 'YIELD2_CHG4', 'CURVE_CHG4']
 const RANGE_BUY_KEYS:  (keyof ParamRanges)[] = ['MA', 'DROP', 'SPREAD_DELTA', 'YIELD10_DELTA']
 
 function RangeForm({

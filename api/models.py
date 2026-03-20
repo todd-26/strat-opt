@@ -7,7 +7,6 @@ class StrategyParams(BaseModel):
     DROP: float
     CHG4: float
     RET3: float
-    SPREAD_LVL: float
     YIELD10_CHG4: float
     YIELD2_CHG4: float
     CURVE_CHG4: float
@@ -40,7 +39,6 @@ class OptimizerRequest(BaseModel):
     DROP: list[float]
     CHG4: list[float]
     RET3: list[float]
-    SPREAD_LVL: list[float]
     YIELD10_CHG4: list[float]
     YIELD2_CHG4: list[float]
     CURVE_CHG4: list[float]
@@ -100,7 +98,6 @@ class OptimizerResultRow(BaseModel):
     DROP: float
     CHG4: float
     RET3: float
-    SPREAD_LVL: float
     YIELD10_CHG4: float
     YIELD2_CHG4: float
     CURVE_CHG4: float

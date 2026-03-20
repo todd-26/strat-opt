@@ -8,7 +8,6 @@ All securities in SignalVane use the same `GenericStrategy` driven by `api/secur
 
 | Parameter | What it measures | Trigger condition |
 |-----------|-----------------|-------------------|
-| **SPREAD_LVL** | Absolute level of the credit spread | `spread > SPREAD_LVL` — spread is above threshold, risk too high |
 | **CHG4** | 4-week % change in credit spread (`chg4`) | `chg4 > CHG4` — spread has risen too much over 4 weeks |
 | **RET3** | 3-week price return (`ret3`) | `ret3 < RET3` — price has dropped too much over 3 weeks (RET3 is negative) |
 | **YIELD10_CHG4** | 4-week % change in 10yr Treasury yield | `yield10_chg4 > YIELD10_CHG4` — 10yr yield rose too much over 4 weeks |

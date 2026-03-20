@@ -3,7 +3,6 @@ export interface StrategyParams {
   DROP: number
   CHG4: number
   RET3: number
-  SPREAD_LVL: number
   YIELD10_CHG4: number
   YIELD2_CHG4: number
   CURVE_CHG4: number
@@ -54,7 +53,6 @@ export interface OptimizerResultRow {
   DROP: number
   CHG4: number
   RET3: number
-  SPREAD_LVL: number
   YIELD10_CHG4: number
   YIELD2_CHG4: number
   CURVE_CHG4: number
@@ -107,7 +105,6 @@ export interface OptimizerRequest {
   DROP: number[]
   CHG4: number[]
   RET3: number[]
-  SPREAD_LVL: number[]
   YIELD10_CHG4: number[]
   YIELD2_CHG4: number[]
   CURVE_CHG4: number[]
@@ -121,7 +118,7 @@ export interface OptimizerRequest {
   disabled_factors?: string[]
 }
 
-export type OptimizerGrids = Pick<OptimizerRequest, 'MA' | 'DROP' | 'CHG4' | 'RET3' | 'SPREAD_LVL' | 'YIELD10_CHG4' | 'YIELD2_CHG4' | 'CURVE_CHG4' | 'SPREAD_DELTA' | 'YIELD10_DELTA'>
+export type OptimizerGrids = Pick<OptimizerRequest, 'MA' | 'DROP' | 'CHG4' | 'RET3' | 'YIELD10_CHG4' | 'YIELD2_CHG4' | 'CURVE_CHG4' | 'SPREAD_DELTA' | 'YIELD10_DELTA'>
 
 export interface ParamRange { min: number; max: number; step: number }
 
@@ -131,7 +128,6 @@ export interface ParamRanges {
   DROP: ParamRange
   CHG4: ParamRange
   RET3: ParamRange
-  SPREAD_LVL: ParamRange
   YIELD10_CHG4: ParamRange
   YIELD2_CHG4: ParamRange
   CURVE_CHG4: ParamRange
@@ -155,7 +151,6 @@ export interface AppConfig {
   sell_triggers: {
     CHG4: ParamConfig
     RET3: ParamConfig
-    SPREAD_LVL: ParamConfig
     YIELD10_CHG4: ParamConfig
     YIELD2_CHG4: ParamConfig
     CURVE_CHG4: ParamConfig

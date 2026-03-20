@@ -66,7 +66,6 @@ export function OptimizerTab({ settings, ticker, defaultRanges, paramDescription
         sell_triggers: {
           CHG4:         { ...config.sell_triggers.CHG4,         range: ranges.CHG4,         ignore: disabledFactors.has('CHG4') },
           RET3:         { ...config.sell_triggers.RET3,         range: ranges.RET3,         ignore: disabledFactors.has('RET3') },
-          SPREAD_LVL:   { ...config.sell_triggers.SPREAD_LVL,   range: ranges.SPREAD_LVL,   ignore: disabledFactors.has('SPREAD_LVL') },
           YIELD10_CHG4: { ...config.sell_triggers.YIELD10_CHG4, range: ranges.YIELD10_CHG4, ignore: disabledFactors.has('YIELD10_CHG4') },
           YIELD2_CHG4:  { ...config.sell_triggers.YIELD2_CHG4,  range: ranges.YIELD2_CHG4,  ignore: disabledFactors.has('YIELD2_CHG4') },
           CURVE_CHG4:   { ...config.sell_triggers.CURVE_CHG4,   range: ranges.CURVE_CHG4,   ignore: disabledFactors.has('CURVE_CHG4') },
@@ -120,7 +119,6 @@ export function OptimizerTab({ settings, ticker, defaultRanges, paramDescription
       DROP:        disabledFactors.has('DROP')        ? [0] : rangeToArray(ranges.DROP),
       CHG4:        disabledFactors.has('CHG4')        ? [0] : rangeToArray(ranges.CHG4),
       RET3:        disabledFactors.has('RET3')        ? [0] : rangeToArray(ranges.RET3),
-      SPREAD_LVL:  disabledFactors.has('SPREAD_LVL') ? [0] : rangeToArray(ranges.SPREAD_LVL),
       YIELD10_CHG4:  disabledFactors.has('YIELD10_CHG4') ? [0] : rangeToArray(ranges.YIELD10_CHG4),
       YIELD2_CHG4:   disabledFactors.has('YIELD2_CHG4')  ? [0] : rangeToArray(ranges.YIELD2_CHG4),
       CURVE_CHG4:  disabledFactors.has('CURVE_CHG4') ? [0] : rangeToArray(ranges.CURVE_CHG4),
@@ -141,7 +139,7 @@ export function OptimizerTab({ settings, ticker, defaultRanges, paramDescription
 
   function paramsEqual(a: StrategyParams, b: StrategyParams) {
     return a.MA === b.MA && a.DROP === b.DROP && a.CHG4 === b.CHG4 && a.RET3 === b.RET3 &&
-      a.SPREAD_LVL === b.SPREAD_LVL && a.YIELD10_CHG4 === b.YIELD10_CHG4 &&
+      a.YIELD10_CHG4 === b.YIELD10_CHG4 &&
       a.YIELD2_CHG4 === b.YIELD2_CHG4 && a.CURVE_CHG4 === b.CURVE_CHG4 &&
       a.SPREAD_DELTA === b.SPREAD_DELTA && a.YIELD10_DELTA === b.YIELD10_DELTA
   }
@@ -172,7 +170,6 @@ export function OptimizerTab({ settings, ticker, defaultRanges, paramDescription
             DROP:        [params.DROP],
             CHG4:        [params.CHG4],
             RET3:        [params.RET3],
-            SPREAD_LVL:  [params.SPREAD_LVL],
             YIELD10_CHG4:  [params.YIELD10_CHG4],
             YIELD2_CHG4:   [params.YIELD2_CHG4],
             CURVE_CHG4:  [params.CURVE_CHG4],
