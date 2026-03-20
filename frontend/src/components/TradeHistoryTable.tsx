@@ -26,7 +26,6 @@ function fmtPct(v: number | null | undefined): string {
 }
 
 const COL_FACTOR_MAP: Partial<Record<keyof TradeEvent, string>> = {
-  spread: 'SPREAD_LVL',
   chg4: 'CHG4',
   ret3: 'RET3',
   price: 'MA',
@@ -44,7 +43,6 @@ function isBoldCell(t: TradeEvent, col: keyof TradeEvent, params?: StrategyParam
   const factor = COL_FACTOR_MAP[col]
   if (factor && disabledFactors?.has(factor)) return false
   if (t.action === 'SELL') {
-    if (col === 'spread')       return t.spread != null && t.spread > params.SPREAD_LVL
     if (col === 'chg4')         return t.chg4 != null && t.chg4 > params.CHG4
     if (col === 'ret3')         return t.ret3 != null && t.ret3 < params.RET3
     if (col === 'yield10_chg4') return t.yield10_chg4 != null && t.yield10_chg4 > params.YIELD10_CHG4
@@ -64,14 +62,6 @@ function getPopup(t: TradeEvent, col: keyof TradeEvent, params: StrategyParams, 
   const factor = COL_FACTOR_MAP[col]
   if (factor && disabledFactors?.has(factor)) return null
   if (t.action === 'SELL') {
-    if (col === 'spread') return {
-      title: 'Sell Rule: Spread Level',
-      lines: [
-        `Spread:     ${fmt(t.spread, 2)}`,
-        `Threshold:  ${fmt(params.SPREAD_LVL, 2)}`,
-        `${fmt(t.spread, 2)} > ${fmt(params.SPREAD_LVL, 2)}  →  sell triggered`,
-      ],
-    }
     if (col === 'chg4') {
       const lines = [
         `4-wk change:  ${fmtPct(t.chg4)}`,
@@ -216,7 +206,7 @@ export function TradeHistoryTable({ trades, params, disabledFactors }: Props) {
               <Th>Action</Th>
               <Th tooltip="Closing price at trade date. Bold on BUY: close must be above MA.">Price</Th>
               <Th tooltip="n-week moving average of close price. Bold on BUY: close must be above MA.">MA</Th>
-              <Th tooltip="Credit spread at trade date. Sell rule: triggers if spread > SPREAD_LVL threshold.">Spread</Th>
+              <Th tooltip="Credit spread at trade date.">Spread</Th>
               <Th tooltip="% drop from 4-week spread peak. Buy rule: must drop at least DROP threshold.">Drop</Th>
               <Th tooltip={`4-week % change in credit spread (BAMLH0A0HYM2). Sell rule: triggers if chg4 > ${params?.CHG4 ?? 'CHG4'} threshold.`}>chg4</Th>
               <Th tooltip="3-week price return. Sell rule: triggers if ret3 < RET3 threshold.">ret3</Th>

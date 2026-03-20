@@ -57,17 +57,6 @@
               "step": 0.0025
             }
           },
-          "SPREAD_LVL": {
-            "description": "Sell if credit spread exceeds absolute level",
-            "type": "absolute",
-            "ignore": true,
-            "default": 7.0,
-            "range": {
-              "min": 7.0,
-              "max": 7.0,
-              "step": 0.5
-            }
-          },
           "YIELD10_CHG4": {
             "description": "Sell if 10-year yield 4-week change exceeds threshold",
             "type": "percent",
@@ -205,17 +194,6 @@
               "min": -0.018,
               "max": -0.018,
               "step": 0.002
-            }
-          },
-          "SPREAD_LVL": {
-            "description": "Sell if credit spread exceeds absolute level",
-            "type": "absolute",
-            "ignore": true,
-            "default": 4.2,
-            "range": {
-              "min": 4.2,
-              "max": 4.2,
-              "step": 0.2
             }
           },
           "YIELD10_CHG4": {
@@ -357,17 +335,6 @@
               "step": 0.001
             }
           },
-          "SPREAD_LVL": {
-            "description": "Sell if credit spread exceeds absolute level",
-            "type": "absolute",
-            "ignore": true,
-            "default": 7.0,
-            "range": {
-              "min": 7.0,
-              "max": 7.0,
-              "step": 0.5
-            }
-          },
           "YIELD10_CHG4": {
             "description": "Sell if 10-year yield 4-week change exceeds threshold",
             "type": "percent",
@@ -505,17 +472,6 @@
               "min": -0.0225,
               "max": -0.0225,
               "step": 0.0025
-            }
-          },
-          "SPREAD_LVL": {
-            "description": "Sell if credit spread exceeds absolute level",
-            "type": "absolute",
-            "ignore": true,
-            "default": 7.0,
-            "range": {
-              "min": 7.0,
-              "max": 7.0,
-              "step": 0.5
             }
           },
           "YIELD10_CHG4": {
@@ -657,17 +613,6 @@
               "step": 0.002
             }
           },
-          "SPREAD_LVL": {
-            "description": "Sell if credit spread exceeds absolute level",
-            "type": "absolute",
-            "ignore": true,
-            "default": 4.2,
-            "range": {
-              "min": 4.2,
-              "max": 4.2,
-              "step": 0.2
-            }
-          },
           "YIELD10_CHG4": {
             "description": "Sell if 10-year yield 4-week change exceeds threshold",
             "type": "percent",
@@ -807,17 +752,6 @@
               "step": 0.001
             }
           },
-          "SPREAD_LVL": {
-            "description": "Sell if credit spread exceeds absolute level",
-            "type": "absolute",
-            "ignore": true,
-            "default": 7.0,
-            "range": {
-              "min": 7.0,
-              "max": 7.0,
-              "step": 0.5
-            }
-          },
           "YIELD10_CHG4": {
             "description": "Sell if 10-year yield 4-week change exceeds threshold",
             "type": "percent",
@@ -955,17 +889,6 @@
               "min": -0.018,
               "max": -0.018,
               "step": 0.002
-            }
-          },
-          "SPREAD_LVL": {
-            "description": "Sell if credit spread exceeds absolute level",
-            "type": "absolute",
-            "ignore": true,
-            "default": 4.2,
-            "range": {
-              "min": 4.2,
-              "max": 4.2,
-              "step": 0.2
             }
           },
           "YIELD10_CHG4": {

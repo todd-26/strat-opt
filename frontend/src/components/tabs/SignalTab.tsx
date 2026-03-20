@@ -64,7 +64,6 @@ export function SignalTab({ settings, ticker, defaultParams, paramDescriptions, 
         sell_triggers: {
           CHG4:         { ...config.sell_triggers.CHG4,         default: params.CHG4,         ignore: disabledFactors.has('CHG4') },
           RET3:         { ...config.sell_triggers.RET3,         default: params.RET3,         ignore: disabledFactors.has('RET3') },
-          SPREAD_LVL:   { ...config.sell_triggers.SPREAD_LVL,   default: params.SPREAD_LVL,   ignore: disabledFactors.has('SPREAD_LVL') },
           YIELD10_CHG4: { ...config.sell_triggers.YIELD10_CHG4, default: params.YIELD10_CHG4, ignore: disabledFactors.has('YIELD10_CHG4') },
           YIELD2_CHG4:  { ...config.sell_triggers.YIELD2_CHG4,  default: params.YIELD2_CHG4,  ignore: disabledFactors.has('YIELD2_CHG4') },
           CURVE_CHG4:   { ...config.sell_triggers.CURVE_CHG4,   default: params.CURVE_CHG4,   ignore: disabledFactors.has('CURVE_CHG4') },
@@ -269,7 +268,6 @@ export function SignalTab({ settings, ticker, defaultParams, paramDescriptions, 
 
               <div className="mb-1 text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>Sell — trigger if ANY true</div>
               <dl className="mb-4 space-y-1.5 text-sm">
-                <ThresholdRow label="Spread"    value={result.metrics.spread}       disabled={disabledFactors.has('SPREAD_LVL')} />
                 <ThresholdRow label="chg4"      value={result.metrics.chg4}          disabled={disabledFactors.has('CHG4')} pct />
                 <ThresholdRow label="ret3"      value={result.metrics.ret3}          disabled={disabledFactors.has('RET3')} pct />
                 <ThresholdRow label="10yr chg4" value={result.metrics.yield10_chg4}  disabled={disabledFactors.has('YIELD10_CHG4')} pct />

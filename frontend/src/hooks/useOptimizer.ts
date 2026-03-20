@@ -35,7 +35,6 @@ export function useOptimizer() {
       DROP: grids.DROP,
       CHG4: grids.CHG4,
       RET3: grids.RET3,
-      SPREAD_LVL: grids.SPREAD_LVL,
       YIELD10_CHG4: grids.YIELD10_CHG4,
       YIELD2_CHG4: grids.YIELD2_CHG4,
       CURVE_CHG4: grids.CURVE_CHG4,

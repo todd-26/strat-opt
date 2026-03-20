@@ -7,7 +7,7 @@ from indicators import IndicatorEngine
 from backtester import Backtester
 from strategy_generic import GenericStrategy
 
-PARAM_NAMES = ['MA', 'DROP', 'CHG4', 'RET3', 'SPREAD_LVL', 'YIELD10_CHG4', 'YIELD2_CHG4', 'CURVE_CHG4', 'SPREAD_DELTA', 'YIELD10_DELTA']
+PARAM_NAMES = ['MA', 'DROP', 'CHG4', 'RET3', 'YIELD10_CHG4', 'YIELD2_CHG4', 'CURVE_CHG4', 'SPREAD_DELTA', 'YIELD10_DELTA']
 INT_PARAMS  = {'MA', 'SPREAD_DELTA', 'YIELD10_DELTA'}
 
 
@@ -33,7 +33,6 @@ class GenericOptimizer:
             'DROP':        [0.016],
             'CHG4':        [0.16],
             'RET3':        [-0.0225],
-            'SPREAD_LVL':  [7.0],
             'YIELD10_CHG4':  [0.12],
             'YIELD2_CHG4':   [0.10],
             'CURVE_CHG4':  [0.30],

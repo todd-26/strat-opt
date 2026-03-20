@@ -85,7 +85,6 @@ export function SignalsTab({ securities, settings }: Props) {
           DROP:         config.buy_conditions.DROP.default,
           CHG4:         config.sell_triggers.CHG4.default,
           RET3:         config.sell_triggers.RET3.default,
-          SPREAD_LVL:   config.sell_triggers.SPREAD_LVL.default,
           YIELD10_CHG4: config.sell_triggers.YIELD10_CHG4.default,
           YIELD2_CHG4:  config.sell_triggers.YIELD2_CHG4.default,
           CURVE_CHG4:   config.sell_triggers.CURVE_CHG4.default,

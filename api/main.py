@@ -372,7 +372,7 @@ def run_signal(req: SignalRequest):
     strat = GenericStrategy(
         params={
             'MA': p.MA, 'DROP': p.DROP, 'CHG4': p.CHG4, 'RET3': p.RET3,
-            'SPREAD_LVL': p.SPREAD_LVL, 'YIELD10_CHG4': p.YIELD10_CHG4,
+            'YIELD10_CHG4': p.YIELD10_CHG4,
             'YIELD2_CHG4': p.YIELD2_CHG4, 'CURVE_CHG4': p.CURVE_CHG4,
             'SPREAD_DELTA': p.SPREAD_DELTA, 'YIELD10_DELTA': p.YIELD10_DELTA,
         },
@@ -464,7 +464,7 @@ async def run_optimizer(req: OptimizerRequest):
             try:
                 param_grids = {
                     'MA': req.MA, 'DROP': req.DROP, 'CHG4': req.CHG4,
-                    'RET3': req.RET3, 'SPREAD_LVL': req.SPREAD_LVL,
+                    'RET3': req.RET3,
                     'YIELD10_CHG4': req.YIELD10_CHG4, 'YIELD2_CHG4': req.YIELD2_CHG4,
                     'CURVE_CHG4': req.CURVE_CHG4, 'SPREAD_DELTA': req.SPREAD_DELTA,
                     'YIELD10_DELTA': req.YIELD10_DELTA,
@@ -518,7 +518,6 @@ async def run_optimizer(req: OptimizerRequest):
                         DROP=float(best_params["DROP"]),
                         CHG4=float(best_params["CHG4"]),
                         RET3=float(best_params["RET3"]),
-                        SPREAD_LVL=float(best_params["SPREAD_LVL"]),
                         YIELD10_CHG4=float(best_params["YIELD10_CHG4"]),
                         YIELD2_CHG4=float(best_params["YIELD2_CHG4"]),
                         CURVE_CHG4=float(best_params["CURVE_CHG4"]),
@@ -532,7 +531,6 @@ async def run_optimizer(req: OptimizerRequest):
                             DROP=float(row["DROP"]),
                             CHG4=float(row["CHG4"]),
                             RET3=float(row["RET3"]),
-                            SPREAD_LVL=float(row["SPREAD_LVL"]),
                             YIELD10_CHG4=float(row["YIELD10_CHG4"]),
                             YIELD2_CHG4=float(row["YIELD2_CHG4"]),
                             CURVE_CHG4=float(row["CURVE_CHG4"]),

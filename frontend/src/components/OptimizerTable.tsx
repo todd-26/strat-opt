@@ -20,11 +20,11 @@ interface Props {
 }
 
 function toParams(row: OptimizerResultRow): StrategyParams {
-  return { MA: row.MA, DROP: row.DROP, CHG4: row.CHG4, RET3: row.RET3, SPREAD_LVL: row.SPREAD_LVL, YIELD10_CHG4: row.YIELD10_CHG4, YIELD2_CHG4: row.YIELD2_CHG4, CURVE_CHG4: row.CURVE_CHG4, SPREAD_DELTA: row.SPREAD_DELTA, YIELD10_DELTA: row.YIELD10_DELTA }
+  return { MA: row.MA, DROP: row.DROP, CHG4: row.CHG4, RET3: row.RET3, YIELD10_CHG4: row.YIELD10_CHG4, YIELD2_CHG4: row.YIELD2_CHG4, CURVE_CHG4: row.CURVE_CHG4, SPREAD_DELTA: row.SPREAD_DELTA, YIELD10_DELTA: row.YIELD10_DELTA }
 }
 
 function paramsMatch(a: StrategyParams, b: StrategyParams): boolean {
-  return a.MA === b.MA && a.DROP === b.DROP && a.CHG4 === b.CHG4 && a.RET3 === b.RET3 && a.SPREAD_LVL === b.SPREAD_LVL && a.YIELD10_CHG4 === b.YIELD10_CHG4 && a.YIELD2_CHG4 === b.YIELD2_CHG4 && a.CURVE_CHG4 === b.CURVE_CHG4 && a.SPREAD_DELTA === b.SPREAD_DELTA && a.YIELD10_DELTA === b.YIELD10_DELTA
+  return a.MA === b.MA && a.DROP === b.DROP && a.CHG4 === b.CHG4 && a.RET3 === b.RET3 && a.YIELD10_CHG4 === b.YIELD10_CHG4 && a.YIELD2_CHG4 === b.YIELD2_CHG4 && a.CURVE_CHG4 === b.CURVE_CHG4 && a.SPREAD_DELTA === b.SPREAD_DELTA && a.YIELD10_DELTA === b.YIELD10_DELTA
 }
 
 function InfoTooltip({ text }: { text: string }) {
@@ -60,7 +60,6 @@ const cols: { key: SortKey; label: string; fmt: (v: number) => string; tooltip?:
   { key: 'DROP',         label: 'DROP',         fmt: (v) => v.toFixed(3) },
   { key: 'CHG4',         label: 'CHG4',         fmt: (v) => v.toFixed(3) },
   { key: 'RET3',         label: 'RET3',         fmt: (v) => v.toFixed(4) },
-  { key: 'SPREAD_LVL',   label: 'SPREAD_LVL',   fmt: (v) => v.toFixed(1) },
   { key: 'YIELD10_CHG4', label: 'YLD10_CHG4',   fmt: (v) => v.toFixed(3) },
   { key: 'YIELD2_CHG4',  label: 'YLD2_CHG4',    fmt: (v) => v.toFixed(3) },
   { key: 'CURVE_CHG4',   label: 'CURVE_CHG4',   fmt: (v) => v.toFixed(3) },
