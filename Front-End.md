@@ -136,13 +136,15 @@ Clicking a bolded value opens a popup showing the derivation:
 
 Out-of-sample validation of the strategy. Always uses full history; date pickers hidden via `hideDates`. Uses the currently selected ticker; ticker name is displayed prominently at the top of the settings card. Remounts on ticker change via `key={ticker}`.
 
-**Inputs** (all in a single settings card):
+**Inputs** (all in a single settings card; every label has an `InfoTooltip` hover explanation):
 - Window size (months, default 12)
 - Window type: Anchored or Rolling toggle
   - Anchored: training always starts at data start; initial training size input (months, default 36)
   - Rolling: fixed training window that slides; training window length input (months, default 36)
 - Mode: Validate or Discover toggle
 - Discover-only inputs: APY tolerance (bps, default 10), Max combinations (default 3000), Seed source (Saved params / Prev window toggle)
+
+`InfoTooltip` is defined as a local helper function inside `WalkForwardTab` (same pattern as `ParameterPanel.tsx` and `OptimizerTable.tsx`).
 
 **Run/Cancel button** with a progress bar and status line. Validate: N/M windows. Discover: N/(M×5) steps — bar advances at each sub-step; combo-elim and grid-search both update status every 10 combos. Cancel works via a `watch_disconnect` asyncio task (polls every 0.25s) that sets a `threading.Event` — stops the Python thread within ~10 iterations.
 

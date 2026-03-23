@@ -245,6 +245,21 @@ export function WalkForwardTab({ ticker, settings }: Props) {
     />
   )
 
+  function InfoTooltip({ text }: { text: string }) {
+    return (
+      <span className="relative group inline-flex items-center cursor-default ml-1">
+        <span className="text-xs select-none" style={{ color: 'var(--text-muted)', opacity: 0.6 }}>ⓘ</span>
+        <span
+          className="absolute left-1/2 -translate-x-1/2 bottom-full mb-1.5 z-50 hidden group-hover:block
+                     w-64 rounded px-2.5 py-2 text-xs leading-snug pointer-events-none shadow-lg"
+          style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', color: 'var(--text)' }}
+        >
+          {text}
+        </span>
+      </span>
+    )
+  }
+
   const hasValidate = result?.mode === 'validate' && result.validate_results
   const hasDiscover = result?.mode === 'discover' && result.discover_results
   const isEmpty = result && ((hasValidate && result.validate_results!.length === 0) || (hasDiscover && result.discover_results!.length === 0))
@@ -266,12 +281,18 @@ export function WalkForwardTab({ ticker, settings }: Props) {
             <p className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>Window Settings</p>
 
             <div className="flex items-center gap-3">
-              <span className="text-sm shrink-0 w-44" style={labelStyle}>Window size (months)</span>
+              <span className="text-sm shrink-0 w-44 flex items-center" style={labelStyle}>
+                Window size (months)
+                <InfoTooltip text="Length of each out-of-sample test period. The data is divided into sequential windows of this size." />
+              </span>
               {numInput(windowSize, n => setWindowSize(Math.round(n)), 1, 120)}
             </div>
 
             <div className="flex items-center gap-3">
-              <span className="text-sm shrink-0 w-44" style={labelStyle}>Window type</span>
+              <span className="text-sm shrink-0 w-44 flex items-center" style={labelStyle}>
+                Window type
+                <InfoTooltip text="Anchored: training always starts from the beginning of data and grows with each window. Rolling: a fixed-length training window slides forward in time." />
+              </span>
               <TogGroup>
                 <TogBtn value="anchored" current={windowType} onSet={setWindowType} label="Anchored" />
                 <TogBtn value="rolling"  current={windowType} onSet={setWindowType} label="Rolling" />
@@ -280,12 +301,18 @@ export function WalkForwardTab({ ticker, settings }: Props) {
 
             {windowType === 'anchored' ? (
               <div className="flex items-center gap-3">
-                <span className="text-sm shrink-0 w-44" style={labelStyle}>Initial training (months)</span>
+                <span className="text-sm shrink-0 w-44 flex items-center" style={labelStyle}>
+                  Initial training (months)
+                  <InfoTooltip text="How much history to use before the first test window. Must be long enough to produce meaningful parameter estimates." />
+                </span>
                 {numInput(initialTraining, n => setInitialTraining(Math.round(n)), 6, 240)}
               </div>
             ) : (
               <div className="flex items-center gap-3">
-                <span className="text-sm shrink-0 w-44" style={labelStyle}>Training window (months)</span>
+                <span className="text-sm shrink-0 w-44 flex items-center" style={labelStyle}>
+                  Training window (months)
+                  <InfoTooltip text="Fixed size of the training period that slides forward. Each window trains on exactly this many months of history immediately before the test period." />
+                </span>
                 {numInput(trainingWindow, n => setTrainingWindow(Math.round(n)), 6, 240)}
               </div>
             )}
@@ -296,7 +323,10 @@ export function WalkForwardTab({ ticker, settings }: Props) {
             <p className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>Mode</p>
 
             <div className="flex items-center gap-3">
-              <span className="text-sm shrink-0 w-44" style={labelStyle}>Mode</span>
+              <span className="text-sm shrink-0 w-44 flex items-center" style={labelStyle}>
+                Mode
+                <InfoTooltip text="Validate: applies your saved parameters to each test window to measure out-of-sample consistency. Discover: optimizes parameters on each training period then tests them out-of-sample to find which factors survive." />
+              </span>
               <TogGroup>
                 <TogBtn value="validate" current={mode} onSet={setMode} label="Validate" />
                 <TogBtn value="discover" current={mode} onSet={setMode} label="Discover" />
@@ -306,15 +336,24 @@ export function WalkForwardTab({ ticker, settings }: Props) {
             {mode === 'discover' && (
               <>
                 <div className="flex items-center gap-3">
-                  <span className="text-sm shrink-0 w-44" style={labelStyle}>APY tolerance (bps)</span>
+                  <span className="text-sm shrink-0 w-44 flex items-center" style={labelStyle}>
+                    APY tolerance (bps)
+                    <InfoTooltip text="How much worse (in basis points of APY) a simpler model can be vs the baseline before a factor is considered necessary. Higher = more aggressive pruning." />
+                  </span>
                   {numInput(apyTolBps, setApyTolBps, 0, 200, 1)}
                 </div>
                 <div className="flex items-center gap-3">
-                  <span className="text-sm shrink-0 w-44" style={labelStyle}>Max combinations</span>
+                  <span className="text-sm shrink-0 w-44 flex items-center" style={labelStyle}>
+                    Max combinations
+                    <InfoTooltip text="Grid search ceiling for the parameter refinement phase. Larger values allow finer-grained search but take longer. The grid expands until this limit is reached." />
+                  </span>
                   {numInput(maxCombos, n => setMaxCombos(Math.round(n)), 100, 50000, 100, 'w-24')}
                 </div>
                 <div className="flex items-center gap-3">
-                  <span className="text-sm shrink-0 w-44" style={labelStyle}>Seed source</span>
+                  <span className="text-sm shrink-0 w-44 flex items-center" style={labelStyle}>
+                    Seed source
+                    <InfoTooltip text="Saved params: each window starts optimization from your saved config defaults. Prev window: each window seeds from the previous window's best parameters, tracking regime drift over time." />
+                  </span>
                   <TogGroup>
                     <TogBtn value="saved"    current={seedSource} onSet={setSeedSource} label="Saved params" />
                     <TogBtn value="previous" current={seedSource} onSet={setSeedSource} label="Prev window" />
