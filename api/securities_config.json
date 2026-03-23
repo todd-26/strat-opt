@@ -50,10 +50,10 @@
             "description": "Sell if 3-week price return falls below threshold",
             "type": "percent",
             "ignore": false,
-            "default": -0.0225,
+            "default": -0.03,
             "range": {
-              "min": -0.0225,
-              "max": -0.0225,
+              "min": -0.03,
+              "max": -0.03,
               "step": 0.0025
             }
           },
@@ -61,21 +61,21 @@
             "description": "Sell if 10-year yield 4-week change exceeds threshold",
             "type": "percent",
             "ignore": false,
-            "default": 0.12,
+            "default": 0.15,
             "range": {
-              "min": 0.12,
-              "max": 0.12,
+              "min": 0.15,
+              "max": 0.15,
               "step": 0.01
             }
           },
           "YIELD2_CHG4": {
             "description": "Sell if 2-year yield 4-week change exceeds threshold",
             "type": "percent",
-            "ignore": true,
-            "default": 0.1,
+            "ignore": false,
+            "default": 0.09,
             "range": {
-              "min": 0.1,
-              "max": 0.1,
+              "min": 0.09,
+              "max": 0.09,
               "step": 0.01
             }
           },
@@ -117,7 +117,7 @@
           "SPREAD_DELTA": {
             "description": "Consecutive weeks of declining credit spread required",
             "type": "weeks",
-            "ignore": false,
+            "ignore": true,
             "default": 2.0,
             "range": {
               "min": 2.0,

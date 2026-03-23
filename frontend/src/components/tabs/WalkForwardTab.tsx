@@ -47,8 +47,10 @@ function fmtParamVal(key: string, v: number): string {
   return v.toFixed(3)
 }
 
-function fmtKeyParams(params: Record<string, number>): string {
+function fmtKeyParams(params: Record<string, number>, activeFactors: string[]): string {
+  const active = new Set(activeFactors)
   return Object.entries(params)
+    .filter(([k]) => active.has(k))
     .map(([k, v]) => `${k}=${fmtParamVal(k, v)}`)
     .join(', ') || '—'
 }
@@ -109,7 +111,7 @@ function DiscoverTable({ rows }: { rows: DiscoverWindowResult[] }) {
                 {row.is_partial && <span className="ml-1 text-xs" style={{ color: 'var(--text-muted)' }}>*</span>}
               </td>
               <td className={tdCls} style={{ fontSize: '0.73rem' }}>{row.active_factors.join(', ')}</td>
-              <td className={tdCls} style={{ fontSize: '0.73rem', color: 'var(--text-muted)' }}>{fmtKeyParams(row.key_params)}</td>
+              <td className={tdCls} style={{ fontSize: '0.73rem', color: 'var(--text-muted)' }}>{fmtKeyParams(row.key_params, row.active_factors)}</td>
               <td className={tdCls}>{fmtApy(row.insample_apy)}</td>
               <td className={tdCls}>{fmtApy(row.outsample_apy)}</td>
               <td className={tdCls}>{fmtApy(row.buyhold_apy)}</td>
@@ -159,7 +161,7 @@ function exportDiscoverCsv(rows: DiscoverWindowResult[], ticker: string, stabili
   const data = rows.map(r => [
     r.train_start, r.train_end, r.test_start, r.test_end,
     r.active_factors.join('; '),
-    Object.entries(r.key_params).map(([k, v]) => `${k}=${fmtParamVal(k, v)}`).join('; '),
+    Object.entries(r.key_params).filter(([k]) => r.active_factors.includes(k)).map(([k, v]) => `${k}=${fmtParamVal(k, v)}`).join('; '),
     r.insample_apy  != null ? (r.insample_apy  * 100).toFixed(4) : '',
     r.outsample_apy != null ? (r.outsample_apy * 100).toFixed(4) : '',
     r.buyhold_apy   != null ? (r.buyhold_apy   * 100).toFixed(4) : '',
