@@ -360,7 +360,7 @@
           "CURVE_CHG4": {
             "description": "Sell if yield curve (10y-2y) 4-week change falls more than threshold",
             "type": "basis_points",
-            "ignore": false,
+            "ignore": true,
             "default": 0.46,
             "range": {
               "min": 0.48,
@@ -384,11 +384,11 @@
           "DROP": {
             "description": "Credit spread must fall this fraction from 4-week peak",
             "type": "percent",
-            "ignore": true,
-            "default": 0.015,
+            "ignore": false,
+            "default": 0.025,
             "range": {
-              "min": 0.012,
-              "max": 0.032,
+              "min": 0.025,
+              "max": 0.025,
               "step": 0.001
             }
           },
