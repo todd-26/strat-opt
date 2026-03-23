@@ -25,7 +25,8 @@ strat-opt/
 │   ├── strategy_generic.py # GenericStrategy — config-driven, handles all securities
 │   ├── strategy_buyhold.py # Buy-and-hold baseline
 │   ├── backtester.py       # Converts positions to equity curves
-│   └── optimizer_generic.py # GenericOptimizer — config-driven, handles all securities
+│   ├── optimizer_generic.py # GenericOptimizer — config-driven, handles all securities
+│   └── walk_forward.py     # WalkForwardEngine — validate and discover walk-forward modes
 ├── frontend/               # React/Vite UI
 │   ├── src/
 │   │   ├── App.tsx         # Main app with tab navigation
@@ -147,7 +148,7 @@ Backend Pipeline:
 - `GenericStrategy(BaseStrategy)` — single config-driven strategy for all securities
 - `BuyAndHoldStrategy` always invested, used as baseline
 - `GenericStrategy` accepts `params: dict` and `ignore: set` of factor names; disabled sell factors → never trigger, disabled buy factors → always pass
-- Valid sell factor names: `SPREAD_LVL`, `CHG4`, `RET3`, `YIELD10_CHG4`, `YIELD2_CHG4`, `CURVE_CHG4`
+- Valid sell factor names: `CHG4`, `RET3`, `YIELD10_CHG4`, `YIELD2_CHG4`, `CURVE_CHG4`
 - Valid buy factor names: `MA`, `DROP`, `SPREAD_DELTA`, `YIELD10_DELTA`
 
 **Backtester** (`backtester.py`):
@@ -160,6 +161,18 @@ Backend Pipeline:
 - Accepts `param_grids: dict`, `start_date`/`end_date`, `disabled_factors` set
 - Disabled grids collapse to `[0]` (single placeholder) to reduce combinations
 - Supports `progress_callback` for streaming progress to frontend
+
+**Walk-Forward** (`walk_forward.py`):
+- `WalkForwardEngine` — loads full data once, applies non-MA indicators; adds MA columns lazily per run
+- Two modes: `run_validate()` (fixed params across test windows) and `run_discover()` (optimize on training, test out-of-sample)
+- Window types: Anchored (training grows from data start) or Rolling (fixed training window slides)
+- Discover mode: per window — seed, baseline, single-factor elimination, combination elimination, range refinement grid search, OOS test
+- Returns results list + factor stability dict; streams progress via SSE with `progress_callback(current, total, status="")`
+- **Validate**: `total = n_windows`, advances 1 tick per window
+- **Discover**: `total = n_windows * 5`; combo elimination fires progress/cancel-check every 10 combos; `_grid_search` fires every 10 combos
+- **Cancellation**: `cancel_event: threading.Event` checked at top of window loop, every 10 combo-elim combos, every 10 grid-search combos. `main.py` uses a separate `watch_disconnect` asyncio task (polls `request.is_disconnected()` every 0.25s) that sets `cancel_event` and puts `("cancelled",)` on the queue — reliable regardless of whether the generator is mid-await. `finally` sets event + cancels watcher task.
+- `_build_refinement_grids`: early-return `{p: [0]}` when `active_factors` is empty (combo elimination eliminated all factors → `total` stays 1 forever in the `while True` loop → infinite hang); also added `k > 500` safety cap for factors pinned at bounds. This was the root cause of the "stuck at combo elimination 120/127" symptom.
+- `_generate_windows`: guard `if cursor > max_date: break` before calling `_snap_fwd` — without it, `_snap_fwd` returns `df.index[-1]` when past end of data, so the termination check never fires and cursor overflows to year 2262
 
 ### API Server (api/)
 
@@ -175,24 +188,26 @@ FastAPI server with endpoints:
 - `POST /api/run/buyhold` — Runs buy-and-hold backtest
 - `POST /api/run/signal` — Runs strategy and returns current signal + trade history
 - `POST /api/run/optimizer` — Runs grid search with SSE streaming progress (UI label: Backtester)
+- `POST /api/run/walk-forward` — Runs walk-forward validation or discovery with SSE streaming progress; accepts `WalkForwardRequest`; uses full history (no date filter); reads seed params from saved config
 
 All three run endpoints accept optional `start_date`/`end_date` (YYYY-MM-DD strings) to restrict the data window; return HTTP 400 if range is empty.
 Signal and optimizer endpoints accept `disabled_factors` (list of factor names to ignore).
 
 ### Frontend (frontend/)
 
-React/Vite SPA with four tabs:
+React/Vite SPA with five tabs:
 - **Backtester** — Grid search with parameter range inputs, streaming progress, sortable results table, drill-down charts
 - **Buy & Hold** — Baseline comparison run
 - **Current Signal** — Shows BUY/SELL/HOLD signal with current metrics, Factor Values panel, and full trade history
 - **Signals** — Runs current signal across all (or selected) securities at once; uses each security's saved defaults; results painted serially as they complete; no date range filter (always uses full history); shows Invested/Not Invested toggle per row (saves immediately via POST /api/config); configs prefetched on mount
+- **Walk-Forward** — Out-of-sample walk-forward testing in Validate or Discover mode; date pickers hidden; uses selected ticker; `WalkForwardTab.tsx`; `streamWalkForward()` in api.ts
 
 Key features:
 - Theming system (4 themes: Slate, Navy & Gold, Charcoal & Green, High Contrast)
 - Theme and input type persisted to localStorage; all other settings (cash rate, start position, params, ranges, disabled factors) persisted to `api/securities_config.json` (per-security)
 - Equity curve charts with buy/sell markers, CSV/PNG export; ticker + APY labels embedded inside PNG-captured div only (not in toolbar); `strategyLabel` prop (default `"Strategy"`) lets BuyHoldTab label it `"Buy & Hold"`; date range shown right-justified in chart header
 - Recharts for visualization
-- Global date range picker in `Header.tsx` (From/To); filters data for Backtester, Buy & Hold, and Current Signal tabs; hidden on Signals tab via `hideDates` prop; not persisted
+- Global date range picker in `Header.tsx` (From/To); filters data for Backtester, Buy & Hold, and Current Signal tabs; hidden on Signals and Walk-Forward tabs via `hideDates` prop; not persisted
 - Factor disable checkboxes in ParameterPanel (both single and range modes); disabled factors are skipped in strategy evaluation and backtester grid iteration
 - **Settings isolation**: Opening/saving Settings does NOT reset Backtester or Current Signal tab state. Tabs initialize from config on mount; `key={ticker}` remount handles ticker changes. Prop-syncing `useEffect` hooks were removed from both `OptimizerTab` and `SignalTab`. Each tab has "Reset from Settings" and "Save to Settings" buttons — both styled accent and enabled only when the tab's current values differ from saved defaults (`hasChanges`); muted and disabled otherwise. Both tabs accept `config: AppConfig` and `onSaveConfig` props.
 - **Settings "Save Permanently"** button is also only active (accent) when `localConfig` differs from the `config` prop (`hasChanges = JSON.stringify(localConfig) !== JSON.stringify(config)`).
@@ -201,7 +216,6 @@ Key features:
 ## Trading Logic
 
 **SELL if ANY of:**
-- `spread > SPREAD_LVL` (absolute spread too high)
 - `chg4 > CHG4` (4-week spread change too high)
 - `ret3 < RET3` (3-week price return too negative)
 - `yield10_chg4 > YIELD10_CHG4` (10yr yield rose too much over 4 weeks)

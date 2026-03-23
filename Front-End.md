@@ -36,13 +36,14 @@ Below the header: a single row of tabs:
 - **Buy & Hold**
 - **Current Signal**
 - **Signals**
+- **Walk-Forward**
 
 Each tab has its own independent state (parameters, results). Selecting a different security does **not** reset the active tab.
 
 ### Parameter Panel (Backtester, Buy & Hold, Current Signal)
 Each of these three tabs has a collapsible parameter panel. It starts expanded. After a run completes successfully, it collapses automatically so results get full focus. The user can re-expand it at any time.
 
-**Factor Checkboxes**: Each factor has a checkbox to enable/disable it. Factors are grouped under "Sell Factors" (SPREAD_LVL, CHG4, RET3, YIELD10_CHG4, YIELD2_CHG4, CURVE_CHG4) and "Buy Factors" (MA, DROP, SPREAD_DELTA, YIELD10_DELTA) headers. Disabled factors grey out their inputs (opacity 0.45). `SPREAD_DELTA` and `YIELD10_DELTA` are fully numeric inputs (integer, default 2) controlling how many consecutive falling weeks are required — they behave identically to all other parameters. In the backtester, disabled factors collapse their grid to a single placeholder value, reducing total combinations.
+**Factor Checkboxes**: Each factor has a checkbox to enable/disable it. Factors are grouped under "Sell Factors" (CHG4, RET3, YIELD10_CHG4, YIELD2_CHG4, CURVE_CHG4) and "Buy Factors" (MA, DROP, SPREAD_DELTA, YIELD10_DELTA) headers — 9 factors total. Disabled factors grey out their inputs (opacity 0.45). `SPREAD_DELTA` and `YIELD10_DELTA` are fully numeric inputs (integer, default 2) controlling how many consecutive falling weeks are required — they behave identically to all other parameters. In the backtester, disabled factors collapse their grid to a single placeholder value, reducing total combinations.
 
 **Settings isolation**: Opening or saving Settings does **not** affect parameter values in the Backtester or Current Signal tabs. Each tab initializes from config on mount (React `key={ticker}` remounts on ticker change). Two buttons in the controls row manage the relationship explicitly:
 - **Reset from Settings** — restores all tab parameters to the current saved defaults; accent-colored and enabled only when values differ from saved defaults; muted and disabled otherwise.
@@ -101,7 +102,7 @@ Each strategy parameter gets a single value input (not a range). Pre-filled with
 **Right — Factor Values**:
 A panel showing the current metric reading for each factor, grouped into **Sell** (trigger if ANY true) and **Buy** (ALL must be true) sections. Disabled factors are shown at reduced opacity with an "(off)" label. Each row: factor label on the left, current metric value on the right (percentage factors shown as %). Implemented via `ThresholdRow` component in `SignalTab.tsx`.
 
-Sell factors: Spread, chg4, ret3, 10yr chg4, 2yr chg4, ΔCurve.
+Sell factors: chg4, ret3, 10yr chg4, 2yr chg4, ΔCurve.
 
 Buy factors: Close, MA, 4wk Spread Peak (spread_4wk_peak, the rolling 4-week max of Spread), Drop (spread_drop = 1 − spread/4wk-peak, shown as %), Δspread, Δyield10.
 
@@ -117,7 +118,6 @@ Values that contributed to the decision are **bolded** (dotted underline, pointe
 - BUY: bold Price and MA (close > MA), Drop (spread drop from 4-week peak ≥ DROP threshold), Δspread (falling spreads), and Δyield10 (falling 10yr yield) (unless that factor is disabled)
 
 Clicking a bolded value opens a popup showing the derivation:
-- spread: value vs SPREAD_LVL threshold
 - chg4: % change vs threshold + spread 4 wks ago → now
 - ret3: % return vs threshold + price 3 wks ago → now
 - Price / MA: close vs MA value (shown to 4 decimal places to avoid rounding ambiguity)
@@ -129,6 +129,28 @@ Clicking a bolded value opens a popup showing the derivation:
 - Δyield10: this week's delta + prior week's delta (confirms both negative)
 
 **Export**: CSV download of the trade history table.
+
+---
+
+### Walk-Forward Tab
+
+Out-of-sample validation of the strategy. Always uses full history; date pickers hidden via `hideDates`. Uses the currently selected ticker; ticker name is displayed prominently at the top of the settings card. Remounts on ticker change via `key={ticker}`.
+
+**Inputs** (all in a single settings card):
+- Window size (months, default 12)
+- Window type: Anchored or Rolling toggle
+  - Anchored: training always starts at data start; initial training size input (months, default 36)
+  - Rolling: fixed training window that slides; training window length input (months, default 36)
+- Mode: Validate or Discover toggle
+- Discover-only inputs: APY tolerance (bps, default 10), Max combinations (default 3000), Seed source (Saved params / Prev window toggle)
+
+**Run/Cancel button** with a progress bar and status line. Validate: N/M windows. Discover: N/(M×5) steps — bar advances at each sub-step; combo-elim and grid-search both update status every 10 combos. Cancel works via a `watch_disconnect` asyncio task (polls every 0.25s) that sets a `threading.Event` — stops the Python thread within ~10 iterations.
+
+**Validate mode output** — table columns: Test Period, Strategy APY, B&H APY, Edge, Trades, Std Dev (Strat), Std Dev (B&H). Edge is color-coded green/red. Partial windows flagged with `*`.
+
+**Discover mode output** — table columns: Train Period, Test Period, Active Factors, Key Params, In-Sample APY, OOS APY, B&H APY, Edge, Trades. Followed by a **Factor Stability** panel: grid of all 9 factors, each showing survived/total windows count and a mini bar (green if ≥ 50%, red otherwise).
+
+Implemented in `frontend/src/components/tabs/WalkForwardTab.tsx`. Streaming via `streamWalkForward()` in `lib/api.ts` (same SSE pattern as optimizer).
 
 ---
 
@@ -236,13 +258,13 @@ Accepts an `AppConfig` body and merges changes back into `securities_config.json
 interface ParamConfig { description: string; ignore: boolean; default: number; range: { min: number; max: number; step: number } }
 interface AppConfig {
   name: string; cash_rate: number; cash_vehicle: string; start_invested: 0 | 1
-  sell_triggers: { CHG4: ParamConfig; RET3: ParamConfig; SPREAD_LVL: ParamConfig; YIELD10_CHG4: ParamConfig; YIELD2_CHG4: ParamConfig; CURVE_CHG4: ParamConfig }
+  sell_triggers: { CHG4: ParamConfig; RET3: ParamConfig; YIELD10_CHG4: ParamConfig; YIELD2_CHG4: ParamConfig; CURVE_CHG4: ParamConfig }
   buy_conditions: { MA: ParamConfig; DROP: ParamConfig; SPREAD_DELTA: ParamConfig; YIELD10_DELTA: ParamConfig }
 }
 ```
 
 ### Data flow
-`App.tsx` holds `config: AppConfig | null` state, loaded from `GET /api/config` on ticker change. It derives `defaultStrategyParams`, `defaultRanges`, `defaultDisabledFactors`, and `paramDescriptions` from the config and passes them as props to each tab. `SettingsSheet` receives `config`, `onSaveConfig`, `securities`, `onAddSecurity`, `onRemoveSecurity`, and `onFetchData` props. `handleFetchData` in App.tsx calls `updateSecurityData`, then resets startDate/endDate and reloads dateRange when the updated ticker matches the current one. `lastConfigRef` (useRef) holds the last non-null config so SettingsSheet is rendered outside the `config &&` gate and never unmounts during ticker reload. `dateRangeError` state captures failures from `getDateRange`; passed to Header as optional `dateRangeError?: string | null` prop and displayed inline next to the date pickers. `hideDates` optional bool prop hides date pickers when active tab is `'signals'`.
+`App.tsx` holds `config: AppConfig | null` state, loaded from `GET /api/config` on ticker change. It derives `defaultStrategyParams`, `defaultRanges`, `defaultDisabledFactors`, and `paramDescriptions` from the config and passes them as props to each tab. `SettingsSheet` receives `config`, `onSaveConfig`, `securities`, `onAddSecurity`, `onRemoveSecurity`, and `onFetchData` props. `handleFetchData` in App.tsx calls `updateSecurityData`, then resets startDate/endDate and reloads dateRange when the updated ticker matches the current one. `lastConfigRef` (useRef) holds the last non-null config so SettingsSheet is rendered outside the `config &&` gate and never unmounts during ticker reload. `dateRangeError` state captures failures from `getDateRange`; passed to Header as optional `dateRangeError?: string | null` prop and displayed inline next to the date pickers. `hideDates` optional bool prop hides date pickers when active tab is `'signals'` or `'walkforward'`.
 
 ---
 

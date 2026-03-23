@@ -167,3 +167,59 @@ export interface Settings {
   theme: string
   inputType: 'csv' | 'api'
 }
+
+// ---------------------------------------------------------------------------
+// Walk-forward types
+// ---------------------------------------------------------------------------
+
+export interface WalkForwardRequest {
+  ticker: string
+  input_type: string
+  window_size_months: number
+  window_type: 'anchored' | 'rolling'
+  initial_training_months: number
+  training_window_months: number
+  mode: 'validate' | 'discover'
+  apy_tolerance_bps: number
+  max_combinations: number
+  seed_source: 'saved' | 'previous'
+}
+
+export interface ValidateWindowResult {
+  test_start: string
+  test_end: string
+  strategy_apy: number | null
+  buyhold_apy: number | null
+  edge: number | null
+  trades: number
+  stdev_strategy: number | null
+  stdev_buyhold: number | null
+  is_partial: boolean
+}
+
+export interface DiscoverWindowResult {
+  train_start: string
+  train_end: string
+  test_start: string
+  test_end: string
+  active_factors: string[]
+  key_params: Record<string, number>
+  insample_apy: number | null
+  outsample_apy: number | null
+  buyhold_apy: number | null
+  edge: number | null
+  trades: number
+  is_partial: boolean
+}
+
+export interface FactorStability {
+  survived: number
+  total: number
+}
+
+export interface WalkForwardResponse {
+  mode: string
+  validate_results?: ValidateWindowResult[]
+  discover_results?: DiscoverWindowResult[]
+  factor_stability?: Record<string, FactorStability>
+}

@@ -4,6 +4,7 @@ import re
 import json
 import math
 import asyncio
+import threading
 import requests as _requests
 import concurrent.futures
 import pandas as _pd
@@ -14,7 +15,7 @@ from dotenv import load_dotenv
 load_dotenv(Path(__file__).parent.parent / ".env")
 load_dotenv(Path(__file__).parent.parent / ".env.local", override=True)
 
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from fastapi.staticfiles import StaticFiles
@@ -29,6 +30,7 @@ from strategy_generic import GenericStrategy       # noqa: E402
 from strategy_buyhold import BuyAndHoldStrategy    # noqa: E402
 from backtester import Backtester                  # noqa: E402
 from optimizer_generic import GenericOptimizer     # noqa: E402
+from walk_forward import WalkForwardEngine         # noqa: E402
 
 from models import (                               # noqa: E402
     BuyHoldRequest,
@@ -45,6 +47,11 @@ from models import (                               # noqa: E402
     AppConfig,
     AddSecurityRequest,
     ReorderSecuritiesRequest,
+    WalkForwardRequest,
+    WalkForwardResponse,
+    ValidateWindowResult,
+    DiscoverWindowResult,
+    FactorStability,
 )
 
 app = FastAPI(title="strat-opt API")
@@ -123,8 +130,10 @@ def _build_trade_history(bt_df, buy_dates, sell_dates, spread_delta_n=2, yield10
             spread_delta=_safe_float(row.get("spread_delta")),
             ma_value=_safe_float(row.get(ma_col)) if ma_col else None,
             spread_delta_history=[
-                _safe_float(bt_df.iloc[pos - (spread_delta_n - 1 - i)].get("spread_delta"))
-                for i in range(spread_delta_n) if pos - (spread_delta_n - 1 - i) >= 0
+                v for v in (
+                    _safe_float(bt_df.iloc[pos - (spread_delta_n - 1 - i)].get("spread_delta"))
+                    for i in range(spread_delta_n) if pos - (spread_delta_n - 1 - i) >= 0
+                ) if v is not None
             ] or None,
             spread_drop=_safe_float(drop),
             spread_4wk_peak=_safe_float(peak),
@@ -133,8 +142,10 @@ def _build_trade_history(bt_df, buy_dates, sell_dates, spread_delta_n=2, yield10
             curve_chg4=_safe_float(row.get("curve_chg4")),
             yield10_delta=_safe_float(row.get("yield10_delta")),
             yield10_delta_history=[
-                _safe_float(bt_df.iloc[pos - (yield10_delta_n - 1 - i)].get("yield10_delta"))
-                for i in range(yield10_delta_n) if pos - (yield10_delta_n - 1 - i) >= 0
+                v for v in (
+                    _safe_float(bt_df.iloc[pos - (yield10_delta_n - 1 - i)].get("yield10_delta"))
+                    for i in range(yield10_delta_n) if pos - (yield10_delta_n - 1 - i) >= 0
+                ) if v is not None
             ] or None,
         ))
 
@@ -419,8 +430,10 @@ def run_signal(req: SignalRequest):
         chg4=_safe_float(last_row.get("chg4")),
         spread_delta=_safe_float(last_row.get("spread_delta")),
         spread_delta_history=[
-            _safe_float(df_ind.iloc[last_pos - (p.SPREAD_DELTA - 1 - i)].get("spread_delta"))
-            for i in range(p.SPREAD_DELTA) if last_pos - (p.SPREAD_DELTA - 1 - i) >= 0
+            v for v in (
+                _safe_float(df_ind.iloc[last_pos - (p.SPREAD_DELTA - 1 - i)].get("spread_delta"))
+                for i in range(p.SPREAD_DELTA) if last_pos - (p.SPREAD_DELTA - 1 - i) >= 0
+            ) if v is not None
         ] or None,
         yield10_chg4=_safe_float(last_row.get("yield10_chg4")),
         yield2_chg4=_safe_float(last_row.get("yield2_chg4")),
@@ -429,8 +442,10 @@ def run_signal(req: SignalRequest):
         curve_4wk_ago=_safe_float(df_ind.iloc[last_pos - 4]["YieldCurve"]) if last_pos >= 4 else None,
         yield10_delta=_safe_float(last_row.get("yield10_delta")),
         yield10_delta_history=[
-            _safe_float(df_ind.iloc[last_pos - (p.YIELD10_DELTA - 1 - i)].get("yield10_delta"))
-            for i in range(p.YIELD10_DELTA) if last_pos - (p.YIELD10_DELTA - 1 - i) >= 0
+            v for v in (
+                _safe_float(df_ind.iloc[last_pos - (p.YIELD10_DELTA - 1 - i)].get("yield10_delta"))
+                for i in range(p.YIELD10_DELTA) if last_pos - (p.YIELD10_DELTA - 1 - i) >= 0
+            ) if v is not None
         ] or None,
         spread_drop=_safe_float(spread_drop_val),
         spread_4wk_peak=_safe_float(spread_peak),
@@ -595,6 +610,137 @@ def save_config(config: AppConfig, ticker: str = Query()):
 
     CONFIG_PATH.write_text(json.dumps(full, indent=2))
     return {"ok": True}
+
+
+# ---------------------------------------------------------------------------
+# Walk-forward endpoint
+# ---------------------------------------------------------------------------
+
+@app.post("/api/run/walk-forward")
+async def run_walk_forward(req: WalkForwardRequest, request: Request):
+    async def event_stream():
+        loop  = asyncio.get_running_loop()
+        queue: asyncio.Queue = asyncio.Queue()
+        cancel_event = threading.Event()
+
+        def progress_callback(current: int, total: int, status: str = ""):
+            loop.call_soon_threadsafe(queue.put_nowait, ("progress", current, total, status))
+
+        def run_sync():
+            try:
+                full    = _load_config()
+                ticker  = req.ticker.upper()
+                if ticker not in full["securities"]:
+                    raise ValueError(f"Unknown ticker: {ticker}")
+                sec_cfg = _security_to_appconfig(full["securities"][ticker])
+
+                # Build seed params from saved config defaults
+                seed_params = {
+                    **{k: v.default for k, v in sec_cfg.sell_triggers.items()},
+                    **{k: v.default for k, v in sec_cfg.buy_conditions.items()},
+                }
+                seed_ignore = set(
+                    [k for k, v in sec_cfg.sell_triggers.items() if v.ignore] +
+                    [k for k, v in sec_cfg.buy_conditions.items() if v.ignore]
+                )
+
+                engine = WalkForwardEngine(
+                    input_type=req.input_type,
+                    input_dir=INPUT_DIR,
+                    ticker=ticker,
+                    cash_rate=sec_cfg.cash_rate,
+                    start_invested=sec_cfg.start_invested,
+                    config=sec_cfg,
+                )
+
+                if req.mode == "validate":
+                    rows = engine.run_validate(
+                        window_size_months=req.window_size_months,
+                        window_type=req.window_type,
+                        initial_training_months=req.initial_training_months,
+                        training_window_months=req.training_window_months,
+                        seed_params=seed_params,
+                        seed_ignore=seed_ignore,
+                        progress_callback=progress_callback,
+                        cancel_event=cancel_event,
+                    )
+                    response = WalkForwardResponse(
+                        mode="validate",
+                        validate_results=[ValidateWindowResult(**r) for r in rows],
+                    )
+                else:  # discover
+                    rows, stability = engine.run_discover(
+                        window_size_months=req.window_size_months,
+                        window_type=req.window_type,
+                        initial_training_months=req.initial_training_months,
+                        training_window_months=req.training_window_months,
+                        seed_params=seed_params,
+                        apy_tolerance_bps=req.apy_tolerance_bps,
+                        max_combinations=req.max_combinations,
+                        seed_source=req.seed_source,
+                        progress_callback=progress_callback,
+                        cancel_event=cancel_event,
+                    )
+                    response = WalkForwardResponse(
+                        mode="discover",
+                        discover_results=[DiscoverWindowResult(**r) for r in rows],
+                        factor_stability={k: FactorStability(**v) for k, v in stability.items()},
+                    )
+
+                if not cancel_event.is_set():
+                    loop.call_soon_threadsafe(queue.put_nowait, ("result", response))
+            except Exception as exc:
+                if not cancel_event.is_set():
+                    loop.call_soon_threadsafe(queue.put_nowait, ("error", str(exc)))
+
+        # Separate task watches for client disconnect and sets cancel_event
+        async def watch_disconnect():
+            while not cancel_event.is_set():
+                if await request.is_disconnected():
+                    cancel_event.set()
+                    queue.put_nowait(("cancelled",))
+                    return
+                await asyncio.sleep(0.25)
+
+        executor = concurrent.futures.ThreadPoolExecutor(max_workers=1)
+        loop.run_in_executor(executor, run_sync)
+        watcher = asyncio.create_task(watch_disconnect())
+
+        deadline = loop.time() + 600.0
+        try:
+            while True:
+                try:
+                    item = await asyncio.wait_for(queue.get(), timeout=1.0)
+                except asyncio.TimeoutError:
+                    if loop.time() > deadline:
+                        yield "event: error\ndata: {\"message\": \"Walk-forward timed out\"}\n\n"
+                        break
+                    continue
+
+                kind = item[0]
+                if kind == "cancelled":
+                    break
+                elif kind == "progress":
+                    _, current, total, status = item
+                    yield f"event: progress\ndata: {json.dumps({'current': current, 'total': total, 'status': status})}\n\n"
+                elif kind == "result":
+                    _, response = item
+                    yield f"event: result\ndata: {response.model_dump_json()}\n\n"
+                    break
+                elif kind == "error":
+                    _, msg = item
+                    yield f"event: error\ndata: {json.dumps({'message': msg})}\n\n"
+                    break
+        finally:
+            cancel_event.set()
+            watcher.cancel()
+            executor.shutdown(wait=False)
+
+    return StreamingResponse(
+        event_stream(),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+    )
 
 
 # ---------------------------------------------------------------------------
