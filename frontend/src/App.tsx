@@ -8,15 +8,17 @@ import { OptimizerTab } from './components/tabs/OptimizerTab'
 import { BuyHoldTab } from './components/tabs/BuyHoldTab'
 import { SignalTab } from './components/tabs/SignalTab'
 import { SignalsTab } from './components/tabs/SignalsTab'
+import { WalkForwardTab } from './components/tabs/WalkForwardTab'
 import type { AppConfig, StrategyParams, ParamRanges } from './types'
 
-type Tab = 'optimizer' | 'buyhold' | 'signal' | 'signals'
+type Tab = 'optimizer' | 'buyhold' | 'signal' | 'signals' | 'walkforward'
 
 const TABS: { id: Tab; label: string }[] = [
-  { id: 'optimizer', label: 'Backtester' },
-  { id: 'buyhold',   label: 'Buy & Hold' },
-  { id: 'signal',    label: 'Current Signal' },
-  { id: 'signals',   label: 'Signals' },
+  { id: 'optimizer',   label: 'Backtester' },
+  { id: 'buyhold',     label: 'Buy & Hold' },
+  { id: 'signal',      label: 'Current Signal' },
+  { id: 'signals',     label: 'Signals' },
+  { id: 'walkforward', label: 'Walk-Forward' },
 ]
 
 export default function App() {
@@ -176,7 +178,7 @@ export default function App() {
         onEndDateChange={setEndDate}
         dateRange={dateRange}
         dateRangeError={dateRangeError}
-        hideDates={activeTab === 'signals'}
+        hideDates={activeTab === 'signals' || activeTab === 'walkforward'}
       />
 
       {/* Tab bar */}
@@ -218,6 +220,9 @@ export default function App() {
         )}
         {activeTab === 'signals' && (
           <SignalsTab securities={securities} settings={settings} />
+        )}
+        {activeTab === 'walkforward' && ticker && (
+          <WalkForwardTab key={ticker} ticker={ticker} settings={settings} />
         )}
       </main>
 

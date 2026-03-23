@@ -63,7 +63,7 @@ FRED daily data is resampled to weekly using `.resample('W-FRI').last()` — eac
 
 ## Disabling Individual Factors
 
-Any of the 10 factors can be disabled via a checkbox in the UI or the `ignore` flag in `securities_config.json`.
+Any of the 9 factors can be disabled via a checkbox in the UI or the `ignore` flag in `securities_config.json`.
 
 - **Disabled sell factor** → never triggers (treated as `False`)
 - **Disabled buy factor** → always passes (treated as `True`)

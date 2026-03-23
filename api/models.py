@@ -179,3 +179,60 @@ class AddSecurityRequest(BaseModel):
 
 class ReorderSecuritiesRequest(BaseModel):
     tickers: list[str]
+
+
+# ---------------------------------------------------------------------------
+# Walk-forward models
+# ---------------------------------------------------------------------------
+
+class WalkForwardRequest(BaseModel):
+    ticker: str
+    input_type: str = "csv"
+    window_size_months: int = 12
+    window_type: str = "anchored"          # "anchored" | "rolling"
+    initial_training_months: int = 36      # anchored only
+    training_window_months: int = 36       # rolling only
+    mode: str = "validate"                 # "validate" | "discover"
+    # Discover-specific
+    apy_tolerance_bps: float = 10.0
+    max_combinations: int = 3000
+    seed_source: str = "saved"             # "saved" | "previous"
+
+
+class ValidateWindowResult(BaseModel):
+    test_start: str
+    test_end: str
+    strategy_apy: Optional[float] = None
+    buyhold_apy: Optional[float] = None
+    edge: Optional[float] = None
+    trades: int
+    stdev_strategy: Optional[float] = None
+    stdev_buyhold: Optional[float] = None
+    is_partial: bool
+
+
+class DiscoverWindowResult(BaseModel):
+    train_start: str
+    train_end: str
+    test_start: str
+    test_end: str
+    active_factors: list[str]
+    key_params: dict
+    insample_apy: Optional[float] = None
+    outsample_apy: Optional[float] = None
+    buyhold_apy: Optional[float] = None
+    edge: Optional[float] = None
+    trades: int
+    is_partial: bool
+
+
+class FactorStability(BaseModel):
+    survived: int
+    total: int
+
+
+class WalkForwardResponse(BaseModel):
+    mode: str
+    validate_results: Optional[list[ValidateWindowResult]] = None
+    discover_results: Optional[list[DiscoverWindowResult]] = None
+    factor_stability: Optional[dict[str, FactorStability]] = None
