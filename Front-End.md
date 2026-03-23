@@ -152,6 +152,8 @@ Out-of-sample validation of the strategy. Always uses full history; date pickers
 
 **Discover mode output** — table columns: Train Period, Test Period, Active Factors, Key Params, In-Sample APY, OOS APY, B&H APY, Edge, Trades. Followed by a **Factor Stability** panel: grid of all 9 factors, each showing survived/total windows count and a mini bar (green if ≥ 50%, red otherwise).
 
+**CSV Export** — an "Export CSV" button appears above each results table once results are available. Validate export includes one row per window (test start/end, APYs, edge, trades, std devs, partial flag). Discover export includes one row per window (train/test periods, active factors, key params, APYs, edge, trades, partial flag) followed by a factor stability summary block. Discover export also includes factor stability data appended after the window rows. Filenames: `{ticker}-walkforward-validate.csv` / `{ticker}-walkforward-discover.csv`. Implemented via `exportValidateCsv` / `exportDiscoverCsv` / `exportCsv` helper functions defined as module-level functions in `WalkForwardTab.tsx`.
+
 Implemented in `frontend/src/components/tabs/WalkForwardTab.tsx`. Streaming via `streamWalkForward()` in `lib/api.ts` (same SSE pattern as optimizer).
 
 ---

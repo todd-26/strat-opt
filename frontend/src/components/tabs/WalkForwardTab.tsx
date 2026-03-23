@@ -123,6 +123,62 @@ function DiscoverTable({ rows }: { rows: DiscoverWindowResult[] }) {
   )
 }
 
+function exportCsv(filename: string, headers: string[], rows: string[][]): void {
+  const escape = (v: string) => (v.includes(',') || v.includes('"') || v.includes('\n')) ? `"${v.replace(/"/g, '""')}"` : v
+  const lines = [headers.map(escape).join(','), ...rows.map(r => r.map(escape).join(','))]
+  const blob = new Blob([lines.join('\r\n')], { type: 'text/csv' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = filename
+  a.click()
+  URL.revokeObjectURL(url)
+}
+
+function exportValidateCsv(rows: ValidateWindowResult[], ticker: string): void {
+  const headers = ['Test Start', 'Test End', 'Strategy APY', 'B&H APY', 'Edge', 'Trades', 'Std Dev (Strat)', 'Std Dev (B&H)', 'Partial']
+  const data = rows.map(r => [
+    r.test_start, r.test_end,
+    r.strategy_apy != null ? (r.strategy_apy * 100).toFixed(4) : '',
+    r.buyhold_apy  != null ? (r.buyhold_apy  * 100).toFixed(4) : '',
+    r.edge         != null ? (r.edge         * 100).toFixed(4) : '',
+    String(r.trades),
+    r.stdev_strategy != null ? (r.stdev_strategy * 100).toFixed(4) : '',
+    r.stdev_buyhold  != null ? (r.stdev_buyhold  * 100).toFixed(4) : '',
+    r.is_partial ? 'Y' : 'N',
+  ])
+  exportCsv(`${ticker}-walkforward-validate.csv`, headers, data)
+}
+
+function exportDiscoverCsv(rows: DiscoverWindowResult[], ticker: string, stability?: Record<string, FactorStability>): void {
+  const headers = [
+    'Train Start', 'Train End', 'Test Start', 'Test End',
+    'Active Factors', 'Key Params',
+    'In-Sample APY', 'OOS APY', 'B&H APY', 'Edge', 'Trades', 'Partial',
+  ]
+  const data = rows.map(r => [
+    r.train_start, r.train_end, r.test_start, r.test_end,
+    r.active_factors.join('; '),
+    Object.entries(r.key_params).map(([k, v]) => `${k}=${fmtParamVal(k, v)}`).join('; '),
+    r.insample_apy  != null ? (r.insample_apy  * 100).toFixed(4) : '',
+    r.outsample_apy != null ? (r.outsample_apy * 100).toFixed(4) : '',
+    r.buyhold_apy   != null ? (r.buyhold_apy   * 100).toFixed(4) : '',
+    r.edge          != null ? (r.edge          * 100).toFixed(4) : '',
+    String(r.trades),
+    r.is_partial ? 'Y' : 'N',
+  ])
+  const lines = [headers, ...data]
+  if (stability && Object.keys(stability).length > 0) {
+    lines.push([])
+    lines.push(['Factor', 'Survived', 'Total', 'Pct'])
+    PARAM_ORDER.filter(k => stability[k]).forEach(k => {
+      const s = stability[k]
+      lines.push([k, String(s.survived), String(s.total), s.total > 0 ? (s.survived / s.total * 100).toFixed(1) + '%' : ''])
+    })
+  }
+  exportCsv(`${ticker}-walkforward-discover.csv`, lines[0], lines.slice(1))
+}
+
 function FactorStabilityPanel({ stability }: { stability: Record<string, FactorStability> }) {
   const ordered = PARAM_ORDER.filter(k => stability[k])
   return (
@@ -425,9 +481,18 @@ export function WalkForwardTab({ ticker, settings }: Props) {
       {/* Validate results */}
       {hasValidate && result!.validate_results!.length > 0 && (
         <div className="space-y-2">
-          <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
-            {result!.validate_results!.length} test window{result!.validate_results!.length !== 1 ? 's' : ''} — current saved parameters applied to each window
-          </p>
+          <div className="flex items-center justify-between">
+            <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
+              {result!.validate_results!.length} test window{result!.validate_results!.length !== 1 ? 's' : ''} — current saved parameters applied to each window
+            </p>
+            <button
+              onClick={() => exportValidateCsv(result!.validate_results!, ticker)}
+              className="px-3 py-1 rounded text-xs font-medium"
+              style={{ background: 'var(--bg-input)', color: 'var(--text-muted)', border: '1px solid var(--border)' }}
+            >
+              Export CSV
+            </button>
+          </div>
           <ValidateTable rows={result!.validate_results!} />
           {anyPartial && (
             <p className="text-xs" style={{ color: 'var(--text-muted)' }}>* Partial window — shorter than the configured window size</p>
@@ -438,9 +503,18 @@ export function WalkForwardTab({ ticker, settings }: Props) {
       {/* Discover results */}
       {hasDiscover && result!.discover_results!.length > 0 && (
         <div className="space-y-3">
-          <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
-            {result!.discover_results!.length} test window{result!.discover_results!.length !== 1 ? 's' : ''} — parameters optimized on training data, tested out-of-sample
-          </p>
+          <div className="flex items-center justify-between">
+            <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
+              {result!.discover_results!.length} test window{result!.discover_results!.length !== 1 ? 's' : ''} — parameters optimized on training data, tested out-of-sample
+            </p>
+            <button
+              onClick={() => exportDiscoverCsv(result!.discover_results!, ticker, result!.factor_stability)}
+              className="px-3 py-1 rounded text-xs font-medium"
+              style={{ background: 'var(--bg-input)', color: 'var(--text-muted)', border: '1px solid var(--border)' }}
+            >
+              Export CSV
+            </button>
+          </div>
           <DiscoverTable rows={result!.discover_results!} />
           {result!.factor_stability && Object.keys(result!.factor_stability).length > 0 && (
             <FactorStabilityPanel stability={result!.factor_stability} />
