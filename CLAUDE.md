@@ -200,7 +200,7 @@ React/Vite SPA with five tabs:
 - **Buy & Hold** — Baseline comparison run
 - **Current Signal** — Shows BUY/SELL/HOLD signal with current metrics, Factor Values panel, and full trade history
 - **Signals** — Runs current signal across all (or selected) securities at once; uses each security's saved defaults; results painted serially as they complete; no date range filter (always uses full history); shows Invested/Not Invested toggle per row (saves immediately via POST /api/config); configs prefetched on mount
-- **Walk-Forward** — Out-of-sample walk-forward testing in Validate or Discover mode; date pickers hidden; uses selected ticker; `WalkForwardTab.tsx`; `streamWalkForward()` in api.ts
+- **Walk-Forward** — Out-of-sample walk-forward testing in Validate or Discover mode; date pickers hidden; uses selected ticker; `WalkForwardTab.tsx`; `streamWalkForward()` in api.ts; "Export CSV" button above results table when results are available
 
 Key features:
 - Theming system (4 themes: Slate, Navy & Gold, Charcoal & Green, High Contrast)

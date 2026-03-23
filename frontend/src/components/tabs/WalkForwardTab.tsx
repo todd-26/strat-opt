@@ -123,6 +123,62 @@ function DiscoverTable({ rows }: { rows: DiscoverWindowResult[] }) {
   )
 }
 
+function exportCsv(filename: string, headers: string[], rows: string[][]): void {
+  const escape = (v: string) => (v.includes(',') || v.includes('"') || v.includes('\n')) ? `"${v.replace(/"/g, '""')}"` : v
+  const lines = [headers.map(escape).join(','), ...rows.map(r => r.map(escape).join(','))]
+  const blob = new Blob([lines.join('\r\n')], { type: 'text/csv' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = filename
+  a.click()
+  URL.revokeObjectURL(url)
+}
+
+function exportValidateCsv(rows: ValidateWindowResult[], ticker: string): void {
+  const headers = ['Test Start', 'Test End', 'Strategy APY', 'B&H APY', 'Edge', 'Trades', 'Std Dev (Strat)', 'Std Dev (B&H)', 'Partial']
+  const data = rows.map(r => [
+    r.test_start, r.test_end,
+    r.strategy_apy != null ? (r.strategy_apy * 100).toFixed(4) : '',
+    r.buyhold_apy  != null ? (r.buyhold_apy  * 100).toFixed(4) : '',
+    r.edge         != null ? (r.edge         * 100).toFixed(4) : '',
+    String(r.trades),
+    r.stdev_strategy != null ? (r.stdev_strategy * 100).toFixed(4) : '',
+    r.stdev_buyhold  != null ? (r.stdev_buyhold  * 100).toFixed(4) : '',
+    r.is_partial ? 'Y' : 'N',
+  ])
+  exportCsv(`${ticker}-walkforward-validate.csv`, headers, data)
+}
+
+function exportDiscoverCsv(rows: DiscoverWindowResult[], ticker: string, stability?: Record<string, FactorStability>): void {
+  const headers = [
+    'Train Start', 'Train End', 'Test Start', 'Test End',
+    'Active Factors', 'Key Params',
+    'In-Sample APY', 'OOS APY', 'B&H APY', 'Edge', 'Trades', 'Partial',
+  ]
+  const data = rows.map(r => [
+    r.train_start, r.train_end, r.test_start, r.test_end,
+    r.active_factors.join('; '),
+    Object.entries(r.key_params).map(([k, v]) => `${k}=${fmtParamVal(k, v)}`).join('; '),
+    r.insample_apy  != null ? (r.insample_apy  * 100).toFixed(4) : '',
+    r.outsample_apy != null ? (r.outsample_apy * 100).toFixed(4) : '',
+    r.buyhold_apy   != null ? (r.buyhold_apy   * 100).toFixed(4) : '',
+    r.edge          != null ? (r.edge          * 100).toFixed(4) : '',
+    String(r.trades),
+    r.is_partial ? 'Y' : 'N',
+  ])
+  const lines = [headers, ...data]
+  if (stability && Object.keys(stability).length > 0) {
+    lines.push([])
+    lines.push(['Factor', 'Survived', 'Total', 'Pct'])
+    PARAM_ORDER.filter(k => stability[k]).forEach(k => {
+      const s = stability[k]
+      lines.push([k, String(s.survived), String(s.total), s.total > 0 ? (s.survived / s.total * 100).toFixed(1) + '%' : ''])
+    })
+  }
+  exportCsv(`${ticker}-walkforward-discover.csv`, lines[0], lines.slice(1))
+}
+
 function FactorStabilityPanel({ stability }: { stability: Record<string, FactorStability> }) {
   const ordered = PARAM_ORDER.filter(k => stability[k])
   return (
@@ -245,6 +301,21 @@ export function WalkForwardTab({ ticker, settings }: Props) {
     />
   )
 
+  function InfoTooltip({ text }: { text: string }) {
+    return (
+      <span className="relative group inline-flex items-center cursor-default ml-1">
+        <span className="text-xs select-none" style={{ color: 'var(--text-muted)', opacity: 0.6 }}>ⓘ</span>
+        <span
+          className="absolute left-1/2 -translate-x-1/2 bottom-full mb-1.5 z-50 hidden group-hover:block
+                     w-64 rounded px-2.5 py-2 text-xs leading-snug pointer-events-none shadow-lg"
+          style={{ background: 'var(--bg-card)', border: '1px solid var(--border)', color: 'var(--text)' }}
+        >
+          {text}
+        </span>
+      </span>
+    )
+  }
+
   const hasValidate = result?.mode === 'validate' && result.validate_results
   const hasDiscover = result?.mode === 'discover' && result.discover_results
   const isEmpty = result && ((hasValidate && result.validate_results!.length === 0) || (hasDiscover && result.discover_results!.length === 0))
@@ -266,12 +337,18 @@ export function WalkForwardTab({ ticker, settings }: Props) {
             <p className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>Window Settings</p>
 
             <div className="flex items-center gap-3">
-              <span className="text-sm shrink-0 w-44" style={labelStyle}>Window size (months)</span>
+              <span className="text-sm shrink-0 w-44 flex items-center" style={labelStyle}>
+                Window size (months)
+                <InfoTooltip text="Length of each out-of-sample test period. The data is divided into sequential windows of this size." />
+              </span>
               {numInput(windowSize, n => setWindowSize(Math.round(n)), 1, 120)}
             </div>
 
             <div className="flex items-center gap-3">
-              <span className="text-sm shrink-0 w-44" style={labelStyle}>Window type</span>
+              <span className="text-sm shrink-0 w-44 flex items-center" style={labelStyle}>
+                Window type
+                <InfoTooltip text="Anchored: training always starts from the beginning of data and grows with each window. Rolling: a fixed-length training window slides forward in time." />
+              </span>
               <TogGroup>
                 <TogBtn value="anchored" current={windowType} onSet={setWindowType} label="Anchored" />
                 <TogBtn value="rolling"  current={windowType} onSet={setWindowType} label="Rolling" />
@@ -280,12 +357,18 @@ export function WalkForwardTab({ ticker, settings }: Props) {
 
             {windowType === 'anchored' ? (
               <div className="flex items-center gap-3">
-                <span className="text-sm shrink-0 w-44" style={labelStyle}>Initial training (months)</span>
+                <span className="text-sm shrink-0 w-44 flex items-center" style={labelStyle}>
+                  Initial training (months)
+                  <InfoTooltip text="How much history to use before the first test window. Must be long enough to produce meaningful parameter estimates." />
+                </span>
                 {numInput(initialTraining, n => setInitialTraining(Math.round(n)), 6, 240)}
               </div>
             ) : (
               <div className="flex items-center gap-3">
-                <span className="text-sm shrink-0 w-44" style={labelStyle}>Training window (months)</span>
+                <span className="text-sm shrink-0 w-44 flex items-center" style={labelStyle}>
+                  Training window (months)
+                  <InfoTooltip text="Fixed size of the training period that slides forward. Each window trains on exactly this many months of history immediately before the test period." />
+                </span>
                 {numInput(trainingWindow, n => setTrainingWindow(Math.round(n)), 6, 240)}
               </div>
             )}
@@ -296,7 +379,10 @@ export function WalkForwardTab({ ticker, settings }: Props) {
             <p className="text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>Mode</p>
 
             <div className="flex items-center gap-3">
-              <span className="text-sm shrink-0 w-44" style={labelStyle}>Mode</span>
+              <span className="text-sm shrink-0 w-44 flex items-center" style={labelStyle}>
+                Mode
+                <InfoTooltip text="Validate: applies your saved parameters to each test window to measure out-of-sample consistency. Discover: optimizes parameters on each training period then tests them out-of-sample to find which factors survive." />
+              </span>
               <TogGroup>
                 <TogBtn value="validate" current={mode} onSet={setMode} label="Validate" />
                 <TogBtn value="discover" current={mode} onSet={setMode} label="Discover" />
@@ -306,15 +392,24 @@ export function WalkForwardTab({ ticker, settings }: Props) {
             {mode === 'discover' && (
               <>
                 <div className="flex items-center gap-3">
-                  <span className="text-sm shrink-0 w-44" style={labelStyle}>APY tolerance (bps)</span>
+                  <span className="text-sm shrink-0 w-44 flex items-center" style={labelStyle}>
+                    APY tolerance (bps)
+                    <InfoTooltip text="How much worse (in basis points of APY) a simpler model can be vs the baseline before a factor is considered necessary. Higher = more aggressive pruning." />
+                  </span>
                   {numInput(apyTolBps, setApyTolBps, 0, 200, 1)}
                 </div>
                 <div className="flex items-center gap-3">
-                  <span className="text-sm shrink-0 w-44" style={labelStyle}>Max combinations</span>
+                  <span className="text-sm shrink-0 w-44 flex items-center" style={labelStyle}>
+                    Max combinations
+                    <InfoTooltip text="Grid search ceiling for the parameter refinement phase. Larger values allow finer-grained search but take longer. The grid expands until this limit is reached." />
+                  </span>
                   {numInput(maxCombos, n => setMaxCombos(Math.round(n)), 100, 50000, 100, 'w-24')}
                 </div>
                 <div className="flex items-center gap-3">
-                  <span className="text-sm shrink-0 w-44" style={labelStyle}>Seed source</span>
+                  <span className="text-sm shrink-0 w-44 flex items-center" style={labelStyle}>
+                    Seed source
+                    <InfoTooltip text="Saved params: each window starts optimization from your saved config defaults. Prev window: each window seeds from the previous window's best parameters, tracking regime drift over time." />
+                  </span>
                   <TogGroup>
                     <TogBtn value="saved"    current={seedSource} onSet={setSeedSource} label="Saved params" />
                     <TogBtn value="previous" current={seedSource} onSet={setSeedSource} label="Prev window" />
@@ -386,9 +481,18 @@ export function WalkForwardTab({ ticker, settings }: Props) {
       {/* Validate results */}
       {hasValidate && result!.validate_results!.length > 0 && (
         <div className="space-y-2">
-          <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
-            {result!.validate_results!.length} test window{result!.validate_results!.length !== 1 ? 's' : ''} — current saved parameters applied to each window
-          </p>
+          <div className="flex items-center justify-between">
+            <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
+              {result!.validate_results!.length} test window{result!.validate_results!.length !== 1 ? 's' : ''} — current saved parameters applied to each window
+            </p>
+            <button
+              onClick={() => exportValidateCsv(result!.validate_results!, ticker)}
+              className="px-3 py-1 rounded text-xs font-medium"
+              style={{ background: 'var(--bg-input)', color: 'var(--text-muted)', border: '1px solid var(--border)' }}
+            >
+              Export CSV
+            </button>
+          </div>
           <ValidateTable rows={result!.validate_results!} />
           {anyPartial && (
             <p className="text-xs" style={{ color: 'var(--text-muted)' }}>* Partial window — shorter than the configured window size</p>
@@ -399,9 +503,18 @@ export function WalkForwardTab({ ticker, settings }: Props) {
       {/* Discover results */}
       {hasDiscover && result!.discover_results!.length > 0 && (
         <div className="space-y-3">
-          <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
-            {result!.discover_results!.length} test window{result!.discover_results!.length !== 1 ? 's' : ''} — parameters optimized on training data, tested out-of-sample
-          </p>
+          <div className="flex items-center justify-between">
+            <p className="text-xs" style={{ color: 'var(--text-muted)' }}>
+              {result!.discover_results!.length} test window{result!.discover_results!.length !== 1 ? 's' : ''} — parameters optimized on training data, tested out-of-sample
+            </p>
+            <button
+              onClick={() => exportDiscoverCsv(result!.discover_results!, ticker, result!.factor_stability)}
+              className="px-3 py-1 rounded text-xs font-medium"
+              style={{ background: 'var(--bg-input)', color: 'var(--text-muted)', border: '1px solid var(--border)' }}
+            >
+              Export CSV
+            </button>
+          </div>
           <DiscoverTable rows={result!.discover_results!} />
           {result!.factor_stability && Object.keys(result!.factor_stability).length > 0 && (
             <FactorStabilityPanel stability={result!.factor_stability} />

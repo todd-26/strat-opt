@@ -136,7 +136,7 @@ Clicking a bolded value opens a popup showing the derivation:
 
 Out-of-sample validation of the strategy. Always uses full history; date pickers hidden via `hideDates`. Uses the currently selected ticker; ticker name is displayed prominently at the top of the settings card. Remounts on ticker change via `key={ticker}`.
 
-**Inputs** (all in a single settings card):
+**Inputs** (all in a single settings card; every label has an `InfoTooltip` hover explanation):
 - Window size (months, default 12)
 - Window type: Anchored or Rolling toggle
   - Anchored: training always starts at data start; initial training size input (months, default 36)
@@ -144,11 +144,15 @@ Out-of-sample validation of the strategy. Always uses full history; date pickers
 - Mode: Validate or Discover toggle
 - Discover-only inputs: APY tolerance (bps, default 10), Max combinations (default 3000), Seed source (Saved params / Prev window toggle)
 
+`InfoTooltip` is defined as a local helper function inside `WalkForwardTab` (same pattern as `ParameterPanel.tsx` and `OptimizerTable.tsx`).
+
 **Run/Cancel button** with a progress bar and status line. Validate: N/M windows. Discover: N/(M×5) steps — bar advances at each sub-step; combo-elim and grid-search both update status every 10 combos. Cancel works via a `watch_disconnect` asyncio task (polls every 0.25s) that sets a `threading.Event` — stops the Python thread within ~10 iterations.
 
 **Validate mode output** — table columns: Test Period, Strategy APY, B&H APY, Edge, Trades, Std Dev (Strat), Std Dev (B&H). Edge is color-coded green/red. Partial windows flagged with `*`.
 
 **Discover mode output** — table columns: Train Period, Test Period, Active Factors, Key Params, In-Sample APY, OOS APY, B&H APY, Edge, Trades. Followed by a **Factor Stability** panel: grid of all 9 factors, each showing survived/total windows count and a mini bar (green if ≥ 50%, red otherwise).
+
+**CSV Export** — an "Export CSV" button appears above each results table once results are available. Validate export includes one row per window (test start/end, APYs, edge, trades, std devs, partial flag). Discover export includes one row per window (train/test periods, active factors, key params, APYs, edge, trades, partial flag) followed by a factor stability summary block. Discover export also includes factor stability data appended after the window rows. Filenames: `{ticker}-walkforward-validate.csv` / `{ticker}-walkforward-discover.csv`. Implemented via `exportValidateCsv` / `exportDiscoverCsv` / `exportCsv` helper functions defined as module-level functions in `WalkForwardTab.tsx`.
 
 Implemented in `frontend/src/components/tabs/WalkForwardTab.tsx`. Streaming via `streamWalkForward()` in `lib/api.ts` (same SSE pattern as optimizer).
 
