@@ -1,5 +1,6 @@
 import pandas as pd
 from pathlib import Path
+from typing import Optional
 from alpha_vantage import AlphaVantage
 from fred import Fred
 
@@ -95,7 +96,7 @@ class WeeklyDataLoader:
     # ------------------------------------------------------------
     # Public entry: load everything
     # ------------------------------------------------------------
-    def load(self, start_date: str = None, end_date: str = None) -> pd.DataFrame:
+    def load(self, start_date: Optional[str] = None, end_date: Optional[str] = None) -> pd.DataFrame:
         """
         Returns weekly DataFrame with: close, dividend, TR, Spread, DGS10, DGS2, YieldCurve.
         Optionally sliced to [start_date, end_date] (inclusive, YYYY-MM-DD).

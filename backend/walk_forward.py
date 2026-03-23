@@ -222,16 +222,20 @@ class WalkForwardEngine:
                     st = max(1, int(round(step)))
                     vals = [v for v in range(si - k * st, si + k * st + 1, st)
                             if lo <= v <= hi]
-                    grids[factor] = vals or [si]
+                    grids[factor] = vals or [int(round(max(lo, min(hi, si))))]
                 else:
                     vals = [seed + i * step for i in range(-k, k + 1)
                             if lo <= seed + i * step <= hi]
-                    grids[factor] = vals or [seed]
+                    grids[factor] = vals or [max(lo, min(hi, seed))]
             return grids
 
         # Find the largest k that keeps total combos <= max_combinations
         if not active_factors:
             return {p: [0] for p in PARAM_NAMES}
+
+        # Fast path: all active factors have a degenerate range (min == max), no expansion possible
+        if all(bounds[f][0] == bounds[f][1] for f in active_factors):
+            return build_at_k(1)
 
         k = 0
         while True:
