@@ -16,16 +16,19 @@ interface Props {
   onAddSecurity: (ticker: string, name: string, template: string) => Promise<void>
   onRemoveSecurity: (ticker: string) => Promise<void>
   onReorderSecurities: (tickers: string[]) => Promise<void>
-  onFetchData: (ticker: string) => Promise<void>
+  onFetchData: (ticker: string) => Promise<boolean>
+  onFetchEconomicData: () => Promise<boolean>
 }
 
-export function SettingsSheet({ open, onClose, settings, onUpdate, config, onSaveConfig, ticker, securities, onAddSecurity, onRemoveSecurity, onReorderSecurities, onFetchData }: Props) {
+export function SettingsSheet({ open, onClose, settings, onUpdate, config, onSaveConfig, ticker, securities, onAddSecurity, onRemoveSecurity, onReorderSecurities, onFetchData, onFetchEconomicData }: Props) {
   const [localConfig, setLocalConfig] = useState<AppConfig>(config)
   const [saveStatus, setSaveStatus]   = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
 
   // Manage Securities state
   const [confirmDelete, setConfirmDelete]   = useState<string | null>(null)
   const [updatingTickers, setUpdatingTickers] = useState<Set<string>>(new Set())
+  const [updatingAll, setUpdatingAll]         = useState(false)
+  const [updatingFred, setUpdatingFred]       = useState(false)
   const [addTicker, setAddTicker]           = useState('')
   const [addName, setAddName]               = useState('')
   const [addTemplate, setAddTemplate]       = useState('')
@@ -84,6 +87,43 @@ export function SettingsSheet({ open, onClose, settings, onUpdate, config, onSav
       setManageError(String(e))
       setConfirmDelete(null)
     }
+  }
+
+  async function handleUpdateFred() {
+    setManageError(null)
+    setUpdatingFred(true)
+    try {
+      const alreadyCurrent = await onFetchEconomicData()
+      setManageStatus(alreadyCurrent ? 'Economic data already up to date.' : 'Economic data updated.')
+    } catch (e) {
+      setManageError(`Error updating economic data: ${String(e)}`)
+    } finally {
+      setUpdatingFred(false)
+    }
+  }
+
+  async function handleUpdateAll() {
+    setManageError(null)
+    setUpdatingAll(true)
+    const tickers = [...localSecurities]
+    let anyFetched = false
+    for (let i = 0; i < tickers.length; i++) {
+      const t = tickers[i]
+      setUpdatingTickers(prev => new Set(prev).add(t))
+      try {
+        const alreadyCurrent = await onFetchData(t)
+        if (!alreadyCurrent) anyFetched = true
+      } catch (e) {
+        setManageError(`Error updating ${t}: ${String(e)}`)
+        setUpdatingTickers(prev => { const s = new Set(prev); s.delete(t); return s })
+        setUpdatingAll(false)
+        return
+      }
+      setUpdatingTickers(prev => { const s = new Set(prev); s.delete(t); return s })
+      if (i < tickers.length - 1) await new Promise(r => setTimeout(r, 1500))
+    }
+    setUpdatingAll(false)
+    setManageStatus(anyFetched ? 'All securities updated.' : 'All securities already up to date.')
   }
 
   async function handleUpdate(t: string) {
@@ -216,6 +256,26 @@ export function SettingsSheet({ open, onClose, settings, onUpdate, config, onSav
           {/* Manage Securities */}
           <Section title="Manage Securities">
             <div className="space-y-3">
+              {/* Update All button */}
+              <button
+                onClick={handleUpdateAll}
+                disabled={updatingAll || updatingTickers.size > 0 || updatingFred}
+                className="w-full rounded px-3 py-1.5 text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+                style={{ background: 'var(--accent)', color: 'var(--accent-text)' }}
+              >
+                {updatingAll ? 'Updating...' : 'Update All Securities'}
+              </button>
+
+              {/* Update Economic Data button */}
+              <button
+                onClick={handleUpdateFred}
+                disabled={updatingFred || updatingAll || updatingTickers.size > 0}
+                className="w-full rounded px-3 py-1.5 text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+                style={{ background: 'var(--accent)', color: 'var(--accent-text)' }}
+              >
+                {updatingFred ? 'Updating...' : 'Update Economic Data'}
+              </button>
+
               {/* Existing securities list */}
               <div className="space-y-1">
                 {localSecurities.map((s, i) => (
@@ -276,6 +336,9 @@ export function SettingsSheet({ open, onClose, settings, onUpdate, config, onSav
                 ))}
               </div>
 
+              {manageStatus && <p className="text-xs font-medium" style={{ color: 'var(--buy)' }}>{manageStatus}</p>}
+              {manageError && <p className="text-xs" style={{ color: 'var(--sell)' }}>{manageError}</p>}
+
               {/* Add security form */}
               <div className="space-y-2 pt-1 border-t" style={{ borderColor: 'var(--border)' }}>
                 <span className="text-xs font-medium" style={{ color: 'var(--text-muted)' }}>Add Security</span>
@@ -306,8 +369,6 @@ export function SettingsSheet({ open, onClose, settings, onUpdate, config, onSav
                 </button>
               </div>
 
-              {manageStatus && <p className="text-xs font-medium" style={{ color: 'var(--buy)' }}>{manageStatus}</p>}
-              {manageError && <p className="text-xs" style={{ color: 'var(--sell)' }}>{manageError}</p>}
             </div>
           </Section>
 

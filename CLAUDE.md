@@ -133,7 +133,9 @@ Backend Pipeline:
 - After merging, `load()` caps the result at `min(spread_df["date"].max(), treasury_df["date"].max())` — prevents `merge_asof` from silently carrying stale FRED values into price rows newer than the latest FRED data
 - `Fred.get_data()` auto-saves `['date', 'value']` to `inputs/{series_id}.csv` on cache miss (fresh API call); `observation_start` set to `'2000-01-01'` for full history
 - `ApiSource` exposes `from_cache: bool` so callers can detect whether data came from cache or a live fetch
+- `main.py` `_fetch_and_save_csv(ticker)` returns `bool` (True = already current). Checks in order: (1) `_api_cache` — free hit if same-process API run fetched today; (2) CSV file mtime == today — loads into cache, skips API call; (3) Alpha Vantage via `ApiSource` — fetches, populates cache, writes CSV. `fetch_security_data` endpoint returns `{"ok": True, "already_current": bool}`
 - `main.py` `_fetch_and_save_fred(series_id)` fetches full FRED history directly (bypasses `_api_cache`); `_update_fred_if_stale(ticker)` refreshes all three FRED CSVs if older than the AV CSV; called from both `fetch_security_data` and `add_security`
+- `POST /api/economic-data/fetch` — refreshes all three FRED CSVs; guarded by `_fred_last_fetched` module-level datetime (1-hour in-memory TTL); returns `{"ok": True, "already_current": bool}`; `_fred_last_fetched` and `_FRED_CACHE_SECONDS = 3600` declared at module level alongside `_FRED_SERIES`
 - `WeeklyDataLoader.load()` raises `ValueError` (with available data range in message) if date slice produces empty DataFrame; all three run endpoints catch it and return HTTP 400
 - `Fred` class accepts `series_id` and `col_name` params — reusable for any FRED series
 - `DataSource` / `CsvSource` / `ApiSource` abstract CSV vs live API data sources
@@ -212,6 +214,7 @@ Key features:
 - Factor disable checkboxes in ParameterPanel (both single and range modes); disabled factors are skipped in strategy evaluation and backtester grid iteration
 - **Settings isolation**: Opening/saving Settings does NOT reset Backtester or Current Signal tab state. Tabs initialize from config on mount; `key={ticker}` remount handles ticker changes. Prop-syncing `useEffect` hooks were removed from both `OptimizerTab` and `SignalTab`. Each tab has "Reset from Settings" and "Save to Settings" buttons — both styled accent and enabled only when the tab's current values differ from saved defaults (`hasChanges`); muted and disabled otherwise. Both tabs accept `config: AppConfig` and `onSaveConfig` props.
 - **Settings "Save Permanently"** button is also only active (accent) when `localConfig` differs from the `config` prop (`hasChanges = JSON.stringify(localConfig) !== JSON.stringify(config)`).
+- **Settings → Manage Securities** has an **"Update All Securities"** button (accent, full-width, above the list) that refreshes all securities serially with a 1500ms pause between each. Uses `ApiSource` day-level cache — no duplicate AV call if a Signals/Backtester run already fetched the data today. `updatingAll` state disables individual refresh buttons while running and vice versa.
 - Trade history table has 13 columns (Date, Action, Price, MA, Spread, Drop, chg4, ret3, Δspread, Δ10yr%, Δ2yr%, ΔCurve, Δyield10); triggered values are bolded per trade action with clickable popups showing derivations
 
 ## Trading Logic
