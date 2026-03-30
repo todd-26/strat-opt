@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useSettings } from './hooks/useSettings'
 import { applyTheme } from './lib/themes'
-import { getConfig, saveConfig, fetchSecurities, getDateRange, addSecurity, removeSecurity, updateSecurityData, reorderSecurities } from './lib/api'
+import { getConfig, saveConfig, fetchSecurities, getDateRange, addSecurity, removeSecurity, updateSecurityData, updateEconomicData, reorderSecurities } from './lib/api'
 import { Header } from './components/Header'
 import { SettingsSheet } from './components/Settings'
 import { OptimizerTab } from './components/tabs/OptimizerTab'
@@ -69,8 +69,8 @@ export default function App() {
     setSecurities(tickers)
   }
 
-  async function handleFetchData(t: string) {
-    await updateSecurityData(t)
+  async function handleFetchData(t: string): Promise<boolean> {
+    const alreadyCurrent = await updateSecurityData(t)
     if (t === ticker) {
       setStartDate('')
       setEndDate('')
@@ -79,6 +79,7 @@ export default function App() {
         .then(r => { setDateRange(r); setDateRangeError(null) })
         .catch((e: unknown) => { setDateRange(null); setDateRangeError(e instanceof Error ? e.message : String(e)) })
     }
+    return alreadyCurrent
   }
 
   useEffect(() => {
@@ -240,6 +241,7 @@ export default function App() {
           onRemoveSecurity={handleRemoveSecurity}
           onReorderSecurities={handleReorderSecurities}
           onFetchData={handleFetchData}
+          onFetchEconomicData={updateEconomicData}
         />
       )}
 

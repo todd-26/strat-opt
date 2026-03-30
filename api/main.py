@@ -8,6 +8,7 @@ import threading
 import requests as _requests
 import concurrent.futures
 import pandas as _pd
+from datetime import date as _date, datetime as _datetime
 from pathlib import Path
 from typing import AsyncGenerator
 from dotenv import load_dotenv
@@ -24,6 +25,7 @@ CODE_DIR  = Path(__file__).resolve().parent.parent / "backend"
 INPUT_DIR = Path(__file__).resolve().parent.parent / "inputs"
 sys.path.insert(0, str(CODE_DIR))
 
+from data_source import ApiSource, ApiData, _api_cache  # noqa: E402
 from data_loader import WeeklyDataLoader          # noqa: E402
 from indicators import IndicatorEngine             # noqa: E402
 from strategy_generic import GenericStrategy       # noqa: E402
@@ -173,8 +175,16 @@ def _build_backtest_result(bt_result: dict, spread_delta_n=2, yield10_delta_n=2)
     )
 
 
-def _fetch_and_save_csv(ticker: str) -> None:
-    """Fetch weekly adjusted CSV from Alpha Vantage and save to inputs dir."""
+def _fetch_and_save_csv(ticker: str) -> bool:
+    """Fetch weekly adjusted CSV from Alpha Vantage and save to inputs dir.
+
+    Returns True if data was already current (no API call made), False if freshly fetched.
+
+    Check order:
+    1. In-memory _api_cache (populated by same-process API runs today) — free.
+    2. CSV file on disk modified today — load it, populate cache, skip API call.
+    3. Alpha Vantage API — fetch, populate cache, write CSV.
+    """
     api_key = os.environ.get("ALPHA_VANTAGE_API_KEY")
     if not api_key:
         raise ValueError("ALPHA_VANTAGE_API_KEY is not set in the environment.")
@@ -183,23 +193,30 @@ def _fetch_and_save_csv(ticker: str) -> None:
         "https://www.alphavantage.co/query?function=TIME_SERIES_WEEKLY_ADJUSTED&symbol={ticker}&outputsize=full&datatype=csv&apikey={apikey}",
     )
     url = url_template.format(ticker=ticker, apikey=api_key)
-    resp = _requests.get(url, timeout=30)
-    resp.raise_for_status()
-    content = resp.text
-    # Alpha Vantage returns JSON error messages even for CSV requests
-    if content.strip().startswith("{"):
-        try:
-            err = json.loads(content)
-            msg = (err.get("Error Message") or err.get("Note") or
-                   err.get("Information") or "Unknown Alpha Vantage error")
-            raise ValueError(msg)
-        except json.JSONDecodeError:
-            pass
     csv_path = INPUT_DIR / f"{ticker.lower()}-weekly-adjusted.csv"
-    csv_path.write_text(content, encoding="utf-8")
+    cache_key = (url, frozenset(), _date.today())
+
+    # 1. In-memory cache hit — write cached data to CSV and return
+    if cache_key in _api_cache:
+        _api_cache[cache_key].to_csv(csv_path, index=False)
+        return True
+
+    # 2. CSV file already updated today — load into cache and return
+    if csv_path.exists():
+        mtime = _date.fromtimestamp(csv_path.stat().st_mtime)
+        if mtime == _date.today():
+            _api_cache[cache_key] = _pd.read_csv(csv_path)
+            return True
+
+    # 3. Fetch from Alpha Vantage via ApiSource (raises ValueError on error response)
+    source = ApiSource(url, ApiData.CSV)
+    source.data.to_csv(csv_path, index=False)
+    return False
 
 
 _FRED_SERIES = ('BAMLH0A0HYM2', 'DGS10', 'DGS2')
+_fred_last_fetched: _datetime | None = None
+_FRED_CACHE_SECONDS = 3600
 
 
 def _fetch_and_save_fred(series_id: str) -> None:
@@ -308,13 +325,30 @@ def fetch_security_data(ticker: str):
     if ticker not in full["securities"]:
         raise HTTPException(status_code=404, detail=f"{ticker} not found.")
     try:
-        _fetch_and_save_csv(ticker)
+        already_current = _fetch_and_save_csv(ticker)
         _update_fred_if_stale(ticker)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Fetch failed: {e}")
-    return {"ok": True}
+    return {"ok": True, "already_current": already_current}
+
+
+@app.post("/api/economic-data/fetch")
+def fetch_economic_data():
+    global _fred_last_fetched
+    now = _datetime.now()
+    if _fred_last_fetched and (now - _fred_last_fetched).total_seconds() < _FRED_CACHE_SECONDS:
+        return {"ok": True, "already_current": True}
+    try:
+        for series_id in _FRED_SERIES:
+            _fetch_and_save_fred(series_id)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to fetch economic data: {e}")
+    _fred_last_fetched = now
+    return {"ok": True, "already_current": False}
 
 
 @app.post("/api/securities/reorder")
