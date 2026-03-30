@@ -895,17 +895,17 @@
             "description": "Sell if 10-year yield 4-week change exceeds threshold",
             "type": "percent",
             "ignore": false,
-            "default": 0.125,
+            "default": 0.27,
             "range": {
-              "min": 0.125,
-              "max": 0.125,
+              "min": 0.27,
+              "max": 0.27,
               "step": 0.001
             }
           },
           "YIELD2_CHG4": {
             "description": "Sell if 2-year yield 4-week change exceeds threshold",
             "type": "percent",
-            "ignore": false,
+            "ignore": true,
             "default": 0.141,
             "range": {
               "min": 0.141,
@@ -929,7 +929,7 @@
           "MA": {
             "description": "Price must be above n-week moving average",
             "type": "weeks",
-            "ignore": false,
+            "ignore": true,
             "default": 2.0,
             "range": {
               "min": 2.0,
@@ -940,7 +940,7 @@
           "DROP": {
             "description": "Credit spread must fall this fraction from 4-week peak",
             "type": "percent",
-            "ignore": false,
+            "ignore": true,
             "default": 0.024,
             "range": {
               "min": 0.024,
@@ -952,10 +952,10 @@
             "description": "Consecutive weeks of declining credit spread required",
             "type": "weeks",
             "ignore": false,
-            "default": 2.0,
+            "default": 6.0,
             "range": {
-              "min": 2.0,
-              "max": 2.0,
+              "min": 6.0,
+              "max": 6.0,
               "step": 1.0
             }
           },
