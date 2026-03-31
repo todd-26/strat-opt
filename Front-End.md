@@ -28,6 +28,7 @@ A persistent top header containing:
 - App name **SignalVane** on the left
 - Security **dropdown** next to the name (populated from `GET /api/securities`; securities are user-configurable via Settings)
 - **From / To date inputs** for a global date range filter (not persisted; applies to Backtester, Buy & Hold, and Current Signal tabs). Hidden when the **Signals** tab is active (via `hideDates` prop) since that tab always uses full history. By default they display the actual data range (min/max) for the selected security, fetched from `GET /api/date-range`; internally stored as `''` (no filter) until the user changes them. Uses `<input type="date">` — browser native calendar. An **X** button appears when either date is customized to reset both to default. On blur, validates: end < start or date out of data range shows an error popup and clears the bad field.
+- **"As of"** economic data dates — always visible between the date pickers and the gear icon; shows latest available date for each FRED series as "As of: Spread M/D · 2Y M/D · 10Y M/D"; fetched from `GET /api/economic-data/dates` on mount and after "Update Economic Data" completes; `fmtDate()` helper strips year to M/D format
 - Gear icon on the right to open Settings
 
 ### Tab Navigation

@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useSettings } from './hooks/useSettings'
 import { applyTheme } from './lib/themes'
-import { getConfig, saveConfig, fetchSecurities, getDateRange, addSecurity, removeSecurity, updateSecurityData, updateEconomicData, reorderSecurities } from './lib/api'
+import { getConfig, saveConfig, fetchSecurities, getDateRange, addSecurity, removeSecurity, updateSecurityData, updateEconomicData, reorderSecurities, getEconomicDates } from './lib/api'
 import { Header } from './components/Header'
 import { SettingsSheet } from './components/Settings'
 import { OptimizerTab } from './components/tabs/OptimizerTab'
@@ -33,6 +33,7 @@ export default function App() {
   const [endDate, setEndDate]         = useState('')
   const [dateRange, setDateRange]     = useState<{ min: string; max: string } | null>(null)
   const [dateRangeError, setDateRangeError] = useState<string | null>(null)
+  const [econDates, setEconDates]     = useState<{ spread: string | null; dgs2: string | null; dgs10: string | null } | null>(null)
   const [startupError, setStartupError] = useState<string | null>(null)
   const lastConfigRef = useRef<AppConfig | null>(null)
   if (config !== null) lastConfigRef.current = config
@@ -69,6 +70,12 @@ export default function App() {
     setSecurities(tickers)
   }
 
+  async function handleFetchEconomicData(): Promise<boolean> {
+    const alreadyCurrent = await updateEconomicData()
+    getEconomicDates().then(setEconDates).catch(() => {})
+    return alreadyCurrent
+  }
+
   async function handleFetchData(t: string): Promise<boolean> {
     const alreadyCurrent = await updateSecurityData(t)
     if (t === ticker) {
@@ -97,6 +104,10 @@ export default function App() {
       .then(r => { setDateRange(r); setDateRangeError(null) })
       .catch((e: unknown) => { setDateRange(null); setDateRangeError(e instanceof Error ? e.message : String(e)) })
   }, [ticker])
+
+  useEffect(() => {
+    getEconomicDates().then(setEconDates).catch(() => {})
+  }, [])
 
   async function handleSaveConfig(newConfig: AppConfig) {
     await saveConfig(ticker, newConfig)
@@ -180,6 +191,7 @@ export default function App() {
         dateRange={dateRange}
         dateRangeError={dateRangeError}
         hideDates={activeTab === 'signals' || activeTab === 'walkforward'}
+        econDates={econDates}
       />
 
       {/* Tab bar */}
@@ -241,7 +253,7 @@ export default function App() {
           onRemoveSecurity={handleRemoveSecurity}
           onReorderSecurities={handleReorderSecurities}
           onFetchData={handleFetchData}
-          onFetchEconomicData={updateEconomicData}
+          onFetchEconomicData={handleFetchEconomicData}
         />
       )}
 
