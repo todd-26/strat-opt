@@ -334,6 +334,23 @@ def fetch_security_data(ticker: str):
     return {"ok": True, "already_current": already_current}
 
 
+@app.get("/api/economic-data/dates")
+def get_economic_dates():
+    result = {}
+    labels = {'BAMLH0A0HYM2': 'spread', 'DGS2': 'dgs2', 'DGS10': 'dgs10'}
+    for series_id, key in labels.items():
+        path = INPUT_DIR / f"{series_id}.csv"
+        if not path.exists():
+            result[key] = None
+            continue
+        df = _pd.read_csv(path)
+        df['date'] = _pd.to_datetime(df['date'], errors='coerce')
+        df = df.dropna(subset=['date', 'value'])
+        df = df[_pd.to_numeric(df['value'], errors='coerce').notna()]
+        result[key] = df['date'].max().strftime('%Y-%m-%d') if not df.empty else None
+    return result
+
+
 @app.post("/api/economic-data/fetch")
 def fetch_economic_data():
     global _fred_last_fetched

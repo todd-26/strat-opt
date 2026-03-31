@@ -13,6 +13,13 @@ interface Props {
   dateRange?: { min: string; max: string } | null
   dateRangeError?: string | null
   hideDates?: boolean
+  econDates?: { spread: string | null; dgs2: string | null; dgs10: string | null } | null
+}
+
+function fmtDate(d: string | null | undefined): string {
+  if (!d) return '—'
+  const [, m, day] = d.split('-')
+  return `${parseInt(m)}/${parseInt(day)}`
 }
 
 const inputStyle: React.CSSProperties = {
@@ -21,7 +28,7 @@ const inputStyle: React.CSSProperties = {
   border: '1px solid var(--border)',
 }
 
-export function Header({ ticker, securities, onTickerChange, onOpenSettings, startDate, endDate, onStartDateChange, onEndDateChange, dateRange, dateRangeError, hideDates }: Props) {
+export function Header({ ticker, securities, onTickerChange, onOpenSettings, startDate, endDate, onStartDateChange, onEndDateChange, dateRange, dateRangeError, hideDates, econDates }: Props) {
   const [error, setError] = useState('')
   const hasCustomDates = startDate !== '' || endDate !== ''
 
@@ -102,6 +109,17 @@ export function Header({ ticker, securities, onTickerChange, onOpenSettings, sta
           )}
         </>}
       </div>
+
+      {econDates && (
+        <div className="flex items-center gap-2 text-xs" style={{ color: 'var(--text-header)', opacity: 0.65 }}>
+          <span>As of:</span>
+          <span>Spread {fmtDate(econDates.spread)}</span>
+          <span>·</span>
+          <span>2Y {fmtDate(econDates.dgs2)}</span>
+          <span>·</span>
+          <span>10Y {fmtDate(econDates.dgs10)}</span>
+        </div>
+      )}
 
       <button
         onClick={onOpenSettings}
