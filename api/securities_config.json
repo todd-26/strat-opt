@@ -171,7 +171,7 @@
       "cash_rate": 0.023,
       "cash_vehicle": "JMST",
       "cash_vehicle_notes": "JPMorgan Ultra-Short Muni ETF, tax-exempt",
-      "start_invested": 0,
+      "start_invested": 1,
       "parameters": {
         "sell_triggers": {
           "CHG4": {
@@ -588,7 +588,7 @@
       "cash_rate": 0.023,
       "cash_vehicle": "JMST",
       "cash_vehicle_notes": "JPMorgan Ultra-Short Muni ETF, tax-exempt",
-      "start_invested": 0,
+      "start_invested": 1,
       "parameters": {
         "sell_triggers": {
           "CHG4": {
@@ -727,13 +727,13 @@
       "cash_rate": 0.035,
       "cash_vehicle": "JMST",
       "cash_vehicle_notes": "JPMorgan Ultra-Short Muni ETF, tax-exempt",
-      "start_invested": 0,
+      "start_invested": 1,
       "parameters": {
         "sell_triggers": {
           "CHG4": {
             "description": "Sell if 4-week credit spread change exceeds threshold",
             "type": "percent",
-            "ignore": false,
+            "ignore": true,
             "default": 0.125,
             "range": {
               "min": 0.125,
@@ -745,17 +745,17 @@
             "description": "Sell if 3-week price return falls below threshold",
             "type": "percent",
             "ignore": false,
-            "default": -0.018,
+            "default": -0.011,
             "range": {
-              "min": -0.018,
-              "max": -0.018,
+              "min": -0.011,
+              "max": -0.011,
               "step": 0.001
             }
           },
           "YIELD10_CHG4": {
             "description": "Sell if 10-year yield 4-week change exceeds threshold",
             "type": "percent",
-            "ignore": false,
+            "ignore": true,
             "default": 0.1,
             "range": {
               "min": 0.1,
@@ -766,7 +766,7 @@
           "YIELD2_CHG4": {
             "description": "Sell if 2-year yield 4-week change exceeds threshold",
             "type": "percent",
-            "ignore": false,
+            "ignore": true,
             "default": 0.077,
             "range": {
               "min": 0.077,
@@ -793,7 +793,7 @@
             "ignore": true,
             "default": 6.0,
             "range": {
-              "min": 6.0,
+              "min": 1.0,
               "max": 6.0,
               "step": 1.0
             }
@@ -801,11 +801,11 @@
           "DROP": {
             "description": "Credit spread must fall this fraction from 4-week peak",
             "type": "percent",
-            "ignore": true,
-            "default": 0.015,
+            "ignore": false,
+            "default": 0.001,
             "range": {
-              "min": 0.015,
-              "max": 0.015,
+              "min": 0.001,
+              "max": 0.001,
               "step": 0.001
             }
           },
@@ -815,8 +815,8 @@
             "ignore": true,
             "default": 2.0,
             "range": {
-              "min": 2.0,
-              "max": 2.0,
+              "min": 1.0,
+              "max": 1.0,
               "step": 1.0
             }
           },
