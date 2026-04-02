@@ -32,7 +32,8 @@
       "cash_rate": 0.04,
       "cash_vehicle": "money_market",
       "cash_vehicle_notes": "Taxable money market or treasuries",
-      "start_invested": 1,
+      "start_invested": 0,
+      "is_invested": 0,
       "parameters": {
         "sell_triggers": {
           "CHG4": {
@@ -171,7 +172,8 @@
       "cash_rate": 0.023,
       "cash_vehicle": "JMST",
       "cash_vehicle_notes": "JPMorgan Ultra-Short Muni ETF, tax-exempt",
-      "start_invested": 1,
+      "start_invested": 0,
+      "is_invested": 0,
       "parameters": {
         "sell_triggers": {
           "CHG4": {
@@ -310,7 +312,8 @@
       "cash_rate": 0.023,
       "cash_vehicle": "JMST",
       "cash_vehicle_notes": "JPMorgan Ultra-Short Muni ETF, tax-exempt",
-      "start_invested": 1,
+      "start_invested": 0,
+      "is_invested": 0,
       "parameters": {
         "sell_triggers": {
           "CHG4": {
@@ -449,7 +452,8 @@
       "cash_rate": 0.0365,
       "cash_vehicle": "money_market",
       "cash_vehicle_notes": "Taxable money market or treasuries",
-      "start_invested": 1,
+      "start_invested": 0,
+      "is_invested": 1,
       "parameters": {
         "sell_triggers": {
           "CHG4": {
@@ -588,7 +592,8 @@
       "cash_rate": 0.023,
       "cash_vehicle": "JMST",
       "cash_vehicle_notes": "JPMorgan Ultra-Short Muni ETF, tax-exempt",
-      "start_invested": 1,
+      "start_invested": 0,
+      "is_invested": 0,
       "parameters": {
         "sell_triggers": {
           "CHG4": {
@@ -727,7 +732,8 @@
       "cash_rate": 0.035,
       "cash_vehicle": "JMST",
       "cash_vehicle_notes": "JPMorgan Ultra-Short Muni ETF, tax-exempt",
-      "start_invested": 1,
+      "start_invested": 0,
+      "is_invested": 0,
       "parameters": {
         "sell_triggers": {
           "CHG4": {
@@ -866,7 +872,8 @@
       "cash_rate": 0.023,
       "cash_vehicle": "JMST",
       "cash_vehicle_notes": "JPMorgan Ultra-Short Muni ETF, tax-exempt",
-      "start_invested": 1,
+      "start_invested": 0,
+      "is_invested": 1,
       "parameters": {
         "sell_triggers": {
           "CHG4": {

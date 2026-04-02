@@ -42,7 +42,7 @@ export function SignalsTab({ securities, settings }: Props) {
   async function toggleInvested(ticker: string) {
     const cfg = configs.get(ticker)
     if (!cfg) return
-    const updated = { ...cfg, start_invested: (cfg.start_invested === 1 ? 0 : 1) as 0 | 1 }
+    const updated = { ...cfg, is_invested: (cfg.is_invested === 1 ? 0 : 1) as 0 | 1 }
     setConfigs(prev => new Map(prev).set(ticker, updated))
     try {
       await saveConfig(ticker, updated)
@@ -167,7 +167,7 @@ export function SignalsTab({ securities, settings }: Props) {
           const result    = results.get(ticker)
           const isChecked = checked.has(ticker)
           const cfg       = configs.get(ticker)
-          const invested  = cfg?.start_invested === 1
+          const invested  = cfg?.is_invested === 1
 
           return (
             <div
