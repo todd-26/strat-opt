@@ -263,6 +263,7 @@ def _security_to_appconfig(sec: dict) -> AppConfig:
         cash_rate=sec["cash_rate"],
         cash_vehicle=sec.get("cash_vehicle", ""),
         start_invested=sec.get("start_invested", 1),
+        is_invested=sec.get("is_invested", 1),
         sell_triggers={k: v for k, v in p["sell_triggers"].items()},
         buy_conditions={k: v for k, v in p["buy_conditions"].items()},
     )
@@ -648,8 +649,9 @@ def save_config(config: AppConfig, ticker: str = Query()):
         raise HTTPException(status_code=404, detail=f"No config found for ticker {ticker}")
 
     sec = full["securities"][ticker]
-    sec["cash_rate"]     = config.cash_rate
+    sec["cash_rate"]      = config.cash_rate
     sec["start_invested"] = config.start_invested
+    sec["is_invested"]    = config.is_invested
 
     for k, v in config.sell_triggers.items():
         if k in sec["parameters"]["sell_triggers"]:

@@ -148,6 +148,7 @@ export interface AppConfig {
   cash_rate: number
   cash_vehicle: string
   start_invested: 0 | 1
+  is_invested: 0 | 1
   sell_triggers: {
     CHG4: ParamConfig
     RET3: ParamConfig

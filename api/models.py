@@ -167,6 +167,7 @@ class AppConfig(BaseModel):
     cash_rate: float
     cash_vehicle: str
     start_invested: int = 1
+    is_invested: int = 1
     sell_triggers: dict[str, ParamConfig]
     buy_conditions: dict[str, ParamConfig]
 
