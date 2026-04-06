@@ -96,7 +96,7 @@ export function SignalsTab({ securities, settings }: Props) {
           ...Object.entries(config.buy_conditions).filter(([, v]) => v.ignore).map(([k]) => k),
         ]
         const res = await runSignal(
-          ticker, params, config.start_invested, config.cash_rate,
+          ticker, params, config.start_invested, config.is_invested, config.cash_rate,
           inputType, undefined, undefined, disabled
         )
         setResults(prev => new Map(prev).set(ticker, { signal: res.signal }))

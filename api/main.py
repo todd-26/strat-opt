@@ -447,16 +447,11 @@ def run_signal(req: SignalRequest):
     bt        = Backtester(req.cash_rate)
     bt_result = bt.run(df_ind, positions, buy_dates, sell_dates)
 
-    if len(positions) >= 2:
-        prev_pos = positions[-2]
-        last_pos_val = positions[-1]
-    else:
-        prev_pos = positions[-1] if positions else 0
-        last_pos_val = prev_pos
+    last_pos_val = positions[-1] if positions else 0
 
-    if last_pos_val == 1 and prev_pos == 0:
+    if req.is_invested == 0 and last_pos_val == 1:
         signal = "BUY"
-    elif last_pos_val == 0 and prev_pos == 1:
+    elif req.is_invested == 1 and last_pos_val == 0:
         signal = "SELL"
     else:
         signal = "HOLD"

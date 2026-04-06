@@ -11,6 +11,7 @@ export function useSignal() {
     ticker: string,
     params: StrategyParams,
     startInvested: number,
+    isInvested: number,
     cashRate: number,
     inputType: string,
     startDate?: string,
@@ -21,7 +22,7 @@ export function useSignal() {
     setError(null)
     setResult(null)
     try {
-      const data = await runSignal(ticker, params, startInvested, cashRate, inputType, startDate, endDate, disabledFactors)
+      const data = await runSignal(ticker, params, startInvested, isInvested, cashRate, inputType, startDate, endDate, disabledFactors)
       setResult(data)
     } catch (err) {
       setError(String(err))

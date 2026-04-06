@@ -26,6 +26,7 @@ class SignalRequest(BaseModel):
     ticker: str
     params: StrategyParams
     start_invested: int = 1
+    is_invested: int = 1
     cash_rate: float = 0.04
     input_type: str = "csv"
     start_date: Optional[str] = None
