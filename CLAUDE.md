@@ -202,8 +202,8 @@ Signal and optimizer endpoints accept `disabled_factors` (list of factor names t
 React/Vite SPA with five tabs:
 - **Backtester** — Grid search with parameter range inputs, streaming progress, sortable results table, drill-down charts
 - **Buy & Hold** — Baseline comparison run
-- **Current Signal** — Shows BUY/SELL/HOLD signal with current metrics, Factor Values panel, and full trade history
-- **Signals** — Runs current signal across all (or selected) securities at once; uses each security's saved defaults; results painted serially as they complete; no date range filter (always uses full history); shows Invested/Not Invested toggle per row (saves immediately via POST /api/config); configs prefetched on mount
+- **Current Signal** — Shows BUY/SELL/HOLD signal with current metrics, Factor Values panel, and full trade history; `start_invested` controls historical backtest starting position only; signal (BUY/SELL/HOLD) is determined by `config.is_invested` vs `positions[-1]`
+- **Signals** — Runs current signal across all (or selected) securities at once; uses each security's saved defaults; results painted serially as they complete; no date range filter (always uses full history); shows Invested/Not Invested toggle per row (saves immediately via POST /api/config); configs prefetched on mount; passes both `start_invested` and `is_invested` to `runSignal`; signal determined by `is_invested` vs `positions[-1]` (not position transition)
 - **Walk-Forward** — Out-of-sample walk-forward testing in Validate or Discover mode; date pickers hidden; uses selected ticker; `WalkForwardTab.tsx`; `streamWalkForward()` in api.ts; "Export CSV" button above results table when results are available
 
 Key features:

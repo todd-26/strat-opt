@@ -89,7 +89,7 @@ export function SignalTab({ settings, ticker, defaultParams, paramDescriptions, 
   }
 
   function handleRun() {
-    run(ticker, params, startInvested, cashRate, inputType, startDate, endDate, disabledFactors.size ? [...disabledFactors] : undefined)
+    run(ticker, params, startInvested, config.is_invested, cashRate, inputType, startDate, endDate, disabledFactors.size ? [...disabledFactors] : undefined)
     setCollapsed(true)
   }
 
