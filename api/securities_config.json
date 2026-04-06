@@ -33,7 +33,7 @@
       "cash_vehicle": "money_market",
       "cash_vehicle_notes": "Taxable money market or treasuries",
       "start_invested": 0,
-      "is_invested": 0,
+      "is_invested": 1,
       "parameters": {
         "sell_triggers": {
           "CHG4": {
