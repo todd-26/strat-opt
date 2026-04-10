@@ -97,7 +97,7 @@ function DiscoverTable({ rows }: { rows: DiscoverWindowResult[] }) {
       <table className="w-full text-sm" style={{ minWidth: '860px' }}>
         <thead>
           <tr style={{ background: 'var(--bg-input)' }}>
-            {['Train Period', 'Test Period', 'Active Factors', 'Key Params', 'In-Sample APY', 'OOS APY', 'B&H APY', 'Edge', 'Trades'].map(h => (
+            {['Train Period', 'Test Period', 'Key Params', 'In-Sample APY', 'OOS APY', 'B&H APY', 'Edge', 'Trades'].map(h => (
               <th key={h} className={thCls} style={thStyle}>{h}</th>
             ))}
           </tr>
@@ -110,8 +110,7 @@ function DiscoverTable({ rows }: { rows: DiscoverWindowResult[] }) {
                 {fmtPeriod(row.test_start, row.test_end)}
                 {row.is_partial && <span className="ml-1 text-xs" style={{ color: 'var(--text-muted)' }}>*</span>}
               </td>
-              <td className={tdCls} style={{ fontSize: '0.73rem' }}>{row.active_factors.join(', ')}</td>
-              <td className={tdCls} style={{ fontSize: '0.73rem', color: 'var(--text-muted)' }}>{fmtKeyParams(row.key_params, row.active_factors)}</td>
+              <td className={tdCls} style={{ fontSize: '0.73rem', color: 'var(--text)' }}>{fmtKeyParams(row.key_params, row.active_factors)}</td>
               <td className={tdCls}>{fmtApy(row.insample_apy)}</td>
               <td className={tdCls}>{fmtApy(row.outsample_apy)}</td>
               <td className={tdCls}>{fmtApy(row.buyhold_apy)}</td>
