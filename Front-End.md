@@ -101,7 +101,7 @@ Each strategy parameter gets a single value input (not a range). Pre-filled with
 - Below the metrics: a **MetricsCard** showing APY and final value.
 
 **Right — Factor Values**:
-A panel showing the current metric reading for each factor, grouped into **Sell** (trigger if ANY true) and **Buy** (ALL must be true) sections. Disabled factors are shown at reduced opacity with an "(off)" label. Each row: factor label on the left, current metric value on the right (percentage factors shown as %). Implemented via `ThresholdRow` component in `SignalTab.tsx`.
+A panel showing the current metric reading for each factor, grouped into **Sell** (trigger if ANY true) and **Buy** (ALL must be true) sections. Disabled factors are shown at reduced opacity with an "(off)" label. Each row: factor label on the left, current metric value on the right. `chg4` displays as absolute difference (`chg4_abs`) to match the units of the CHG4 threshold in config. Implemented via `ThresholdRow` component in `SignalTab.tsx`.
 
 Sell factors: chg4, ret3, 10yr chg4, 2yr chg4, ΔCurve.
 
@@ -119,7 +119,7 @@ Values that contributed to the decision are **bolded** (dotted underline, pointe
 - BUY: bold Price and MA (close > MA), Drop (spread drop from 4-week peak ≥ DROP threshold), Δspread (falling spreads), and Δyield10 (falling 10yr yield) (unless that factor is disabled)
 
 Clicking a bolded value opens a popup showing the derivation:
-- chg4: % change vs threshold + spread 4 wks ago → now
+- chg4: absolute change (spread now − spread 4 wks ago) vs threshold + spread 4 wks ago → now
 - ret3: % return vs threshold + price 3 wks ago → now
 - Price / MA: close vs MA value (shown to 4 decimal places to avoid rounding ambiguity)
 - Drop: 4-week peak spread, current spread, actual drop %, and DROP threshold

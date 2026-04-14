@@ -120,6 +120,7 @@ class SignalMetrics(BaseModel):
     ma: Optional[float] = None
     ret3: Optional[float] = None
     chg4: Optional[float] = None
+    chg4_abs: Optional[float] = None
     spread_delta: Optional[float] = None
     spread_delta_history: Optional[list[float]] = None
     yield10_chg4: Optional[float] = None

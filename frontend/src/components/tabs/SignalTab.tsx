@@ -245,7 +245,7 @@ export function SignalTab({ settings, ticker, defaultParams, paramDescriptions, 
                   <MetricRow label="Close" value={`$${fmt(result.metrics.close, 2)}`} />
                   <MetricRow label="MA" value={fmt(result.metrics.ma, 2)} />
                   <MetricRow label="Spread" value={fmt(result.metrics.spread, 2)} />
-                  <MetricRow label="chg4" value={fmt(result.metrics.chg4, 4)} />
+                  <MetricRow label="chg4" value={fmt(result.metrics.chg4_abs ?? result.metrics.chg4, 4)} />
                   <MetricRow label="ret3" value={fmt(result.metrics.ret3, 4)} />
                   <MetricRow label="Δspread" value={fmt(result.metrics.spread_delta, 4)} />
                   <MetricRow label="10yr chg4" value={fmt(result.metrics.yield10_chg4, 4)} />
@@ -268,7 +268,7 @@ export function SignalTab({ settings, ticker, defaultParams, paramDescriptions, 
 
               <div className="mb-1 text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>Sell — trigger if ANY true</div>
               <dl className="mb-4 space-y-1.5 text-sm">
-                <ThresholdRow label="chg4"      value={result.metrics.chg4}          disabled={disabledFactors.has('CHG4')} pct />
+                <ThresholdRow label="chg4"      value={result.metrics.chg4_abs ?? result.metrics.chg4} disabled={disabledFactors.has('CHG4')} />
                 <ThresholdRow label="ret3"      value={result.metrics.ret3}          disabled={disabledFactors.has('RET3')} pct />
                 <ThresholdRow label="10yr chg4" value={result.metrics.yield10_chg4}  disabled={disabledFactors.has('YIELD10_CHG4')} pct />
                 <ThresholdRow label="2yr chg4"  value={result.metrics.yield2_chg4}   disabled={disabledFactors.has('YIELD2_CHG4')} pct />
