@@ -475,6 +475,7 @@ def run_signal(req: SignalRequest):
         ma=_safe_float(last_row.get(ma_col)),
         ret3=_safe_float(last_row.get("ret3")),
         chg4=_safe_float(last_row.get("chg4")),
+        chg4_abs=_safe_float(last_row["Spread"] - df_ind.iloc[last_pos - 4]["Spread"]) if last_pos >= 4 else None,
         spread_delta=_safe_float(last_row.get("spread_delta")),
         spread_delta_history=[
             v for v in (

@@ -8,7 +8,7 @@ All securities in SignalVane use the same `GenericStrategy` driven by `api/secur
 
 | Parameter | What it measures | Trigger condition |
 |-----------|-----------------|-------------------|
-| **CHG4** | 4-week % change in credit spread (`chg4`) | `chg4 > CHG4` — spread has risen too much over 4 weeks |
+| **CHG4** | 4-week absolute change in credit spread (`chg4_abs`) | `chg4_abs > CHG4` — spread has risen too much over 4 weeks (absolute units, e.g. 0.165 = 16.5 bps) |
 | **RET3** | 3-week price return (`ret3`) | `ret3 < RET3` — price has dropped too much over 3 weeks (RET3 is negative) |
 | **YIELD10_CHG4** | 4-week % change in 10yr Treasury yield | `yield10_chg4 > YIELD10_CHG4` — 10yr yield rose too much over 4 weeks |
 | **YIELD2_CHG4** | 4-week % change in 2yr Treasury yield | `yield2_chg4 > YIELD2_CHG4` — 2yr yield rose too much over 4 weeks |
@@ -35,7 +35,8 @@ These are computed by `IndicatorEngine.apply_all()` and feed the parameters abov
 
 | Indicator | How it's computed | Used by |
 |-----------|-------------------|---------|
-| `chg4` | `Spread.pct_change(4)` — 4-week % change in credit spread | CHG4 sell rule |
+| `chg4` | `Spread.pct_change(4)` — 4-week % change in credit spread (internal comparison only) | CHG4 sell rule |
+| `chg4_abs` | `Spread.diff(4)` — 4-week absolute change in credit spread (display in Current Metrics / Factor Values) | CHG4 display |
 | `ret3` | `close.pct_change(3)` — 3-week price return | RET3 sell rule |
 | `spread_delta` | `Spread.diff()` — week-over-week spread change | SPREAD_DELTA buy rule |
 | `MA{n}` | `close.rolling(n).mean()` — n-week moving average | MA buy rule |

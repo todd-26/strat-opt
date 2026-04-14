@@ -74,6 +74,7 @@ export interface SignalMetrics {
   ma?: number | null
   ret3?: number | null
   chg4?: number | null
+  chg4_abs?: number | null
   spread_delta?: number | null
   spread_delta_history?: number[] | null
   yield10_chg4?: number | null

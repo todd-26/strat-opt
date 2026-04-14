@@ -40,10 +40,10 @@
             "description": "Sell if 4-week credit spread change exceeds threshold",
             "type": "percent",
             "ignore": true,
-            "default": 0.16,
+            "default": 0.25,
             "range": {
-              "min": 0.16,
-              "max": 0.16,
+              "min": 0.25,
+              "max": 0.25,
               "step": 0.01
             }
           },
@@ -97,10 +97,10 @@
             "description": "Price must be above n-week moving average",
             "type": "weeks",
             "ignore": true,
-            "default": 50.0,
+            "default": 14.0,
             "range": {
-              "min": 50.0,
-              "max": 50.0,
+              "min": 14.0,
+              "max": 14.0,
               "step": 1.0
             }
           },
@@ -108,10 +108,10 @@
             "description": "Credit spread must fall this fraction from 4-week peak",
             "type": "percent",
             "ignore": true,
-            "default": 0.016,
+            "default": 0.022,
             "range": {
-              "min": 0.016,
-              "max": 0.016,
+              "min": 0.022,
+              "max": 0.022,
               "step": 0.001
             }
           },
@@ -119,10 +119,10 @@
             "description": "Consecutive weeks of declining credit spread required",
             "type": "weeks",
             "ignore": true,
-            "default": 2.0,
+            "default": 1.0,
             "range": {
-              "min": 2.0,
-              "max": 2.0,
+              "min": 1.0,
+              "max": 1.0,
               "step": 1.0
             }
           },
@@ -130,10 +130,10 @@
             "description": "Consecutive weeks of declining 10-year yield required",
             "type": "weeks",
             "ignore": true,
-            "default": 2.0,
+            "default": 1.0,
             "range": {
-              "min": 2.0,
-              "max": 2.0,
+              "min": 1.0,
+              "max": 1.0,
               "step": 1.0
             }
           }
@@ -313,7 +313,7 @@
       "cash_vehicle": "JMST",
       "cash_vehicle_notes": "JPMorgan Ultra-Short Muni ETF, tax-exempt",
       "start_invested": 0,
-      "is_invested": 0,
+      "is_invested": 1,
       "parameters": {
         "sell_triggers": {
           "CHG4": {
@@ -733,7 +733,7 @@
       "cash_vehicle": "JMST",
       "cash_vehicle_notes": "JPMorgan Ultra-Short Muni ETF, tax-exempt",
       "start_invested": 0,
-      "is_invested": 0,
+      "is_invested": 1,
       "parameters": {
         "sell_triggers": {
           "CHG4": {
