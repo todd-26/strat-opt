@@ -183,4 +183,7 @@ frontend/dist/
 # Claude Code session transcripts (keep settings/skills/hooks tracked)
 .claude/projects/
 
+# API keys and urls
+API Instructions.txt
+
 

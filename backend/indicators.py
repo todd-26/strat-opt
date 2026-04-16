@@ -29,7 +29,7 @@ class IndicatorEngine:
         """
         Adds 4-week percentage change in Spread → 'chg4'.
         """
-        df["chg4"] = df["Spread"].pct_change(4)
+        df["chg4"] = df["Spread"].pct_change(4, fill_method=None)
         return df
 
     # ------------------------------------------------------------
@@ -40,7 +40,7 @@ class IndicatorEngine:
         """
         Adds 3-week price return % change → 'ret3'.
         """
-        df["ret3"] = df["close"].pct_change(3)
+        df["ret3"] = df["close"].pct_change(3, fill_method=None)
         return df
 
     # ------------------------------------------------------------
@@ -60,13 +60,13 @@ class IndicatorEngine:
     @staticmethod
     def add_yield10_chg4(df: pd.DataFrame) -> pd.DataFrame:
         """Adds 4-week % change in 10yr yield → 'yield10_chg4'."""
-        df["yield10_chg4"] = df["DGS10"].pct_change(4)
+        df["yield10_chg4"] = df["DGS10"].pct_change(4, fill_method=None)
         return df
 
     @staticmethod
     def add_yield2_chg4(df: pd.DataFrame) -> pd.DataFrame:
         """Adds 4-week % change in 2yr yield → 'yield2_chg4'."""
-        df["yield2_chg4"] = df["DGS2"].pct_change(4)
+        df["yield2_chg4"] = df["DGS2"].pct_change(4, fill_method=None)
         return df
 
     @staticmethod
