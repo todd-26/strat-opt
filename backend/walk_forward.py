@@ -313,8 +313,19 @@ class WalkForwardEngine:
                     progress_callback(i + 1, total, f"Window {i+1}/{total}: skipped (too few rows)")
                 continue
 
+            # Determine starting position for test window by running strategy
+            # through the training window — avoids resetting to start_invested
+            # each window when the strategy would actually be invested.
+            df_train = base_df.loc[pd.Timestamp(w['train_start']):pd.Timestamp(w['train_end'])].copy()
+            if len(df_train) > 0:
+                train_strat = GenericStrategy(seed_params, ignore=seed_ignore)
+                train_positions, _, _ = train_strat.run(df_train, start_invested=self.start_invested)
+                test_start_invested = int(train_positions[-1]) if len(train_positions) > 0 else self.start_invested
+            else:
+                test_start_invested = self.start_invested
+
             strat = GenericStrategy(seed_params, ignore=seed_ignore)
-            positions, buys, sells = strat.run(df_w, start_invested=self.start_invested)
+            positions, buys, sells = strat.run(df_w, start_invested=test_start_invested)
             bt = Backtester(self.cash_rate)
             bt_result = bt.run(df_w, positions, buys, sells)
 
