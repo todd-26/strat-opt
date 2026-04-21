@@ -173,7 +173,7 @@
       "cash_vehicle": "JMST",
       "cash_vehicle_notes": "JPMorgan Ultra-Short Muni ETF, tax-exempt",
       "start_invested": 0,
-      "is_invested": 0,
+      "is_invested": 1,
       "parameters": {
         "sell_triggers": {
           "CHG4": {
@@ -493,11 +493,11 @@
             "description": "Sell if 2-year yield 4-week change exceeds threshold",
             "type": "percent",
             "ignore": false,
-            "default": 0.17,
+            "default": 0.165,
             "range": {
-              "min": 0.17,
-              "max": 0.17,
-              "step": 0.01
+              "min": 0.165,
+              "max": 0.165,
+              "step": 0.005
             }
           },
           "CURVE_CHG4": {
@@ -527,7 +527,7 @@
           "DROP": {
             "description": "Credit spread must fall this fraction from 4-week peak",
             "type": "percent",
-            "ignore": false,
+            "ignore": true,
             "default": 0.024,
             "range": {
               "min": 0.024,
@@ -549,7 +549,7 @@
           "YIELD10_DELTA": {
             "description": "Consecutive weeks of declining 10-year yield required",
             "type": "weeks",
-            "ignore": true,
+            "ignore": false,
             "default": 1.0,
             "range": {
               "min": 1.0,
@@ -593,7 +593,7 @@
       "cash_vehicle": "JMST",
       "cash_vehicle_notes": "JPMorgan Ultra-Short Muni ETF, tax-exempt",
       "start_invested": 0,
-      "is_invested": 0,
+      "is_invested": 1,
       "parameters": {
         "sell_triggers": {
           "CHG4": {
@@ -873,7 +873,7 @@
       "cash_vehicle": "JMST",
       "cash_vehicle_notes": "JPMorgan Ultra-Short Muni ETF, tax-exempt",
       "start_invested": 0,
-      "is_invested": 1,
+      "is_invested": 0,
       "parameters": {
         "sell_triggers": {
           "CHG4": {
