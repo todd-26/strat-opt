@@ -47,21 +47,22 @@ class WeeklyDataLoader:
         fr = Fred(self.input_type, self.input_dir)
         df = fr.get_data().copy()
 
-        # Keep daily — merge_asof aligns to each weekly price date, correctly handling
-        # holiday weeks (e.g. Good Friday) where the market closes Thursday but FRED
-        # publishes Friday data, causing W-FRI resampling to mis-assign the prior week.
-        df = df.sort_values("date").reset_index(drop=True)
+        df["date"] = pd.to_datetime(df["date"])
+        df = df.set_index("date").resample("W-FRI").last().sort_index().reset_index()
         return df
 
     # ------------------------------------------------------------
-    # Load FRED treasury yields (daily → weekly via merge_asof)
+    # Load FRED treasury yields (daily → weekly)
     # ------------------------------------------------------------
     def load_treasury(self) -> pd.DataFrame:
         dgs10 = Fred(self.input_type, self.input_dir, series_id='DGS10', col_name='DGS10').get_data().copy()
         dgs2 = Fred(self.input_type, self.input_dir, series_id='DGS2', col_name='DGS2').get_data().copy()
 
-        dgs10 = dgs10.sort_values("date").reset_index(drop=True)
-        dgs2 = dgs2.sort_values("date").reset_index(drop=True)
+        dgs10["date"] = pd.to_datetime(dgs10["date"])
+        dgs2["date"] = pd.to_datetime(dgs2["date"])
+
+        dgs10 = dgs10.set_index("date").resample("W-FRI").last().reset_index()
+        dgs2  = dgs2.set_index("date").resample("W-FRI").last().reset_index()
 
         treasury = pd.merge_asof(
             dgs10.sort_values("date"),
