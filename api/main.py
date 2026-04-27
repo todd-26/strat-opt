@@ -220,18 +220,32 @@ _FRED_CACHE_SECONDS = 3600
 
 
 def _fetch_and_save_fred(series_id: str) -> None:
-    """Fetch full FRED series history from API and save to inputs CSV, bypassing app cache."""
+    """Append new FRED observations to existing CSV, preserving full history."""
     api_key = os.environ.get("FRED_API_KEY")
     url = os.environ.get("FRED_URL")
     if not api_key:
         raise ValueError("FRED_API_KEY is not set")
     if not url:
         raise ValueError("FRED_URL is not set")
+
+    csv_path = INPUT_DIR / f"{series_id}.csv"
+
+    # Determine start date: day after max date in existing CSV, or full history
+    existing_df = None
+    observation_start = '2000-01-01'
+    if csv_path.exists():
+        existing_df = _pd.read_csv(csv_path)
+        existing_df['date'] = _pd.to_datetime(existing_df['date'], errors='coerce')
+        existing_df = existing_df.dropna(subset=['date'])
+        if not existing_df.empty:
+            max_date = existing_df['date'].max()
+            observation_start = (max_date + _pd.Timedelta(days=1)).strftime('%Y-%m-%d')
+
     params = {
         'api_key': api_key,
         'series_id': series_id,
         'file_type': 'json',
-        'observation_start': '2000-01-01',
+        'observation_start': observation_start,
     }
     resp = _requests.get(url, params=params, timeout=30)
     resp.raise_for_status()
@@ -239,8 +253,17 @@ def _fetch_and_save_fred(series_id: str) -> None:
     if 'observations' not in data:
         msg = next(iter(data.values()), "Unknown FRED error") if data else "Empty response"
         raise ValueError(f"FRED API error for {series_id}: {msg}")
-    df = _pd.DataFrame(data['observations'])[['date', 'value']]
-    (INPUT_DIR / f"{series_id}.csv").write_text(df.to_csv(index=False), encoding='utf-8')
+
+    obs = data['observations']
+    new_df = _pd.DataFrame(obs)[['date', 'value']] if obs else _pd.DataFrame(columns=['date', 'value'])
+
+    if existing_df is not None and not existing_df.empty:
+        existing_df['date'] = existing_df['date'].dt.strftime('%Y-%m-%d')
+        combined = _pd.concat([existing_df[['date', 'value']], new_df], ignore_index=True)
+        combined = combined.drop_duplicates(subset='date').sort_values('date').reset_index(drop=True)
+        csv_path.write_text(combined.to_csv(index=False), encoding='utf-8')
+    else:
+        csv_path.write_text(new_df.to_csv(index=False), encoding='utf-8')
 
 
 def _update_fred_if_stale(av_ticker: str) -> None:

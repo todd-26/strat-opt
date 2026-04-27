@@ -139,13 +139,13 @@ export function streamOptimizer(req: OptimizerRequest, cbs: OptimizerCallbacks):
         cbs.onError(body || `HTTP ${res.status}`)
         return
       }
-      await parseSSE(res, (event) => {
-        if (event.type === 'progress') {
-          cbs.onProgress(event.current as number, event.total as number)
-        } else if (event.type === 'result') {
-          cbs.onResult(event.data as OptimizerResponse)
-        } else if (event.type === 'error') {
-          cbs.onError(event.message as string)
+      await parseSSE(res, (type, data) => {
+        if (type === 'progress') {
+          cbs.onProgress(data.current as number, data.total as number)
+        } else if (type === 'result') {
+          cbs.onResult(data as unknown as OptimizerResponse)
+        } else if (type === 'error') {
+          cbs.onError(data.message as string)
         }
       })
     } catch (e) {
@@ -176,13 +176,13 @@ export function streamWalkForward(req: WalkForwardRequest, cbs: WalkForwardCallb
         cbs.onError(body || `HTTP ${res.status}`)
         return
       }
-      await parseSSE(res, (event) => {
-        if (event.type === 'progress') {
-          cbs.onProgress(event.current as number, event.total as number, (event.status as string) ?? '')
-        } else if (event.type === 'result') {
-          cbs.onResult(event.data as WalkForwardResponse)
-        } else if (event.type === 'error') {
-          cbs.onError(event.message as string)
+      await parseSSE(res, (type, data) => {
+        if (type === 'progress') {
+          cbs.onProgress(data.current as number, data.total as number, (data.status as string) ?? '')
+        } else if (type === 'result') {
+          cbs.onResult(data as unknown as WalkForwardResponse)
+        } else if (type === 'error') {
+          cbs.onError(data.message as string)
         }
       })
     } catch (e) {
@@ -192,7 +192,8 @@ export function streamWalkForward(req: WalkForwardRequest, cbs: WalkForwardCallb
   return controller
 }
 
-async function parseSSE(res: Response, onEvent: (event: Record<string, unknown>) => void) {
+// SSE frames are separated by \n\n; each frame has an "event: <type>" line and a "data: <json>" line.
+async function parseSSE(res: Response, onEvent: (type: string, data: Record<string, unknown>) => void) {
   const reader = res.body?.getReader()
   if (!reader) return
   const decoder = new TextDecoder()
@@ -204,10 +205,12 @@ async function parseSSE(res: Response, onEvent: (event: Record<string, unknown>)
     const parts = buf.split('\n\n')
     buf = parts.pop() ?? ''
     for (const part of parts) {
-      const dataLine = part.split('\n').find(l => l.startsWith('data: '))
-      if (dataLine) {
+      const lines = part.split('\n')
+      const eventLine = lines.find(l => l.startsWith('event: '))
+      const dataLine  = lines.find(l => l.startsWith('data: '))
+      if (eventLine && dataLine) {
         try {
-          onEvent(JSON.parse(dataLine.slice(6)) as Record<string, unknown>)
+          onEvent(eventLine.slice(7), JSON.parse(dataLine.slice(6)) as Record<string, unknown>)
         } catch { /* ignore malformed */ }
       }
     }
