@@ -68,6 +68,32 @@ def pipeline_df():
 
 
 # ---------------------------------------------------------------------------
+# Economic data integrity — oldest record must be 2000-01-03
+# If these fail, the CSV was likely overwritten with a truncated fetch
+# ---------------------------------------------------------------------------
+
+import pandas as pd
+
+_FRED_FILES = {
+    "BAMLH0A0HYM2": INPUTS_DIR / "BAMLH0A0HYM2.csv",
+    "DGS10":        INPUTS_DIR / "DGS10.csv",
+    "DGS2":         INPUTS_DIR / "DGS2.csv",
+}
+_EXPECTED_START = pd.Timestamp("2000-01-03")
+
+
+@pytest.mark.parametrize("series_id,path", list(_FRED_FILES.items()))
+def test_fred_history_starts_at_2000(series_id, path):
+    """Oldest row must be 2000-01-03 — detects accidental truncation to FRED's 3-year window."""
+    df = pd.read_csv(path, parse_dates=["date"])
+    oldest = df["date"].min()
+    assert oldest == _EXPECTED_START, (
+        f"{series_id}: oldest entry is {oldest.date()}, expected 2000-01-03. "
+        f"File may have been overwritten by a full fetch instead of an append."
+    )
+
+
+# ---------------------------------------------------------------------------
 # Pipeline integration
 # ---------------------------------------------------------------------------
 
