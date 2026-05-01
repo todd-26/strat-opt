@@ -43,9 +43,10 @@ strat-opt/
 ├── tests/                  # Python unit tests
 │   ├── conftest.py         # sys.path setup (backend/ + tests/)
 │   ├── helpers.py          # make_weekly_df synthetic fixture factory
-│   ├── test_indicators.py  # IndicatorEngine unit tests
-│   ├── test_backtester.py  # Backtester unit tests
-│   └── test_strategy.py    # GenericStrategy unit tests
+│   ├── test_indicators.py   # IndicatorEngine unit tests
+│   ├── test_backtester.py   # Backtester unit tests
+│   ├── test_strategy.py     # GenericStrategy unit tests (run() + evaluate_sell/buy)
+│   └── test_integration.py  # Pipeline + consistency tests on real SPHY CSVs (skipped if missing)
 ├── pytest.ini              # testpaths = tests
 ├── requirements-dev.txt    # pytest
 ├── .env                    # Environment variables (API keys)

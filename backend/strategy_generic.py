@@ -48,7 +48,7 @@ class GenericStrategy(BaseStrategy):
             return False
         cond1 = True if 'MA'           in self.ignore else (row['close'] > row[ma_col])
         past  = df.loc[:idx]
-        if len(past) < 3:
+        if len(past) < 3 and not {'SPREAD_DELTA', 'YIELD10_DELTA'}.issubset(self.ignore):
             return False
         cond2 = True if 'SPREAD_DELTA' in self.ignore else (past['spread_delta'].tail(self.SPREAD_DELTA) < 0).all()
         spreads = pd.concat([past['Spread'].iloc[-3:], pd.Series([row['Spread']], dtype=float)])
