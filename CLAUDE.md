@@ -40,6 +40,14 @@ strat-opt/
 │   ├── BAMLH0A0HYM2.csv              # FRED credit spread data
 │   ├── DGS10.csv                     # FRED 10yr Treasury yield
 │   └── DGS2.csv                      # FRED 2yr Treasury yield
+├── tests/                  # Python unit tests
+│   ├── conftest.py         # sys.path setup (backend/ + tests/)
+│   ├── helpers.py          # make_weekly_df synthetic fixture factory
+│   ├── test_indicators.py  # IndicatorEngine unit tests
+│   ├── test_backtester.py  # Backtester unit tests
+│   └── test_strategy.py    # GenericStrategy unit tests
+├── pytest.ini              # testpaths = tests
+├── requirements-dev.txt    # pytest
 ├── .env                    # Environment variables (API keys)
 ├── serve.bat               # Normal use: serves pre-built frontend + API on :8000
 └── start-prod.bat          # Rebuilds frontend then serves on :8000
@@ -78,6 +86,16 @@ Rules:
 - Don't narrate tool calls ("Let me read the file..." / "Now I'll edit..."). Just do it.
 - Keep explanations proportional to complexity. Simple changes need one sentence, not three paragraphs.
 
+## Running Tests
+
+```bash
+pip install -r requirements-dev.txt
+pytest                      # runs all tests in tests/
+pytest tests/test_strategy.py -v   # single file, verbose
+```
+
+Tests are pure Python — no server, no CSV files, no API keys needed. Each test file imports from `backend/` via `tests/conftest.py` sys.path injection.
+
 ## Running the Application
 
 ### Normal Use
@@ -87,7 +105,7 @@ serve.bat       # Serves pre-built frontend + API on port 8000
 
 ### After Frontend Changes
 ```bash
-start-prod.bat  # Rebuilds frontend, then serves on port 8000
+start-prod.bat  # Runs tests first (aborts on failure), rebuilds frontend, then serves on port 8000
 ```
 
 ### Individual Servers (dev)
