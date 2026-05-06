@@ -5,10 +5,7 @@ from pathlib import Path
 from data_loader import WeeklyDataLoader
 from indicators import IndicatorEngine
 from backtester import Backtester
-from strategy_generic import GenericStrategy
-
-PARAM_NAMES = ['MA', 'DROP', 'CHG4', 'RET3', 'YIELD10_CHG4', 'YIELD2_CHG4', 'CURVE_CHG4', 'SPREAD_DELTA', 'YIELD10_DELTA']
-INT_PARAMS  = {'MA', 'SPREAD_DELTA', 'YIELD10_DELTA'}
+from strategy_generic import GenericStrategy, PARAM_NAMES, INT_PARAMS
 
 
 class GenericOptimizer:

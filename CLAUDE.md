@@ -184,6 +184,7 @@ Backend Pipeline:
 - Accepts `param_grids: dict`, `start_date`/`end_date`, `disabled_factors` set
 - Disabled grids collapse to `[0]` (single placeholder) to reduce combinations
 - Supports `progress_callback` for streaming progress to frontend
+- `PARAM_NAMES` and `INT_PARAMS` are defined in `strategy_generic.py` and imported by both `optimizer_generic.py` and `walk_forward.py` — single source of truth for the factor list
 
 **Walk-Forward** (`walk_forward.py`):
 - `WalkForwardEngine` — loads full data once, applies non-MA indicators; adds MA columns lazily per run

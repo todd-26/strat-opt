@@ -6,16 +6,9 @@ from pathlib import Path
 
 from data_loader import WeeklyDataLoader
 from indicators import IndicatorEngine
-from strategy_generic import GenericStrategy
+from strategy_generic import GenericStrategy, PARAM_NAMES, INT_PARAMS
 from strategy_buyhold import BuyAndHoldStrategy
 from backtester import Backtester
-
-PARAM_NAMES = [
-    'MA', 'DROP', 'CHG4', 'RET3',
-    'YIELD10_CHG4', 'YIELD2_CHG4', 'CURVE_CHG4',
-    'SPREAD_DELTA', 'YIELD10_DELTA',
-]
-INT_PARAMS = {'MA', 'SPREAD_DELTA', 'YIELD10_DELTA'}
 
 
 class WalkForwardEngine:
