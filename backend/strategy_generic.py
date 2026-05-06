@@ -1,6 +1,9 @@
 import pandas as pd
 from strategy_base import BaseStrategy
 
+PARAM_NAMES = ['MA', 'DROP', 'CHG4', 'RET3', 'YIELD10_CHG4', 'YIELD2_CHG4', 'CURVE_CHG4', 'SPREAD_DELTA', 'YIELD10_DELTA']
+INT_PARAMS  = {'MA', 'SPREAD_DELTA', 'YIELD10_DELTA'}
+
 
 class GenericStrategy(BaseStrategy):
     """

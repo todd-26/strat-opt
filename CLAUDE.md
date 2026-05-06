@@ -148,7 +148,7 @@ Backend Pipeline:
 
 **Data layer** (`data_loader.py`, `data_source.py`, `alpha_vantage.py`, `fred.py`):
 - `WeeklyDataLoader` loads weekly prices, FRED spread and treasury yields (DGS10, DGS2); FRED series are resampled to W-FRI via `resample("W-FRI").last()` before merging; computes total return factor (`TR_factor`, `TR`) and `YieldCurve = DGS10 - DGS2`
-- **FRED alignment**: FRED data is pre-resampled to W-FRI (`resample("W-FRI").last()`) before the `merge_asof` join. This matches the weekly price index and produces correct backtester results. The holiday-week patch in `main.py` (`_patch_holiday_week_fred`) handles the Good Friday edge case for the current signal only by reading raw daily FRED CSVs directly.
+- **FRED alignment**: FRED data is pre-resampled to W-FRI (`resample("W-FRI").last()`) before the `merge_asof` join. This matches the weekly price index and produces correct results across all run modes.
 - **Price series uses `adjusted close`** (not raw close): split-corrected and continuous across split events (e.g. HYMB 2:1 split Jan 2023). `TR_factor = adj_close / adj_close_prev` — dividends are already embedded in adj_close, so no separate dividend addition. Raw `close` and `dividend amount` columns are discarded in `alpha_vantage.py`.
 - After merging, `load()` caps the result at `min(spread_df["date"].max(), treasury_df["date"].max())` — prevents `merge_asof` from silently carrying stale FRED values into price rows newer than the latest FRED data
 - `Fred.get_data()` auto-saves `['date', 'value']` to `inputs/{series_id}.csv` on cache miss (fresh API call); `observation_start` set to `'2000-01-01'` for full history
@@ -184,6 +184,7 @@ Backend Pipeline:
 - Accepts `param_grids: dict`, `start_date`/`end_date`, `disabled_factors` set
 - Disabled grids collapse to `[0]` (single placeholder) to reduce combinations
 - Supports `progress_callback` for streaming progress to frontend
+- `PARAM_NAMES` and `INT_PARAMS` are defined in `strategy_generic.py` and imported by both `optimizer_generic.py` and `walk_forward.py` — single source of truth for the factor list
 
 **Walk-Forward** (`walk_forward.py`):
 - `WalkForwardEngine` — loads full data once, applies non-MA indicators; adds MA columns lazily per run
