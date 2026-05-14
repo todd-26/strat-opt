@@ -17,7 +17,9 @@
       "Bash(npm run *)",
       "Bash(pytest -v)",
       "Bash(where python *)",
-      "Bash(pip show *)"
+      "Bash(pip show *)",
+      "Bash(Get-Content \"C:\\\\Users\\\\Todd\\\\OneDrive\\\\Documents\\\\Finance\\\\strat-opt\\\\inputs\\\\shym-weekly-adjusted.csv\")",
+      "Bash(Select-Object -Last 10)"
     ]
   }
 }
