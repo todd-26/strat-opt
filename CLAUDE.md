@@ -112,7 +112,7 @@ start-prod.bat  # Runs tests first (aborts on failure), rebuilds frontend, then 
 ### Individual Servers (dev)
 ```bash
 # Backend only
-api\dev.bat     # or: cd api && uvicorn main:app --reload --host 0.0.0.0 --port 8000
+api\dev.bat     # or: cd api && uvicorn main:app --reload --host 127.0.0.1 --port 8000
 
 # Frontend only (proxies /api to :8000)
 frontend\dev.bat  # or: cd frontend && npm run dev
