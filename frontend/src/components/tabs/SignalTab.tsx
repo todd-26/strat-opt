@@ -268,7 +268,7 @@ export function SignalTab({ settings, ticker, defaultParams, paramDescriptions, 
 
               <div className="mb-1 text-xs font-semibold uppercase tracking-wide" style={{ color: 'var(--text-muted)' }}>Sell — trigger if ANY true</div>
               <dl className="mb-4 space-y-1.5 text-sm">
-                <ThresholdRow label="chg4"      value={result.metrics.chg4_abs ?? result.metrics.chg4} disabled={disabledFactors.has('CHG4')} />
+                <ThresholdRow label="chg4"      value={result.metrics.chg4_abs ?? result.metrics.chg4} disabled={disabledFactors.has('CHG4')} suffix={result.metrics.chg4 != null ? `(${(result.metrics.chg4 * 100).toFixed(1)}%)` : undefined} />
                 <ThresholdRow label="ret3"      value={result.metrics.ret3}          disabled={disabledFactors.has('RET3')} pct />
                 <ThresholdRow label="10yr chg4" value={result.metrics.yield10_chg4}  disabled={disabledFactors.has('YIELD10_CHG4')} pct />
                 <ThresholdRow label="2yr chg4"  value={result.metrics.yield2_chg4}   disabled={disabledFactors.has('YIELD2_CHG4')} pct />
@@ -313,13 +313,14 @@ function MetricRow({ label, value }: { label: string; value: string }) {
   )
 }
 
-function ThresholdRow({ label, value, history, disabled, pct, hint }: {
+function ThresholdRow({ label, value, history, disabled, pct, hint, suffix }: {
   label: string
   value: number | null | undefined
   history?: number[] | null
   disabled?: boolean
   pct?: boolean
   hint?: string
+  suffix?: string
 }) {
   const fmt = (v: number | null | undefined) =>
     v == null ? '—' : pct ? `${(v * 100).toFixed(2)}%` : v.toFixed(4)
@@ -336,6 +337,7 @@ function ThresholdRow({ label, value, history, disabled, pct, hint }: {
       <dt style={{ color: 'var(--text-muted)' }}>{label}{hint && <span className="ml-1 text-xs font-normal" style={{ color: 'var(--text-muted)', opacity: 0.7 }}>{hint}</span>}</dt>
       <dd className="font-medium tabular-nums" style={{ color: 'var(--text)' }}>
         {historyDisplay ?? display}
+        {suffix && <span className="ml-1 text-xs font-normal" style={{ color: 'var(--text-muted)' }}>{suffix}</span>}
         {history != null && (
           <span className="ml-1.5 text-xs font-bold" style={{ color: allPass ? 'var(--buy)' : 'var(--sell)' }}>
             {allPass ? '✓' : '✗'}
