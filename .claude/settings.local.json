@@ -19,7 +19,8 @@
       "Bash(where python *)",
       "Bash(pip show *)",
       "Bash(Get-Content \"C:\\\\Users\\\\Todd\\\\OneDrive\\\\Documents\\\\Finance\\\\strat-opt\\\\inputs\\\\shym-weekly-adjusted.csv\")",
-      "Bash(Select-Object -Last 10)"
+      "Bash(Select-Object -Last 10)",
+      "Bash(accepts 'optional\\) *)"
     ]
   }
 }
